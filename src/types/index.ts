@@ -1,30 +1,50 @@
 export type BillType = 'QUOTATION' | 'INVOICE';
 
+export type IndustryCategory =
+  | 'creative_agency'
+  | 'software_tech'
+  | 'consulting'
+  | 'construction'
+  | 'photography_events'
+  | 'general_business';
+
+export type ProposalTheme = 'creative' | 'modern' | 'compact';
+
 export type EventDateMode = 'single' | 'range';
 
+export interface CurrencyConfig {
+  code: string;       // e.g. 'USD', 'INR', 'EUR', 'GBP', 'AED'
+  symbol: string;     // e.g. '$', '₹', '€', '£', 'AED'
+  label: string;      // e.g. 'USD - US Dollar ($)'
+  locale: string;     // e.g. 'en-US', 'en-IN'
+  decimalPlaces: number;
+}
+
 export interface ClientInfo {
-  nameOfEvent: string; // Manually Written
-  address: string;     // Manually Written
-  contactNo: string;   // Manually Written (numbers only)
-  clientName?: string; // Optional Contact Person
-  email?: string;      // Optional Email
+  nameOfEvent: string; // Project / Event / Job Title
+  address: string;     // Client / Site Address
+  contactNo: string;   // Contact Phone
+  clientName?: string; // Contact Person / Organization
+  email?: string;      // Client Email
+  taxId?: string;      // Client GSTIN / VAT ID / Tax ID
 }
 
 export interface DocumentDetails {
-  invoiceNo: string;   // Manually Written / Auto
-  invoiceDate: string; // Automatic choose by Present date (DD/MM/YYYY)
+  invoiceNo: string;   // Quote / Invoice #
+  invoiceDate: string; // Issue Date (DD/MM/YYYY or YYYY-MM-DD)
   eventDateMode: EventDateMode;
-  eventDate: string;   // Single date
-  eventDateFrom: string; // Range from
-  eventDateTo: string;   // Range to
-  dueDate?: string;
-  validUntilDate?: string;
+  eventDate: string;   // Execution / Event date
+  eventDateFrom: string; // Range Start
+  eventDateTo: string;   // Range End
+  dueDate?: string;    // Payment Due Date
+  validUntilDate?: string; // Quotation Expiry Date
+  poNumber?: string;   // Purchase Order / Reference #
 }
 
-export interface EventCoverageItem {
+export interface ScopeMilestoneItem {
   id: string;
-  dayTitle: string; // e.g., "Day 1 - Walima"
-  services: string[]; // e.g., ["Traditional Photography", "Traditional Videography", "Candid Videography", "Candid Photography"]
+  dayTitle: string; // Phase / Milestone / Day Title (e.g. "Phase 1: Brand Strategy & UI/UX" or "Day 1 - Main Event")
+  services: string[]; // Key deliverables / tasks in this phase
 }
 
 export interface DeliverableItem {
@@ -35,8 +55,8 @@ export interface DeliverableItem {
 
 export interface CrewMemberItem {
   id: string;
-  team: string; // e.g. "Candid Photographer", "Candid Videographer", "Traditional Photographer", "Traditional Videographer", "Drone Pilot"
-  role: string; // e.g. "Capturing portraits and moments of the couple, immediate family & friends in creative angles."
+  team: string; // e.g. "Lead Designer", "Senior Full-Stack Dev", "Site Supervisor", "Drone Pilot"
+  role: string; // Key responsibility or credential description
   enabled: boolean;
 }
 
@@ -51,19 +71,37 @@ export interface WhyChooseUsItem {
 export interface PricingItem {
   id: string;
   description: string;
-  amount: number;
-  qty?: number;
-  rate?: number;
+  amount: number;       // Line item total
+  qty?: number;         // Quantity
+  unit?: string;        // 'hrs', 'days', 'units', 'sq ft', 'items', 'fixed', 'months'
+  rate?: number;        // Unit Price
+  isOptional?: boolean; // Client can toggle this add-on in interactive proposal view
+  selected?: boolean;   // Whether currently included in total
+  taxRate?: number;     // Line item specific tax % (if applicable)
+}
+
+export type TaxType = 'none' | 'gst' | 'igst' | 'vat' | 'sales_tax' | 'custom';
+
+export interface TaxConfig {
+  type: TaxType;
+  percent: number;       // Main tax rate (e.g. 18 for GST, 20 for VAT, 8.25 for Sales Tax)
+  label?: string;        // Custom tax label (e.g. 'VAT (20%)', 'GST (18%)')
+  taxNumberLabel?: string; // 'GSTIN', 'VAT Reg No', 'Tax ID', 'EIN'
 }
 
 export interface PaymentTermsConfig {
-  advancePercent: number; // e.g. 30
-  afterEventPercent: number; // e.g. 50
-  balancePercent: number; // e.g. 20
+  advancePercent: number; // e.g. 30%
+  afterEventPercent: number; // e.g. 50%
+  balancePercent: number; // e.g. 20%
   advanceCustomAmount?: number;
   afterEventCustomAmount?: number;
   balanceCustomAmount?: number;
   isCustomAmounts: boolean;
+  paymentMilestoneLabels?: {
+    advanceLabel: string;
+    afterEventLabel: string;
+    balanceLabel: string;
+  };
   // For Invoices:
   advanceReceived?: number;
   advancePaidDate?: string;
@@ -71,10 +109,10 @@ export interface PaymentTermsConfig {
 }
 
 export interface InvoicePaymentRecord {
-  status: 'UNPAID' | 'PARTIALLY_PAID' | 'PAID';
+  status: 'UNPAID' | 'PARTIALLY_PAID' | 'PAID' | 'OVERDUE';
   amountReceived: number;
   paymentDate?: string;
-  paymentMode?: string; // UPI, Bank Transfer, Cash, Card
+  paymentMode?: string; // UPI, Bank Transfer, Stripe, PayPal, Cash, Card
   transactionRef?: string;
   notes?: string;
 }
@@ -90,6 +128,17 @@ export interface WatermarkConfig {
   customImageUrl?: string;
 }
 
+export interface SignatoryRecord {
+  enabled: boolean;
+  signerName: string;
+  signerTitle: string;
+  signatureDate?: string;
+  signatureDataUrl?: string;
+  clientSignedName?: string;
+  clientSignedDate?: string;
+  clientSignatureDataUrl?: string;
+}
+
 export interface StudioProfile {
   name: string;
   tagline: string;
@@ -101,39 +150,67 @@ export interface StudioProfile {
   phoneNumbers: string;
   email: string;
   website: string;
-  gstin?: string;
-  upiId?: string;
+  taxNumberLabel?: string; // 'GSTIN' | 'VAT ID' | 'Tax ID' | 'EIN'
+  gstin?: string;          // Tax / GST / VAT registration number
+  upiId?: string;          // UPI ID (e.g. username@upi)
+  paymentLink?: string;    // Stripe / PayPal / Direct Pay link
   bankName?: string;
   accountNumber?: string;
-  ifscCode?: string;
+  ifscCode?: string;       // IFSC / Swift / Routing code
   accountHolder?: string;
   signatureUrl?: string;
   authEnabled?: boolean;
-  adminUsername?: string; // Default: 'fusionbells'
-  adminPassword?: string; // Default: 'fbf@2026'
+  adminUsername?: string;
+  adminPassword?: string;
+}
+
+export interface AcceptanceAuditRecord {
+  signatoryName: string;
+  signatoryEmail?: string;
+  signedAt: string; // ISO date string
+  formattedDate?: string;
+  signatureDataUrl?: string;
+  selectedAddonIds?: string[];
+  acceptedTotalInvestment: number;
+  ipAddress?: string;
+  userAgent?: string;
 }
 
 export interface QuotationDocument {
   id: string;
   type: BillType;
+  industry: IndustryCategory;
+  theme: ProposalTheme;
+  currency: CurrencyConfig;
+  accentColor?: string; // Custom brand hex color (e.g. #f59e0b)
+  fontFamily?: string;  // e.g. 'Outfit', 'Plus Jakarta Sans', 'Inter', 'Playfair Display'
+  status?: 'DRAFT' | 'SENT' | 'VIEWED' | 'APPROVED' | 'PAID';
+  viewCount?: number;
+  lastViewedAt?: string;
+  approvedAt?: string;
+  acceptanceAudit?: AcceptanceAuditRecord;
   client: ClientInfo;
   details: DocumentDetails;
-  packageBannerTitle: string;
-  eventCoverage: EventCoverageItem[];
+  packageBannerTitle: string; // Project / Package Title (e.g. "FULL-STACK WEB APP DEVELOPMENT & LAUNCH")
+  eventCoverage: ScopeMilestoneItem[]; // Universal Project Phases / SOW Milestones
   deliverables: DeliverableItem[];
-  crewMembers: CrewMemberItem[];
+  crewMembers: CrewMemberItem[]; // Specialists / Key Team
   whyChooseUs: WhyChooseUsItem[];
   includeCrewSection: boolean;
   includeWhyChooseUs: boolean;
+  includeScopeSection: boolean;
   pricingItems: PricingItem[];
   totalInvestment: number;
   discount: number;
-  taxPercent: number; // 0 for none, 18 for GST
-  taxType: 'none' | 'gst' | 'igst';
+  taxConfig: TaxConfig;
+  // Legacy compatibility fields:
+  taxPercent: number;
+  taxType: TaxType;
   paymentTerms: PaymentTermsConfig;
   invoicePayment: InvoicePaymentRecord;
   termsAndConditions: string[];
   footerNote: string;
+  signatory: SignatoryRecord;
   watermark: WatermarkConfig;
   studio: StudioProfile;
   updatedAt: string;

@@ -1,11 +1,36 @@
 import React, { useState } from 'react';
-import {
-  DEFAULT_SERVICES,
-  DEFAULT_EVENT_TYPES,
-  DEFAULT_ADDITIONAL_SERVICES,
-} from '../constants/defaultData';
-import { Camera, Film, Video, Sparkles, Plus, Check, Wand2 } from 'lucide-react';
+import { Camera, Film, Video, Wand2 } from 'lucide-react';
 import type { QuotationDocument } from '../types';
+
+export const DEFAULT_SERVICES = [
+  { id: 'trad-photo', category: 'Traditional', name: 'Traditional Photography', defaultDeliverable: 'Traditional High-Res Photo Coverage' },
+  { id: 'trad-video', category: 'Traditional', name: 'Traditional Videography', defaultDeliverable: 'Traditional Full Length Video' },
+  { id: 'candid-photo', category: 'Candid', name: 'Candid Photography', defaultDeliverable: 'Professionally Edited High Resolution Candid Photographs' },
+  { id: 'candid-video', category: 'Candid', name: 'Candid Videography', defaultDeliverable: 'Candid Cinema Coverage' },
+  { id: 'cinematic-films', category: 'Cinematic', name: 'Cinematic Films', defaultDeliverable: 'Cinematic Highlight Films & Teaser' },
+];
+
+export const DEFAULT_EVENT_TYPES = [
+  'Walima',
+  'Wedding Reception',
+  'Pre Wedding',
+  'Engagement',
+  'Baby Shower',
+  'Birthday',
+  'House Ceremony',
+  'Haldi',
+  'Mehendi',
+  'Sangeet',
+  'Muhurtham',
+];
+
+export const DEFAULT_ADDITIONAL_SERVICES = [
+  { id: 'drone', name: 'Drone', label: 'Drone (Aerial 4K Shoot)', deliverable: '4K Drone Aerial Footage' },
+  { id: 'led-wall', name: 'LED Wall', label: 'LED Wall (Live Display Setup)', deliverable: 'Live LED Wall Projection' },
+  { id: 'live-stream', name: 'Live Streaming', label: 'Live Streaming (YouTube/FB Webcast)', deliverable: 'Full HD Multi-Cam Live Stream' },
+  { id: 'album', name: 'Luxury Album', label: 'Luxury Photobook Album (40 Pages)', deliverable: 'Premium Matte Leather Hardcover Photobook Album' },
+  { id: 'reels', name: 'Reels Package', label: 'Instagram Reels & Shorts', deliverable: '3x Same-day Vertical Reels for Instagram' },
+];
 
 interface ServiceMatrixBuilderProps {
   document: QuotationDocument;
@@ -62,12 +87,11 @@ export const ServiceMatrixBuilder: React.FC<ServiceMatrixBuilderProps> = ({
     }
   };
 
-  // Smart Package Generator: Apply current selection to the document
   const applyPackageToDocument = () => {
     const eventNameJoined = selectedEvents.length > 0 ? selectedEvents.join(' & ') : 'Wedding';
     const isCinematic = selectedServices.some((s) => s.toLowerCase().includes('cinematic') || s.toLowerCase().includes('video'));
     const isPhoto = selectedServices.some((s) => s.toLowerCase().includes('photo'));
-    
+
     let packageSuffix = 'PACKAGE';
     if (isPhoto && isCinematic) {
       packageSuffix = 'PHOTOGRAPHY & CINEMATOGRAPHY PACKAGE';
@@ -79,7 +103,6 @@ export const ServiceMatrixBuilder: React.FC<ServiceMatrixBuilderProps> = ({
 
     const packageBanner = `${eventNameJoined.toUpperCase()} ${packageSuffix}`;
 
-    // Construct event coverage
     const allCoveredServices = [...selectedServices, ...selectedAddons];
     const newCoverage = selectedEvents.map((ev, index) => ({
       id: `day-${index + 1}`,
@@ -87,7 +110,6 @@ export const ServiceMatrixBuilder: React.FC<ServiceMatrixBuilderProps> = ({
       services: allCoveredServices,
     }));
 
-    // Construct deliverables
     const defaultDeliverables = [
       { id: 'del-1', text: 'Event Teaser (60-90 seconds 4K)', included: true },
       {
@@ -99,154 +121,115 @@ export const ServiceMatrixBuilder: React.FC<ServiceMatrixBuilderProps> = ({
       { id: 'del-4', text: 'We will provide all the traditional full length video', included: selectedServices.includes('Traditional Videography') },
     ];
 
-    if (selectedAddons.includes('Drone')) {
-      defaultDeliverables.push({
-        id: 'del-drone',
-        text: '4K Drone Aerial Shots & Cinematic Perspectives',
-        included: true,
-      });
-    }
-
-    if (selectedAddons.includes('LED Wall')) {
-      defaultDeliverables.push({
-        id: 'del-led',
-        text: 'Live LED Wall Live Feed & Switcher Setup',
-        included: true,
-      });
-    }
-
-    if (selectedAddons.includes('Live Streaming')) {
-      defaultDeliverables.push({
-        id: 'del-live',
-        text: 'Full HD Multi-Cam Live Webcast on YouTube / Private Link',
-        included: true,
-      });
-    }
-
-    if (selectedAddons.includes('Luxury Album')) {
-      defaultDeliverables.push({
-        id: 'del-album',
-        text: '1x Premium Matte Finish Hardcover Photobook Album (40 Pages)',
-        included: true,
-      });
-    }
-
-    // Update pricing description
-    const newPricingDescription = `Complete Package – ${eventNameJoined} Photography & Cinematography`;
+    selectedAddons.forEach((addonName, idx) => {
+      const match = DEFAULT_ADDITIONAL_SERVICES.find((a) => a.name === addonName);
+      if (match) {
+        defaultDeliverables.push({
+          id: `del-addon-${idx}`,
+          text: match.deliverable,
+          included: true,
+        });
+      }
+    });
 
     onChange({
       ...doc,
-      client: {
-        ...doc.client,
-        nameOfEvent: doc.client.nameOfEvent || eventNameJoined,
-      },
       packageBannerTitle: packageBanner,
       eventCoverage: newCoverage,
       deliverables: defaultDeliverables,
-      pricingItems: [
-        {
-          id: 'price-1',
-          description: newPricingDescription,
-          amount: doc.totalInvestment || 49000,
-        },
-      ],
+      client: {
+        ...doc.client,
+        nameOfEvent: eventNameJoined,
+      },
     });
   };
 
   return (
-    <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-5 shadow-lg space-y-5 text-slate-200">
-      <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-        <div className="flex items-center space-x-2">
-          <Sparkles className="w-5 h-5 text-amber-400" />
-          <h3 className="text-base font-semibold text-amber-200 font-['Outfit']">
-            Wedding Photography & Services Builder
-          </h3>
+    <div className="space-y-4 bg-slate-950/80 border border-slate-800 rounded-xl p-4 text-xs font-['Plus_Jakarta_Sans',sans-serif]">
+      <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
+        <div>
+          <h4 className="text-xs font-bold text-amber-300 uppercase tracking-wider font-['Outfit'] flex items-center space-x-1.5">
+            <Wand2 className="w-3.5 h-3.5" />
+            <span>Event & Photography Package Generator</span>
+          </h4>
+          <p className="text-[11px] text-slate-400">
+            Select events and crew services to auto-populate coverage schedule
+          </p>
         </div>
+
         <button
           type="button"
           onClick={applyPackageToDocument}
-          className="flex items-center space-x-1.5 px-3 py-1.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-semibold text-xs rounded-lg shadow-md transition-all active:scale-95"
+          className="px-3 py-1.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold rounded-lg shadow transition-all flex items-center space-x-1"
         >
-          <Wand2 className="w-3.5 h-3.5" />
-          <span>Apply to Quotation</span>
+          <Wand2 className="w-3 h-3" />
+          <span>Apply to Proposal</span>
         </button>
       </div>
 
-      {/* 1. Main Photography / Cinematography Services */}
+      {/* Services Selection */}
       <div>
-        <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2 font-['Outfit']">
-          Forms → Services Main
+        <label className="text-[11px] font-semibold text-slate-300 block mb-1.5">
+          1. Select Core Photography & Video Services
         </label>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-          {DEFAULT_SERVICES.map((svc) => {
-            const isSelected = selectedServices.includes(svc.name);
+        <div className="grid grid-cols-2 gap-2">
+          {DEFAULT_SERVICES.map((svc: { id: string; category: string; name: string; defaultDeliverable: string }) => {
+            const isChecked = selectedServices.includes(svc.name);
             return (
               <button
                 key={svc.id}
                 type="button"
                 onClick={() => toggleService(svc.name)}
-                className={`flex items-center justify-between p-2.5 rounded-lg border text-xs font-medium transition-all text-left ${
-                  isSelected
-                    ? 'bg-amber-500/20 border-amber-500/60 text-amber-100 shadow-sm'
-                    : 'bg-slate-950/60 border-slate-800 text-slate-300 hover:border-slate-700'
+                className={`p-2 rounded-lg border text-left flex items-center space-x-2 transition-all ${
+                  isChecked
+                    ? 'bg-amber-500/20 border-amber-500/80 text-amber-300'
+                    : 'bg-slate-900 border-slate-800 text-slate-400 hover:bg-slate-800'
                 }`}
               >
-                <div className="flex items-center space-x-2">
-                  {svc.category === 'Traditional' && <Camera className="w-4 h-4 text-amber-400" />}
-                  {svc.category === 'Candid' && <Sparkles className="w-4 h-4 text-amber-400" />}
-                  {svc.category === 'Cinematic' && <Film className="w-4 h-4 text-amber-400" />}
-                  <div>
-                    <span className="font-semibold text-amber-300 mr-1.5">[{svc.category}]</span>
-                    <span>{svc.name.replace(svc.category + ' ', '')}</span>
-                  </div>
+                <div className="shrink-0">
+                  {svc.category === 'Traditional' ? (
+                    <Camera className="w-3.5 h-3.5" />
+                  ) : svc.category === 'Candid' ? (
+                    <Film className="w-3.5 h-3.5" />
+                  ) : (
+                    <Video className="w-3.5 h-3.5" />
+                  )}
                 </div>
-                <div
-                  className={`w-4 h-4 rounded flex items-center justify-center border ${
-                    isSelected
-                      ? 'bg-amber-400 border-amber-400 text-slate-950'
-                      : 'border-slate-700'
-                  }`}
-                >
-                  {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
-                </div>
+                <span className="text-[11px] font-medium leading-tight">{svc.name}</span>
               </button>
             );
           })}
         </div>
       </div>
 
-      {/* 2. Events Selection */}
+      {/* Events Selection */}
       <div>
-        <div className="flex items-center justify-between mb-2">
-          <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 font-['Outfit']">
-            Events → Occasion Types
+        <div className="flex items-center justify-between mb-1.5">
+          <label className="text-[11px] font-semibold text-slate-300">
+            2. Select Event Ceremonies (Multi-Day Support)
           </label>
           <button
             type="button"
             onClick={() => setShowCustomInput(!showCustomInput)}
-            className="text-[11px] text-amber-400 hover:text-amber-300 flex items-center space-x-1"
+            className="text-[10px] text-amber-400 hover:underline"
           >
-            <Plus className="w-3 h-3" />
-            <span>Add Custom Event</span>
+            {showCustomInput ? 'Cancel' : '+ Custom Event'}
           </button>
         </div>
 
         {showCustomInput && (
-          <div className="flex items-center space-x-2 mb-2 bg-slate-950 p-2 rounded-lg border border-slate-800">
+          <div className="flex space-x-2 mb-2">
             <input
               type="text"
               placeholder="e.g. Sangeet & Cocktail Night"
               value={customEventInput}
               onChange={(e) => setCustomEventInput(e.target.value)}
-              className="flex-1 bg-transparent text-xs text-slate-200 outline-none placeholder-slate-500"
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') handleAddCustomEvent();
-              }}
+              className="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-slate-100"
             />
             <button
               type="button"
               onClick={handleAddCustomEvent}
-              className="px-2.5 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-semibold rounded"
+              className="px-2.5 py-1 bg-amber-500 text-slate-950 font-bold rounded-lg text-xs"
             >
               Add
             </button>
@@ -254,59 +237,46 @@ export const ServiceMatrixBuilder: React.FC<ServiceMatrixBuilderProps> = ({
         )}
 
         <div className="flex flex-wrap gap-1.5">
-          {DEFAULT_EVENT_TYPES.map((ev) => {
-            const isSelected = selectedEvents.includes(ev);
+          {DEFAULT_EVENT_TYPES.map((ev: string) => {
+            const isChecked = selectedEvents.includes(ev);
             return (
               <button
                 key={ev}
                 type="button"
                 onClick={() => toggleEvent(ev)}
-                className={`px-3 py-1.5 rounded-lg border text-xs font-medium transition-all flex items-center space-x-1.5 ${
-                  isSelected
-                    ? 'bg-amber-500/20 border-amber-500/60 text-amber-200 shadow-sm'
-                    : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:border-slate-700'
+                className={`px-2.5 py-1 rounded-lg text-xs border transition-all ${
+                  isChecked
+                    ? 'bg-amber-500 text-slate-950 font-bold border-amber-400'
+                    : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'
                 }`}
               >
-                <span>{ev}</span>
-                {isSelected && <Check className="w-3 h-3 text-amber-400" />}
+                {ev}
               </button>
             );
           })}
         </div>
       </div>
 
-      {/* 3. Additional Events / Gear */}
+      {/* Addons Selection */}
       <div>
-        <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2 font-['Outfit']">
-          Additional Gear & Services →
+        <label className="text-[11px] font-semibold text-slate-300 block mb-1.5">
+          3. Optional Production Add-ons
         </label>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-          {DEFAULT_ADDITIONAL_SERVICES.map((addon) => {
-            const isSelected = selectedAddons.includes(addon.name);
+        <div className="flex flex-wrap gap-1.5">
+          {DEFAULT_ADDITIONAL_SERVICES.map((addon: { id: string; name: string; label: string; deliverable: string }) => {
+            const isChecked = selectedAddons.includes(addon.name);
             return (
               <button
                 key={addon.id}
                 type="button"
                 onClick={() => toggleAddon(addon.name)}
-                className={`flex items-center justify-between p-2 rounded-lg border text-xs font-medium transition-all ${
-                  isSelected
-                    ? 'bg-amber-500/20 border-amber-500/60 text-amber-200 shadow-sm'
-                    : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:border-slate-700'
+                className={`px-2.5 py-1 rounded-lg text-[11px] border transition-all ${
+                  isChecked
+                    ? 'bg-emerald-500 text-slate-950 font-bold border-emerald-400'
+                    : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'
                 }`}
               >
-                <div className="flex items-center space-x-1.5">
-                  <Video className="w-3.5 h-3.5 text-amber-400" />
-                  <span>{addon.name}</span>
-                </div>
-                <div
-                  className={`w-3.5 h-3.5 rounded flex items-center justify-center border ${
-                    isSelected
-                      ? 'bg-amber-400 border-amber-400 text-slate-950'
-                      : 'border-slate-700'
-                  }`}
-                >
-                  {isSelected && <Check className="w-2.5 h-2.5 stroke-[3]" />}
-                </div>
+                {addon.label}
               </button>
             );
           })}

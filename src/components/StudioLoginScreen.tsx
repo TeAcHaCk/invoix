@@ -14,8 +14,8 @@ export const StudioLoginScreen: React.FC<StudioLoginScreenProps> = ({
   expectedUsername,
   expectedPassword,
   onLoginSuccess,
-  studioName = 'FUSION BELLS FILMS',
-  studioTagline = 'REAL MOMENTS, TIMELESS STORIES.',
+  studioName = 'INVOIX STUDIO',
+  studioTagline = 'UNIVERSAL PROPOSALS & INVOICES',
   logoUrl,
 }) => {
   const [username, setUsername] = useState('');
@@ -28,8 +28,8 @@ export const StudioLoginScreen: React.FC<StudioLoginScreenProps> = ({
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     const cleanUser = username.trim().toLowerCase();
-    const expUser = (expectedUsername || 'fusionbells').trim().toLowerCase();
-    const expPass = expectedPassword || 'fbf@2026';
+    const expUser = (expectedUsername || 'invoix').trim().toLowerCase();
+    const expPass = expectedPassword || 'invoix@2026';
 
     if (cleanUser === expUser && password === expPass) {
       setError(false);

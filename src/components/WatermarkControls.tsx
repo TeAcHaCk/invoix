@@ -91,7 +91,7 @@ export const WatermarkControls: React.FC<WatermarkControlsProps> = ({ config, on
                 type="text"
                 value={config.customText}
                 onChange={(e) => update({ customText: e.target.value })}
-                placeholder="e.g. FBF or FUSION BELLS FILMS"
+                placeholder="e.g. INVOIX or CONFIDENTIAL"
                 className="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-amber-500"
               />
             </div>

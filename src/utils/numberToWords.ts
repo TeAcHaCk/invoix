@@ -1,3 +1,5 @@
+import type { CurrencyConfig } from '../types';
+
 const ones = [
   '',
   'One',
@@ -70,4 +72,43 @@ export function numberToIndianWords(num: number): string {
   }
 
   return 'INR ' + result.trim() + ' Only';
+}
+
+export function numberToInternationalWords(num: number, currencyCode: string = 'USD'): string {
+  if (num === 0) return `Zero ${currencyCode} Only`;
+  if (isNaN(num)) return '';
+
+  let n = Math.floor(Math.abs(num));
+  let result = '';
+
+  const billion = Math.floor(n / 1000000000);
+  n %= 1000000000;
+  const million = Math.floor(n / 1000000);
+  n %= 1000000;
+  const thousand = Math.floor(n / 1000);
+  n %= 1000;
+  const remaining = n;
+
+  if (billion > 0) {
+    result += convertLessThanThousand(billion) + 'Billion ';
+  }
+  if (million > 0) {
+    result += convertLessThanThousand(million) + 'Million ';
+  }
+  if (thousand > 0) {
+    result += convertLessThanThousand(thousand) + 'Thousand ';
+  }
+  if (remaining > 0) {
+    result += convertLessThanThousand(remaining);
+  }
+
+  return `${currencyCode} ${result.trim()} Only`;
+}
+
+export function amountToWords(amount: number, currency?: CurrencyConfig | string): string {
+  const code = typeof currency === 'object' ? currency.code : currency || 'USD';
+  if (code === 'INR') {
+    return numberToIndianWords(amount);
+  }
+  return numberToInternationalWords(amount, code);
 }

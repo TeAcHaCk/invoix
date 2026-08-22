@@ -1,17 +1,26 @@
 import { useState, useEffect } from 'react';
-import type { QuotationDocument, StudioProfile } from './types';
+import type { QuotationDocument, StudioProfile, IndustryCategory } from './types';
 import {
   getDefaultDocument,
   saveStudioProfileToStorage,
   saveWatermarkConfigToStorage,
+  createDocumentFromPreset,
 } from './constants/defaultData';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import { Navbar } from './components/Navbar';
 import { FormEditor } from './components/FormEditor';
 import { InvoiceDocumentView } from './components/InvoiceDocumentView';
 import { StudioSettingsModal } from './components/StudioSettingsModal';
-import { HistoryVaultModal, saveDocumentToVault } from './components/HistoryVaultModal';
+import { HistoryVaultModal } from './components/HistoryVaultModal';
 import { WhatsAppShareModal } from './components/WhatsAppShareModal';
-import { StudioLoginScreen } from './components/StudioLoginScreen';
+import { ClientInteractiveModal } from './components/ClientInteractiveModal';
+import { AuthModal } from './components/AuthModal';
+import { PublicProposalPage } from './components/PublicProposalPage';
+import { AdminLayout } from './components/admin/AdminLayout';
+import { LandingPage } from './components/landing/LandingPage';
+import { PrivacyPolicyPage } from './components/landing/PrivacyPolicyPage';
+import { TermsOfServicePage } from './components/landing/TermsOfServicePage';
+import { saveDocument } from './services/documentService';
 import { exportDocumentToPdf, printDocument } from './utils/pdfGenerator';
 import confetti from 'canvas-confetti';
 import {
@@ -24,17 +33,25 @@ import {
   FileCheck,
 } from 'lucide-react';
 
-export function App() {
-  const [document, setDocument] = useState<QuotationDocument>(() => {
-    // Clear legacy dummy cache if any
-    localStorage.removeItem('fbf_current_document');
-    localStorage.removeItem('fbf_current_document_v2');
+interface StudioWorkspaceProps {
+  initialIndustry?: IndustryCategory;
+  onNavigateToAdmin: () => void;
+  onNavigateToHome: () => void;
+}
 
-    const savedLast = localStorage.getItem('fbf_current_document_v3');
+function StudioWorkspace({ initialIndustry, onNavigateToAdmin, onNavigateToHome }: StudioWorkspaceProps) {
+  const { user } = useAuth();
+
+  const [document, setDocument] = useState<QuotationDocument>(() => {
+    if (initialIndustry) {
+      return createDocumentFromPreset(initialIndustry);
+    }
+
+    const savedLast = localStorage.getItem('fbf_current_document_v4');
     if (savedLast) {
       try {
         const parsed = JSON.parse(savedLast);
-        if (parsed && parsed.client?.nameOfEvent !== 'Walima' && parsed.client?.address !== 'Vivek Nagar, Bangalore') {
+        if (parsed && parsed.details && parsed.pricingItems) {
           return parsed;
         }
       } catch (e) {
@@ -44,22 +61,13 @@ export function App() {
     return getDefaultDocument();
   });
 
-  const [isUnlocked, setIsUnlocked] = useState<boolean>(() => {
-    const sessionUnlocked = sessionStorage.getItem('fbf_session_unlocked');
-    if (sessionUnlocked === 'true') return true;
-
-    const rememberUntil = localStorage.getItem('fbf_device_unlocked_until');
-    if (rememberUntil && parseInt(rememberUntil, 10) > Date.now()) {
-      return true;
-    }
-    return false;
-  });
-
   const [zoomScale, setZoomScale] = useState<number>(0.92);
   const [isExporting, setIsExporting] = useState<boolean>(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
   const [isVaultOpen, setIsVaultOpen] = useState<boolean>(false);
   const [isWhatsAppOpen, setIsWhatsAppOpen] = useState<boolean>(false);
+  const [isInteractiveOpen, setIsInteractiveOpen] = useState<boolean>(false);
+  const [isAuthOpen, setIsAuthOpen] = useState<boolean>(false);
   const [mobileActiveView, setMobileActiveView] = useState<'editor' | 'preview'>('editor');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -80,25 +88,9 @@ export function App() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const handleUnlock = (rememberDevice: boolean) => {
-    setIsUnlocked(true);
-    sessionStorage.setItem('fbf_session_unlocked', 'true');
-    if (rememberDevice) {
-      const thirtyDays = Date.now() + 30 * 24 * 60 * 60 * 1000;
-      localStorage.setItem('fbf_device_unlocked_until', thirtyDays.toString());
-    }
-    showToast('Studio access granted.');
-  };
-
-  const handleLockStudio = () => {
-    setIsUnlocked(false);
-    sessionStorage.removeItem('fbf_session_unlocked');
-    localStorage.removeItem('fbf_device_unlocked_until');
-  };
-
-  // Autosave current draft to localStorage
+  // Autosave current draft to localStorage & Cloud
   useEffect(() => {
-    localStorage.setItem('fbf_current_document_v3', JSON.stringify(document));
+    localStorage.setItem('fbf_current_document_v4', JSON.stringify(document));
   }, [document]);
 
   const showToast = (msg: string) => {
@@ -108,8 +100,11 @@ export function App() {
 
   const handleExportPdf = async () => {
     setIsExporting(true);
-    const eventSlug = (document.client.nameOfEvent || 'Quotation').replace(/[^a-zA-Z0-9]/g, '_');
-    const fileName = `${document.type}_${eventSlug}_${document.details.invoiceNo || 'Doc'}.pdf`;
+    const clientSlug = (document.client.clientName || document.client.nameOfEvent || 'Proposal').replace(
+      /[^a-zA-Z0-9]/g,
+      '_'
+    );
+    const fileName = `${document.type}_${clientSlug}_${document.details.invoiceNo || 'Doc'}.pdf`;
 
     const success = await exportDocumentToPdf('quotation-invoice-canvas', fileName);
     setIsExporting(false);
@@ -120,7 +115,7 @@ export function App() {
         spread: 60,
         origin: { y: 0.8 },
       });
-      showToast('PDF downloaded successfully!');
+      showToast('Crisp A4 PDF generated and downloaded!');
     } else {
       showToast('Failed to generate PDF. You can also use the Print button.');
     }
@@ -130,14 +125,19 @@ export function App() {
     printDocument();
   };
 
-  const handleSaveToVault = () => {
-    saveDocumentToVault(document);
+  const handleSaveToVault = async () => {
+    const result = await saveDocument(document, user?.id);
     confetti({
       particleCount: 40,
       spread: 45,
       origin: { y: 0.85 },
     });
-    showToast('Saved to Document Vault successfully!');
+
+    if (result.isCloud) {
+      showToast('Saved to Supabase Cloud & Local Vault!');
+    } else {
+      showToast('Saved to Document Vault locally.');
+    }
   };
 
   const handleLoadDocument = (loadedDoc: QuotationDocument) => {
@@ -151,24 +151,24 @@ export function App() {
       ...prev,
       studio: updatedStudio,
     }));
-    showToast('Studio profile saved as permanent default!');
+    showToast('Business profile saved as permanent default!');
   };
 
   const handleNewDocument = () => {
-    if (window.confirm('Start a new blank quotation?')) {
+    if (window.confirm('Start a fresh blank proposal / quotation?')) {
       const fresh = getDefaultDocument();
       setDocument(fresh);
-      localStorage.setItem('fbf_current_document_v3', JSON.stringify(fresh));
+      localStorage.setItem('fbf_current_document_v4', JSON.stringify(fresh));
       showToast('New blank quotation started!');
     }
   };
 
   const handleResetSample = () => {
-    if (window.confirm('Reset all fields to a fresh blank quotation template?')) {
+    if (window.confirm('Reset all fields to the default sample template?')) {
       const fresh = getDefaultDocument();
       setDocument(fresh);
-      localStorage.setItem('fbf_current_document_v3', JSON.stringify(fresh));
-      showToast('Reset to fresh quotation template');
+      localStorage.setItem('fbf_current_document_v4', JSON.stringify(fresh));
+      showToast('Reset to fresh proposal template');
     }
   };
 
@@ -186,36 +186,31 @@ export function App() {
     showToast(`Watermark ${nextEnabled ? 'Enabled' : 'Disabled'}`);
   };
 
-  // Studio Authentication Gate Screen
-  if (!isUnlocked && document.studio.authEnabled !== false) {
-    return (
-      <StudioLoginScreen
-        expectedUsername={document.studio.adminUsername || 'fusionbells'}
-        expectedPassword={document.studio.adminPassword || 'fbf@2026'}
-        onLoginSuccess={handleUnlock}
-        studioName={document.studio.name}
-        studioTagline={document.studio.tagline}
-        logoUrl={document.studio.logoUrl}
-      />
-    );
-  }
+  const handleApproveFromClientView = (approvedDoc: QuotationDocument) => {
+    setDocument(approvedDoc);
+    saveDocument(approvedDoc, user?.id);
+    showToast('Proposal signed and approved by client!');
+  };
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-['Plus_Jakarta_Sans',sans-serif]">
-      {/* Top Navbar */}
+      {/* Top Universal Navbar */}
       <Navbar
         document={document}
         onExportPdf={handleExportPdf}
         onPrint={handlePrint}
         onOpenWhatsApp={() => setIsWhatsAppOpen(true)}
+        onOpenClientInteractive={() => setIsInteractiveOpen(true)}
         onSaveToVault={handleSaveToVault}
         onOpenVault={() => setIsVaultOpen(true)}
         onOpenSettings={() => setIsSettingsOpen(true)}
+        onOpenAuth={() => setIsAuthOpen(true)}
+        onOpenAdmin={onNavigateToAdmin}
+        onNavigateToHome={onNavigateToHome}
         onResetSample={handleResetSample}
         onNewDocument={handleNewDocument}
         isExporting={isExporting}
         onToggleWatermark={handleToggleWatermark}
-        onLockStudio={handleLockStudio}
       />
 
       {/* Mobile View Toggle Bar */}
@@ -242,7 +237,7 @@ export function App() {
           }`}
         >
           <Eye className="w-4 h-4" />
-          <span>Live Quotation Preview</span>
+          <span>Live Document Preview</span>
         </button>
       </div>
 
@@ -269,9 +264,9 @@ export function App() {
               <div className="flex items-center space-x-2">
                 <FileCheck className="w-4 h-4 text-amber-400" />
                 <span className="text-xs font-semibold text-amber-100 uppercase tracking-wide font-['Outfit']">
-                  Live Quotation & Invoice Canvas
+                  Live {document.type === 'INVOICE' ? 'Tax Invoice' : 'Proposal'} Canvas
                 </span>
-                <span className="text-[10px] text-slate-500 bg-slate-800 px-2 py-0.5 rounded font-mono">
+                <span className="text-[10px] text-slate-400 bg-slate-800 px-2 py-0.5 rounded font-mono">
                   A4 Print Ready (210×297mm)
                 </span>
               </div>
@@ -348,7 +343,142 @@ export function App() {
         onClose={() => setIsWhatsAppOpen(false)}
         document={document}
       />
+
+      <ClientInteractiveModal
+        isOpen={isInteractiveOpen}
+        onClose={() => setIsInteractiveOpen(false)}
+        document={document}
+        onApprove={handleApproveFromClientView}
+      />
+
+      <AuthModal
+        isOpen={isAuthOpen}
+        onClose={() => setIsAuthOpen(false)}
+      />
     </div>
+  );
+}
+
+export function App() {
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [selectedIndustry, setSelectedIndustry] = useState<IndustryCategory | undefined>(undefined);
+
+  const [currentView, setCurrentView] = useState<{
+    type: 'landing' | 'studio' | 'admin' | 'public_proposal' | 'privacy' | 'terms';
+    docId?: string;
+  }>(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const viewParam = urlParams.get('view');
+    const pageParam = urlParams.get('page');
+    const hash = window.location.hash;
+
+    if (viewParam) {
+      return { type: 'public_proposal', docId: viewParam };
+    }
+    if (hash.startsWith('#view/')) {
+      return { type: 'public_proposal', docId: hash.replace('#view/', '') };
+    }
+    if (pageParam === 'admin' || hash === '#admin') {
+      return { type: 'admin' };
+    }
+    if (pageParam === 'studio' || hash === '#studio') {
+      return { type: 'studio' };
+    }
+    if (pageParam === 'privacy' || hash === '#privacy') {
+      return { type: 'privacy' };
+    }
+    if (pageParam === 'terms' || hash === '#terms') {
+      return { type: 'terms' };
+    }
+    if (pageParam === 'home' || hash === '#home') {
+      return { type: 'landing' };
+    }
+    // Default to landing
+    return { type: 'landing' };
+  });
+
+  useEffect(() => {
+    const handleUrlChange = () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const viewParam = urlParams.get('view');
+      const pageParam = urlParams.get('page');
+      const hash = window.location.hash;
+
+      if (viewParam) {
+        setCurrentView({ type: 'public_proposal', docId: viewParam });
+      } else if (hash.startsWith('#view/')) {
+        setCurrentView({ type: 'public_proposal', docId: hash.replace('#view/', '') });
+      } else if (pageParam === 'admin' || hash === '#admin') {
+        setCurrentView({ type: 'admin' });
+      } else if (pageParam === 'studio' || hash === '#studio') {
+        setCurrentView({ type: 'studio' });
+      } else if (pageParam === 'privacy' || hash === '#privacy') {
+        setCurrentView({ type: 'privacy' });
+      } else if (pageParam === 'terms' || hash === '#terms') {
+        setCurrentView({ type: 'terms' });
+      } else if (pageParam === 'home' || hash === '#home') {
+        setCurrentView({ type: 'landing' });
+      }
+    };
+
+    window.addEventListener('popstate', handleUrlChange);
+    window.addEventListener('hashchange', handleUrlChange);
+    return () => {
+      window.removeEventListener('popstate', handleUrlChange);
+      window.removeEventListener('hashchange', handleUrlChange);
+    };
+  }, []);
+
+  const navigateToAdmin = () => {
+    window.location.hash = 'admin';
+    setCurrentView({ type: 'admin' });
+  };
+
+  const navigateToStudio = () => {
+    window.location.hash = 'studio';
+    setCurrentView({ type: 'studio' });
+  };
+
+  const navigateToHome = () => {
+    window.location.hash = 'home';
+    setCurrentView({ type: 'landing' });
+  };
+
+  const handleSelectIndustryFromLanding = (industry: IndustryCategory) => {
+    setSelectedIndustry(industry);
+    window.location.hash = 'studio';
+    setCurrentView({ type: 'studio' });
+  };
+
+  return (
+    <AuthProvider>
+      {currentView.type === 'public_proposal' && currentView.docId ? (
+        <PublicProposalPage documentId={currentView.docId} />
+      ) : currentView.type === 'admin' ? (
+        <AdminLayout onBackToStudio={navigateToStudio} />
+      ) : currentView.type === 'privacy' ? (
+        <PrivacyPolicyPage onBack={navigateToHome} />
+      ) : currentView.type === 'terms' ? (
+        <TermsOfServicePage onBack={navigateToHome} />
+      ) : currentView.type === 'landing' ? (
+        <>
+          <LandingPage
+            onLaunchStudio={navigateToStudio}
+            onOpenAuth={() => setIsAuthOpen(true)}
+            onOpenAdmin={navigateToAdmin}
+            onSelectIndustryPreset={handleSelectIndustryFromLanding}
+            onSelectPlan={() => setIsAuthOpen(true)}
+          />
+          <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
+        </>
+      ) : (
+        <StudioWorkspace
+          initialIndustry={selectedIndustry}
+          onNavigateToAdmin={navigateToAdmin}
+          onNavigateToHome={navigateToHome}
+        />
+      )}
+    </AuthProvider>
   );
 }
 

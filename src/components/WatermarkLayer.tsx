@@ -24,11 +24,11 @@ export const WatermarkLayer: React.FC<WatermarkLayerProps> = ({ config }) => {
       >
         {config.type === 'text' ? (
           <div className="text-center font-bold tracking-widest uppercase font-serif text-slate-800 whitespace-nowrap text-7xl select-none">
-            {config.customText || 'FBF'}
+            {config.customText || 'INVOIX'}
           </div>
         ) : (
           <img
-            src={config.customImageUrl || '/assets/watermark.png'}
+            src={config.customImageUrl || '/invoix-logo.png'}
             alt="Watermark"
             className="max-w-[550px] max-h-[550px] object-contain select-none filter contrast-125"
             onError={(e) => {
@@ -39,7 +39,7 @@ export const WatermarkLayer: React.FC<WatermarkLayerProps> = ({ config }) => {
               if (parent) {
                 const textNode = document.createElement('div');
                 textNode.className = 'text-center font-bold tracking-widest font-serif text-slate-800 text-8xl';
-                textNode.innerText = config.customText || 'FBF';
+                textNode.innerText = config.customText || 'INVOIX';
                 parent.appendChild(textNode);
               }
             }}

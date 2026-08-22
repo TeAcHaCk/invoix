@@ -3,7 +3,7 @@ import jsPDF from 'jspdf';
 
 export async function exportDocumentToPdf(
   elementId: string,
-  fileName: string = 'Quotation-FusionBellsFilms.pdf'
+  fileName: string = 'Quotation-Invoix.pdf'
 ): Promise<boolean> {
   const container = document.getElementById(elementId);
   if (!container) {

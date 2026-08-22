@@ -1,7 +1,6 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import type { StudioProfile } from '../types';
-import { Building2, X, Upload, Check, CreditCard, ShieldCheck } from 'lucide-react';
-
+import { Building2, X, Upload, Check, CreditCard } from 'lucide-react';
 import { trimTransparentImage } from '../utils/imageTrim';
 
 interface StudioSettingsModalProps {
@@ -17,12 +16,15 @@ export const StudioSettingsModal: React.FC<StudioSettingsModalProps> = ({
   studio,
   onSave,
 }) => {
-  const [formData, setFormData] = React.useState<StudioProfile>(studio);
+  const [formData, setFormData] = useState<StudioProfile>(studio);
   const logoInputRef = useRef<HTMLInputElement>(null);
 
-  React.useEffect(() => {
+  // Sync state only when opening with new props
+  const [lastStudio, setLastStudio] = useState(studio);
+  if (studio !== lastStudio) {
+    setLastStudio(studio);
     setFormData(studio);
-  }, [studio, isOpen]);
+  }
 
   if (!isOpen) return null;
 
@@ -34,10 +36,10 @@ export const StudioSettingsModal: React.FC<StudioSettingsModalProps> = ({
         if (event.target?.result) {
           const rawUrl = event.target.result as string;
           const trimmed = await trimTransparentImage(rawUrl);
-          setFormData({
-            ...formData,
+          setFormData((prev) => ({
+            ...prev,
             logoUrl: trimmed,
-          });
+          }));
         }
       };
       reader.readAsDataURL(file);
@@ -50,8 +52,8 @@ export const StudioSettingsModal: React.FC<StudioSettingsModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fadeIn">
-      <div className="bg-slate-900 border border-amber-500/30 rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 modal-overlay">
+      <div className="bg-slate-900 border border-amber-500/30 rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden font-['Plus_Jakarta_Sans',sans-serif]">
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-slate-800 bg-slate-950/60">
           <div className="flex items-center space-x-2.5">
@@ -60,10 +62,10 @@ export const StudioSettingsModal: React.FC<StudioSettingsModalProps> = ({
             </div>
             <div>
               <h3 className="text-base font-bold text-amber-100 font-['Outfit']">
-                Studio Profile & Branding Settings
+                Business Profile & Default Branding
               </h3>
               <p className="text-xs text-slate-400">
-                Customize studio information, logo, contact numbers, and bank details.
+                Configure your permanent business details, logo, and bank accounts
               </p>
             </div>
           </div>
@@ -81,14 +83,14 @@ export const StudioSettingsModal: React.FC<StudioSettingsModalProps> = ({
           {/* Logo Section */}
           <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-4 flex items-center justify-between gap-4">
             <div>
-              <label className="block text-slate-300 font-semibold mb-1">Studio Logo</label>
+              <label className="block text-slate-300 font-semibold mb-1">Company / Brand Logo</label>
               <p className="text-[11px] text-slate-400">
-                Transparent PNG recommended. Displayed at the top of quotations/invoices.
+                Transparent PNG recommended. Auto-trimmed to remove padding whitespace.
               </p>
             </div>
             <div className="flex items-center space-x-3">
               {formData.logoUrl && (
-                <div className="bg-white/10 p-2 rounded-lg border border-slate-700">
+                <div className="bg-white p-2 rounded-lg border border-slate-700">
                   <img
                     src={formData.logoUrl}
                     alt="Logo"
@@ -99,208 +101,179 @@ export const StudioSettingsModal: React.FC<StudioSettingsModalProps> = ({
               <input
                 type="file"
                 ref={logoInputRef}
-                onChange={handleLogoUpload}
                 accept="image/*"
+                onChange={handleLogoUpload}
                 className="hidden"
               />
               <button
                 type="button"
                 onClick={() => logoInputRef.current?.click()}
-                className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-amber-300 rounded-lg border border-slate-700 flex items-center space-x-1.5 font-medium"
+                className="px-3 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg flex items-center space-x-1.5 transition-all"
               >
-                <Upload className="w-3.5 h-3.5" />
+                <Upload className="w-4 h-4" />
                 <span>Upload Logo</span>
               </button>
             </div>
           </div>
 
-          {/* Name & Tagline */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {/* Business Details */}
+          <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-slate-300 font-medium mb-1">Studio Name</label>
+              <label className="block text-slate-300 font-semibold mb-1">Business / Company Name</label>
               <input
                 type="text"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="FUSION BELLS FILMS"
-                className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-amber-500"
+                className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-amber-500"
               />
             </div>
             <div>
-              <label className="block text-slate-300 font-medium mb-1">Studio Tagline / Slogan</label>
+              <label className="block text-slate-300 font-semibold mb-1">Tagline</label>
               <input
                 type="text"
                 value={formData.tagline}
                 onChange={(e) => setFormData({ ...formData, tagline: e.target.value })}
-                placeholder="REAL MOMENTS, TIMELESS STORIES."
-                className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-amber-500"
+                className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-amber-500"
               />
             </div>
-          </div>
 
-          {/* Address & Phone */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="block text-slate-300 font-medium mb-1">
-                Studio Address & City
-              </label>
-              <input
-                type="text"
+            <div className="col-span-2">
+              <label className="block text-slate-300 font-semibold mb-1">Business Address</label>
+              <textarea
+                rows={2}
                 value={formData.address}
                 onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                placeholder="Hosakerehalli, Bangalore, Karnataka"
-                className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-amber-500"
+                className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-amber-500"
               />
             </div>
+
             <div>
-              <label className="block text-slate-300 font-medium mb-1">
-                Phone Number(s)
-              </label>
+              <label className="block text-slate-300 font-semibold mb-1">Phone Numbers</label>
               <input
                 type="text"
                 value={formData.phoneNumbers}
                 onChange={(e) => setFormData({ ...formData, phoneNumbers: e.target.value })}
-                placeholder="8970511524, 7411687671"
-                className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-amber-500 font-mono"
+                className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-amber-500"
               />
             </div>
-          </div>
 
-          {/* Website & Email */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-slate-300 font-medium mb-1">Website</label>
-              <input
-                type="text"
-                value={formData.website}
-                onChange={(e) => setFormData({ ...formData, website: e.target.value })}
-                placeholder="fusionbellsfilms.com"
-                className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-amber-500"
-              />
-            </div>
-            <div>
-              <label className="block text-slate-300 font-medium mb-1">Email Address</label>
+              <label className="block text-slate-300 font-semibold mb-1">Official Email</label>
               <input
                 type="email"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                placeholder="info@fusionbellsfilms.com"
-                className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-amber-500"
+                className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-amber-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-slate-300 font-semibold mb-1">Website URL</label>
+              <input
+                type="text"
+                value={formData.website}
+                onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-amber-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-slate-300 font-semibold mb-1">Tax ID / GSTIN / VAT Reg</label>
+              <input
+                type="text"
+                value={formData.gstin || ''}
+                onChange={(e) => setFormData({ ...formData, gstin: e.target.value })}
+                className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-amber-500"
               />
             </div>
           </div>
 
-          {/* UPI ID & Bank Account (For Invoices) */}
-          <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-4 space-y-3">
-            <div className="flex items-center space-x-2 border-b border-slate-800 pb-2">
-              <CreditCard className="w-4 h-4 text-amber-400" />
-              <span className="font-semibold text-amber-200 uppercase font-['Outfit']">
-                Payment & UPI Details
-              </span>
+          {/* Banking & Remittance Details */}
+          <div className="border-t border-slate-800 pt-4">
+            <div className="flex items-center space-x-2 text-amber-300 font-bold mb-3 font-['Outfit']">
+              <CreditCard className="w-4 h-4" />
+              <span>Banking & Payment Remittance</span>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+
+            <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-slate-300 font-medium mb-1">UPI ID (e.g. 8970511524@upi)</label>
-                <input
-                  type="text"
-                  value={formData.upiId || ''}
-                  onChange={(e) => setFormData({ ...formData, upiId: e.target.value })}
-                  placeholder="8970511524@upi"
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-amber-500"
-                />
-              </div>
-              <div>
-                <label className="block text-slate-300 font-medium mb-1">Bank Name</label>
+                <label className="block text-slate-300 font-semibold mb-1">Bank Name</label>
                 <input
                   type="text"
                   value={formData.bankName || ''}
                   onChange={(e) => setFormData({ ...formData, bankName: e.target.value })}
-                  placeholder="HDFC Bank"
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-amber-500"
+                  className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-amber-500"
                 />
               </div>
-            </div>
-          </div>
 
-          {/* Studio Access Security & Credentials */}
-          <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-4 space-y-3">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-              <div className="flex items-center space-x-2">
-                <ShieldCheck className="w-4 h-4 text-amber-400" />
-                <span className="font-semibold text-amber-200 uppercase font-['Outfit']">
-                  Studio Security & Login Credentials
-                </span>
-              </div>
-              <label className="flex items-center space-x-2 cursor-pointer text-xs">
-                <input
-                  type="checkbox"
-                  checked={formData.authEnabled !== false}
-                  onChange={(e) =>
-                    setFormData({ ...formData, authEnabled: e.target.checked })
-                  }
-                  className="rounded bg-slate-900 border-slate-700 text-amber-500 focus:ring-0 accent-amber-400 cursor-pointer"
-                />
-                <span className="text-slate-300">Require Login to Open App</span>
-              </label>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-slate-300 font-medium mb-1">
-                  Studio Username:
+                <label className="block text-slate-300 font-semibold mb-1">Account Number</label>
+                <input
+                  type="text"
+                  value={formData.accountNumber || ''}
+                  onChange={(e) => setFormData({ ...formData, accountNumber: e.target.value })}
+                  className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-amber-500 font-mono"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-300 font-semibold mb-1">IFSC / SWIFT / Routing Code</label>
+                <input
+                  type="text"
+                  value={formData.ifscCode || ''}
+                  onChange={(e) => setFormData({ ...formData, ifscCode: e.target.value })}
+                  className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-amber-500 font-mono"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-300 font-semibold mb-1">Account Holder Name</label>
+                <input
+                  type="text"
+                  value={formData.accountHolder || ''}
+                  onChange={(e) => setFormData({ ...formData, accountHolder: e.target.value })}
+                  className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-amber-500"
+                />
+              </div>
+
+              <div className="col-span-2">
+                <label className="block text-emerald-400 font-semibold mb-1">
+                  UPI ID or Online Payment Link (Auto-generates Payment QR on invoices)
                 </label>
                 <input
                   type="text"
-                  value={formData.adminUsername || 'fusionbells'}
+                  placeholder="e.g. username@upi or https://buy.stripe.com/xxx"
+                  value={formData.upiId || formData.paymentLink || ''}
                   onChange={(e) =>
                     setFormData({
                       ...formData,
-                      adminUsername: e.target.value,
+                      upiId: e.target.value,
+                      paymentLink: e.target.value,
                     })
                   }
-                  placeholder="fusionbells"
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 font-mono text-sm focus:outline-none focus:border-amber-500"
-                />
-              </div>
-              <div>
-                <label className="block text-slate-300 font-medium mb-1">
-                  Studio Password:
-                </label>
-                <input
-                  type="text"
-                  value={formData.adminPassword || 'fbf@2026'}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      adminPassword: e.target.value,
-                    })
-                  }
-                  placeholder="fbf@2026"
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-amber-300 font-mono text-sm focus:outline-none focus:border-amber-500"
+                  className="w-full bg-slate-950 border border-emerald-500/40 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-emerald-400 font-mono"
                 />
               </div>
             </div>
-            <p className="text-[11px] text-slate-500">
-              Default credentials: Username: <code>fusionbells</code> | Password: <code>fbf@2026</code>.
-            </p>
           </div>
         </div>
 
         {/* Footer Actions */}
-        <div className="p-4 border-t border-slate-800 bg-slate-950/60 flex items-center justify-end space-x-3">
+        <div className="p-4 border-t border-slate-800 bg-slate-950/80 flex items-center justify-end space-x-3">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-lg transition-colors"
+            className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold rounded-xl transition-all"
           >
             Cancel
           </button>
           <button
             type="button"
             onClick={handleSave}
-            className="px-5 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 text-xs font-bold rounded-lg shadow-lg flex items-center space-x-1.5 transition-all"
+            className="px-5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl shadow-lg shadow-amber-500/20 flex items-center space-x-1.5 transition-all"
           >
             <Check className="w-4 h-4" />
-            <span>Save Profile</span>
+            <span>Save Profile Defaults</span>
           </button>
         </div>
       </div>
