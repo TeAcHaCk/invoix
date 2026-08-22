@@ -12,6 +12,11 @@ export async function exportDocumentToPdf(
   }
 
   try {
+    // Wait for all custom Google Fonts to be completely loaded and rendered
+    if (document.fonts) {
+      await document.fonts.ready;
+    }
+
     // Check if container has multiple sub-pages marked with .print-page
     const subPages = container.querySelectorAll<HTMLElement>('.print-page');
     const pageElements = subPages.length > 0 ? Array.from(subPages) : [container];
@@ -84,6 +89,10 @@ export async function generatePdfBlob(
   if (!container) return null;
 
   try {
+    if (document.fonts) {
+      await document.fonts.ready;
+    }
+
     const subPages = container.querySelectorAll<HTMLElement>('.print-page');
     const pageElements = subPages.length > 0 ? Array.from(subPages) : [container];
 
