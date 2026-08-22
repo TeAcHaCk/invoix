@@ -30,7 +30,6 @@ import {
   Eye,
   Edit3,
   CheckCircle2,
-  FileCheck,
 } from 'lucide-react';
 
 interface StudioWorkspaceProps {
@@ -91,7 +90,13 @@ function StudioWorkspace({ initialIndustry, onNavigateToAdmin, onNavigateToHome 
   // Autosave current draft to localStorage & Cloud
   useEffect(() => {
     localStorage.setItem('fbf_current_document_v4', JSON.stringify(document));
-  }, [document]);
+    if (user) {
+      const timer = setTimeout(() => {
+        saveDocument(document, user.id);
+      }, 1200);
+      return () => clearTimeout(timer);
+    }
+  }, [document, user]);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -100,24 +105,23 @@ function StudioWorkspace({ initialIndustry, onNavigateToAdmin, onNavigateToHome 
 
   const handleExportPdf = async () => {
     setIsExporting(true);
-    const clientSlug = (document.client.clientName || document.client.nameOfEvent || 'Proposal').replace(
-      /[^a-zA-Z0-9]/g,
-      '_'
-    );
-    const fileName = `${document.type}_${clientSlug}_${document.details.invoiceNo || 'Doc'}.pdf`;
-
-    const success = await exportDocumentToPdf('quotation-invoice-canvas', fileName);
-    setIsExporting(false);
-
-    if (success) {
-      confetti({
-        particleCount: 80,
-        spread: 60,
-        origin: { y: 0.8 },
-      });
-      showToast('Crisp A4 PDF generated and downloaded!');
-    } else {
-      showToast('Failed to generate PDF. You can also use the Print button.');
+    showToast('Rendering high-fidelity PDF pages...');
+    try {
+      const success = await exportDocumentToPdf(
+        'quotation-preview-container',
+        `Quotation-${document.details.invoiceNo || 'Document'}.pdf`
+      );
+      if (success) {
+        confetti({ particleCount: 80, spread: 60, origin: { y: 0.7 } });
+        showToast('PDF successfully generated!');
+      } else {
+        showToast('Failed to export PDF. Please try printing.');
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('Error exporting PDF.');
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -126,75 +130,93 @@ function StudioWorkspace({ initialIndustry, onNavigateToAdmin, onNavigateToHome 
   };
 
   const handleSaveToVault = async () => {
-    const result = await saveDocument(document, user?.id);
-    confetti({
-      particleCount: 40,
-      spread: 45,
-      origin: { y: 0.85 },
-    });
-
-    if (result.isCloud) {
-      showToast('Saved to Supabase Cloud & Local Vault!');
+    const res = await saveDocument(document, user?.id);
+    if (res.success) {
+      confetti({ particleCount: 50, spread: 50, origin: { y: 0.8 } });
+      showToast(res.isCloud ? 'Synced to Supabase Cloud!' : 'Saved to Local Vault!');
     } else {
-      showToast('Saved to Document Vault locally.');
+      showToast('Failed to save document.');
     }
   };
 
-  const handleLoadDocument = (loadedDoc: QuotationDocument) => {
-    setDocument(loadedDoc);
-    showToast(`Loaded ${loadedDoc.type}: ${loadedDoc.client.nameOfEvent || loadedDoc.details.invoiceNo}`);
+  const handleLoadDocument = (doc: QuotationDocument) => {
+    setDocument(doc);
+    showToast(`Loaded ${doc.details.invoiceNo}`);
   };
 
-  const handleStudioSave = (updatedStudio: StudioProfile) => {
-    saveStudioProfileToStorage(updatedStudio);
+  const handleSaveStudioProfile = (profile: StudioProfile) => {
+    saveStudioProfileToStorage(profile);
     setDocument((prev) => ({
       ...prev,
-      studio: updatedStudio,
+      studio: profile,
+      updatedAt: new Date().toISOString(),
     }));
-    showToast('Business profile saved as permanent default!');
+    showToast('Studio branding updated!');
   };
 
   const handleNewDocument = () => {
-    if (window.confirm('Start a fresh blank proposal / quotation?')) {
+    if (window.confirm('Create a new blank document? (Unsaved changes in draft will be reset)')) {
       const fresh = getDefaultDocument();
       setDocument(fresh);
       localStorage.setItem('fbf_current_document_v4', JSON.stringify(fresh));
-      showToast('New blank quotation started!');
+      showToast('Created new proposal draft');
     }
   };
 
   const handleResetSample = () => {
-    if (window.confirm('Reset all fields to the default sample template?')) {
+    if (window.confirm('Reset this workspace to sample industry data?')) {
       const fresh = getDefaultDocument();
       setDocument(fresh);
       localStorage.setItem('fbf_current_document_v4', JSON.stringify(fresh));
-      showToast('Reset to fresh proposal template');
+      showToast('Reset to default sample data.');
     }
   };
 
   const handleToggleWatermark = () => {
-    const nextEnabled = !document.watermark.enabled;
-    const updatedWatermark = {
-      ...document.watermark,
-      enabled: nextEnabled,
-    };
-    saveWatermarkConfigToStorage(updatedWatermark);
-    setDocument((prev) => ({
-      ...prev,
-      watermark: updatedWatermark,
-    }));
-    showToast(`Watermark ${nextEnabled ? 'Enabled' : 'Disabled'}`);
+    setDocument((prev) => {
+      const updated = {
+        ...prev,
+        watermark: {
+          ...prev.watermark,
+          enabled: !prev.watermark?.enabled,
+        },
+      };
+      saveWatermarkConfigToStorage(updated.watermark);
+      return updated;
+    });
   };
 
-  const handleApproveFromClientView = (approvedDoc: QuotationDocument) => {
-    setDocument(approvedDoc);
-    saveDocument(approvedDoc, user?.id);
-    showToast('Proposal signed and approved by client!');
+  const handleApproveFromClientView = (record: any) => {
+    setDocument((prev) => ({
+      ...prev,
+      signatory: record,
+      status: 'APPROVED',
+      approvedAt: new Date().toISOString(),
+      acceptanceAudit: {
+        signatoryName: record.clientSignedName || 'Client Signatory',
+        signatoryEmail: record.clientSignedEmail,
+        signedAt: new Date().toISOString(),
+        formattedDate: record.clientSignedDate || new Date().toLocaleString(),
+        userAgent: navigator.userAgent,
+        signatureDataUrl: record.clientSignatureDataUrl,
+        acceptedTotalInvestment: document.totalInvestment,
+      },
+      updatedAt: new Date().toISOString(),
+    }));
+    showToast('Proposal signed and accepted!');
   };
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-['Plus_Jakarta_Sans',sans-serif]">
-      {/* Top Universal Navbar */}
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 z-50 bg-slate-900 border border-amber-500/50 text-amber-200 px-4 py-2.5 rounded-2xl shadow-2xl flex items-center space-x-2 text-xs font-semibold animate-bounce">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+          <span>{toastMessage}</span>
+        </div>
+      )}
+
+      {/* Top Navbar */}
       <Navbar
         document={document}
         onExportPdf={handleExportPdf}
@@ -207,128 +229,110 @@ function StudioWorkspace({ initialIndustry, onNavigateToAdmin, onNavigateToHome 
         onOpenAuth={() => setIsAuthOpen(true)}
         onOpenAdmin={onNavigateToAdmin}
         onNavigateToHome={onNavigateToHome}
-        onResetSample={handleResetSample}
         onNewDocument={handleNewDocument}
+        onResetSample={handleResetSample}
         isExporting={isExporting}
         onToggleWatermark={handleToggleWatermark}
       />
 
       {/* Mobile View Toggle Bar */}
-      <div className="lg:hidden flex bg-slate-900 border-b border-slate-800 p-2 gap-2 print:hidden no-print">
+      <div className="lg:hidden flex items-center justify-center p-2 bg-slate-900/90 border-b border-slate-800 sticky top-[57px] z-30 space-x-2">
         <button
           type="button"
           onClick={() => setMobileActiveView('editor')}
-          className={`flex-1 py-2 rounded-lg text-xs font-semibold flex items-center justify-center space-x-1.5 transition-all ${
+          className={`flex-1 py-2 rounded-xl text-xs font-bold flex items-center justify-center space-x-1.5 transition-all ${
             mobileActiveView === 'editor'
-              ? 'bg-amber-500 text-slate-950 shadow-md'
-              : 'bg-slate-950 text-slate-400'
+              ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
+              : 'bg-slate-800 text-slate-400'
           }`}
         >
-          <Edit3 className="w-4 h-4" />
-          <span>Editor & Form</span>
+          <Edit3 className="w-3.5 h-3.5" />
+          <span>Form Editor</span>
         </button>
         <button
           type="button"
           onClick={() => setMobileActiveView('preview')}
-          className={`flex-1 py-2 rounded-lg text-xs font-semibold flex items-center justify-center space-x-1.5 transition-all ${
+          className={`flex-1 py-2 rounded-xl text-xs font-bold flex items-center justify-center space-x-1.5 transition-all ${
             mobileActiveView === 'preview'
-              ? 'bg-amber-500 text-slate-950 shadow-md'
-              : 'bg-slate-950 text-slate-400'
+              ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
+              : 'bg-slate-800 text-slate-400'
           }`}
         >
-          <Eye className="w-4 h-4" />
-          <span>Live Document Preview</span>
+          <Eye className="w-3.5 h-3.5" />
+          <span>Live Document</span>
         </button>
       </div>
 
-      {/* Main Workspace Split Layout */}
-      <main className="flex-1 flex flex-col lg:flex-row overflow-hidden max-w-[1900px] w-full mx-auto p-3 lg:p-6 gap-6 print:p-0 print:m-0 print:max-w-none print:block">
-        {/* Left Side: Interactive Form Editor (Hidden on Print) */}
-        <section
-          className={`w-full lg:w-[48%] xl:w-[45%] flex flex-col h-full print:hidden no-print ${
-            mobileActiveView === 'editor' ? 'flex' : 'hidden lg:flex'
+      {/* Main Workspace Split View */}
+      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden relative">
+        {/* Left Side: Form Editor */}
+        <div
+          className={`w-full lg:w-[480px] xl:w-[540px] border-r border-slate-800/80 bg-slate-950 flex flex-col overflow-y-auto ${
+            mobileActiveView === 'preview' ? 'hidden lg:flex' : 'flex'
           }`}
         >
-          <FormEditor document={document} onChange={setDocument} />
-        </section>
+          <FormEditor
+            document={document}
+            onChange={setDocument}
+          />
+        </div>
 
-        {/* Right Side: Live Document Canvas Preview */}
-        <section
-          className={`w-full lg:w-[52%] xl:w-[55%] flex flex-col h-full print:w-full print:p-0 print:m-0 print:block print:border-none print:shadow-none ${
-            mobileActiveView === 'preview' ? 'flex' : 'hidden lg:flex'
+        {/* Right Side: Live Document Preview Canvas */}
+        <div
+          className={`flex-1 bg-slate-900/60 overflow-y-auto p-4 sm:p-8 flex flex-col items-center justify-start relative ${
+            mobileActiveView === 'editor' ? 'hidden lg:flex' : 'flex'
           }`}
         >
-          <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 flex flex-col h-full shadow-2xl overflow-hidden print:p-0 print:m-0 print:border-none print:shadow-none print:bg-transparent print:rounded-none">
-            {/* Canvas Toolbar (Hidden on Print) */}
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800/80 mb-4 px-2 print:hidden no-print">
-              <div className="flex items-center space-x-2">
-                <FileCheck className="w-4 h-4 text-amber-400" />
-                <span className="text-xs font-semibold text-amber-100 uppercase tracking-wide font-['Outfit']">
-                  Live {document.type === 'INVOICE' ? 'Tax Invoice' : 'Proposal'} Canvas
-                </span>
-                <span className="text-[10px] text-slate-400 bg-slate-800 px-2 py-0.5 rounded font-mono">
-                  A4 Print Ready (210×297mm)
-                </span>
-              </div>
+          {/* Zoom & Canvas Floating Action Bar */}
+          <div className="sticky top-4 z-20 mb-4 bg-slate-950/80 backdrop-blur-md border border-slate-800 px-3 py-1.5 rounded-2xl shadow-xl flex items-center space-x-2 text-xs">
+            <button
+              type="button"
+              onClick={() => setZoomScale((prev) => Math.max(0.4, Number((prev - 0.05).toFixed(2))))}
+              className="p-1.5 text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+              title="Zoom Out"
+            >
+              <ZoomOut className="w-4 h-4" />
+            </button>
+            <span className="font-mono text-[11px] text-slate-300 min-w-[42px] text-center font-bold">
+              {Math.round(zoomScale * 100)}%
+            </span>
+            <button
+              type="button"
+              onClick={() => setZoomScale((prev) => Math.min(1.3, Number((prev + 0.05).toFixed(2))))}
+              className="p-1.5 text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+              title="Zoom In"
+            >
+              <ZoomIn className="w-4 h-4" />
+            </button>
+            <div className="w-px h-4 bg-slate-800" />
+            <button
+              type="button"
+              onClick={() => setZoomScale(0.92)}
+              className="px-2 py-1 text-[10.5px] text-slate-400 hover:text-amber-300 font-semibold hover:bg-slate-800 rounded-lg transition-colors cursor-pointer flex items-center space-x-1"
+            >
+              <Maximize2 className="w-3 h-3" />
+              <span>Fit A4</span>
+            </button>
+          </div>
 
-              {/* Zoom Controls */}
-              <div className="flex items-center space-x-1.5 bg-slate-950 p-1 rounded-lg border border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setZoomScale((prev) => Math.max(0.55, prev - 0.08))}
-                  className="p-1 text-slate-400 hover:text-amber-300 rounded hover:bg-slate-800 transition-colors"
-                  title="Zoom Out"
-                >
-                  <ZoomOut className="w-3.5 h-3.5" />
-                </button>
-                <span className="text-[11px] font-mono text-slate-300 min-w-[38px] text-center font-medium">
-                  {Math.round(zoomScale * 100)}%
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setZoomScale((prev) => Math.min(1.2, prev + 0.08))}
-                  className="p-1 text-slate-400 hover:text-amber-300 rounded hover:bg-slate-800 transition-colors"
-                  title="Zoom In"
-                >
-                  <ZoomIn className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setZoomScale(0.92)}
-                  className="p-1 text-slate-400 hover:text-amber-300 rounded hover:bg-slate-800 transition-colors"
-                  title="Reset Zoom"
-                >
-                  <Maximize2 className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </div>
-
-            {/* Scrollable Canvas Viewport */}
-            <div className="flex-1 overflow-auto bg-slate-950/70 rounded-xl p-4 lg:p-8 flex justify-center items-start shadow-inner border border-slate-800/60 print:p-0 print:m-0 print:bg-transparent print:border-none print:shadow-none print:overflow-visible print:block">
-              <InvoiceDocumentView
-                document={document}
-                elementId="quotation-invoice-canvas"
-                zoomScale={zoomScale}
-              />
+          {/* Scaled Printable Document Paper */}
+          <div
+            className="transition-transform duration-150 origin-top flex flex-col items-center pb-20 select-text"
+            style={{ transform: `scale(${zoomScale})` }}
+          >
+            <div id="quotation-preview-container">
+              <InvoiceDocumentView document={document} />
             </div>
           </div>
-        </section>
-      </main>
-
-      {/* Floating Toast Notification */}
-      {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 flex items-center space-x-2 bg-slate-900 border border-amber-500/50 text-amber-200 px-4 py-2.5 rounded-xl shadow-2xl animate-fadeIn text-xs font-semibold">
-          <CheckCircle2 className="w-4 h-4 text-amber-400" />
-          <span>{toastMessage}</span>
         </div>
-      )}
+      </div>
 
-      {/* Modals */}
+      {/* Global Modals */}
       <StudioSettingsModal
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
         studio={document.studio}
-        onSave={handleStudioSave}
+        onSave={handleSaveStudioProfile}
       />
 
       <HistoryVaultModal
@@ -359,65 +363,56 @@ function StudioWorkspace({ initialIndustry, onNavigateToAdmin, onNavigateToHome 
   );
 }
 
+// URL Route Resolver Helper
+function parseCurrentRoute(): {
+  type: 'landing' | 'studio' | 'admin' | 'public_proposal' | 'privacy' | 'terms';
+  docId?: string;
+  section?: string;
+} {
+  const urlParams = new URLSearchParams(window.location.search);
+  const viewParam = urlParams.get('view');
+  const pageParam = urlParams.get('page');
+  const rawHash = window.location.hash.replace('#', '').toLowerCase();
+
+  // 1. Direct Public Proposal Link (?view=doc_123 or #view/doc_123)
+  if (viewParam) return { type: 'public_proposal', docId: viewParam };
+  if (rawHash.startsWith('view/')) return { type: 'public_proposal', docId: rawHash.replace('view/', '') };
+
+  // 2. Landing Page Anchor Navigation (#features, #industries, #pricing, #faq, #home)
+  const isLandingAnchor = ['features', 'industries', 'pricing', 'faq', 'home', ''].includes(rawHash);
+  if (isLandingAnchor && rawHash !== '') {
+    if (pageParam) {
+      window.history.replaceState(null, '', `/#${rawHash}`);
+    }
+    return { type: 'landing', section: rawHash };
+  }
+
+  // 3. Page Routes (by hash or query param)
+  if (rawHash === 'admin' || pageParam === 'admin') return { type: 'admin' };
+  if (rawHash === 'studio' || pageParam === 'studio') return { type: 'studio' };
+  if (rawHash === 'privacy' || pageParam === 'privacy') return { type: 'privacy' };
+  if (rawHash === 'terms' || pageParam === 'terms') return { type: 'terms' };
+
+  // 4. Default to Landing Page
+  return { type: 'landing' };
+}
+
 export function App() {
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [selectedIndustry, setSelectedIndustry] = useState<IndustryCategory | undefined>(undefined);
-
-  const [currentView, setCurrentView] = useState<{
-    type: 'landing' | 'studio' | 'admin' | 'public_proposal' | 'privacy' | 'terms';
-    docId?: string;
-  }>(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const viewParam = urlParams.get('view');
-    const pageParam = urlParams.get('page');
-    const hash = window.location.hash;
-
-    if (viewParam) {
-      return { type: 'public_proposal', docId: viewParam };
-    }
-    if (hash.startsWith('#view/')) {
-      return { type: 'public_proposal', docId: hash.replace('#view/', '') };
-    }
-    if (pageParam === 'admin' || hash === '#admin') {
-      return { type: 'admin' };
-    }
-    if (pageParam === 'studio' || hash === '#studio') {
-      return { type: 'studio' };
-    }
-    if (pageParam === 'privacy' || hash === '#privacy') {
-      return { type: 'privacy' };
-    }
-    if (pageParam === 'terms' || hash === '#terms') {
-      return { type: 'terms' };
-    }
-    if (pageParam === 'home' || hash === '#home') {
-      return { type: 'landing' };
-    }
-    // Default to landing
-    return { type: 'landing' };
-  });
+  const [currentView, setCurrentView] = useState(parseCurrentRoute);
 
   useEffect(() => {
     const handleUrlChange = () => {
-      const urlParams = new URLSearchParams(window.location.search);
-      const viewParam = urlParams.get('view');
-      const pageParam = urlParams.get('page');
-      const hash = window.location.hash;
+      const route = parseCurrentRoute();
+      setCurrentView(route);
 
-      if (viewParam) {
-        setCurrentView({ type: 'public_proposal', docId: viewParam });
-      } else if (hash.startsWith('#view/')) {
-        setCurrentView({ type: 'public_proposal', docId: hash.replace('#view/', '') });
-      } else if (pageParam === 'admin' || hash === '#admin') {
-        setCurrentView({ type: 'admin' });
-      } else if (pageParam === 'studio' || hash === '#studio') {
-        setCurrentView({ type: 'studio' });
-      } else if (pageParam === 'privacy' || hash === '#privacy') {
-        setCurrentView({ type: 'privacy' });
-      } else if (pageParam === 'terms' || hash === '#terms') {
-        setCurrentView({ type: 'terms' });
-      } else if (pageParam === 'home' || hash === '#home') {
-        setCurrentView({ type: 'landing' });
+      // Smooth scroll if an anchor section was clicked
+      if (route.type === 'landing' && route.section && route.section !== 'home') {
+        setTimeout(() => {
+          const el = document.getElementById(route.section!);
+          if (el) el.scrollIntoView({ behavior: 'smooth' });
+        }, 60);
       }
     };
 
@@ -430,24 +425,47 @@ export function App() {
   }, []);
 
   const navigateToAdmin = () => {
-    window.location.hash = 'admin';
+    window.history.pushState(null, '', '/#admin');
     setCurrentView({ type: 'admin' });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const navigateToStudio = () => {
-    window.location.hash = 'studio';
+    window.history.pushState(null, '', '/#studio');
     setCurrentView({ type: 'studio' });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const navigateToHome = () => {
-    window.location.hash = 'home';
-    setCurrentView({ type: 'landing' });
+  const navigateToHome = (section?: string) => {
+    const targetHash = section ? `#${section}` : '';
+    window.history.pushState(null, '', `/${targetHash}`);
+    setCurrentView({ type: 'landing', section });
+
+    if (section) {
+      setTimeout(() => {
+        const el = document.getElementById(section);
+        if (el) el.scrollIntoView({ behavior: 'smooth' });
+      }, 60);
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  const navigateToPrivacy = () => {
+    window.history.pushState(null, '', '/#privacy');
+    setCurrentView({ type: 'privacy' });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const navigateToTerms = () => {
+    window.history.pushState(null, '', '/#terms');
+    setCurrentView({ type: 'terms' });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleSelectIndustryFromLanding = (industry: IndustryCategory) => {
     setSelectedIndustry(industry);
-    window.location.hash = 'studio';
-    setCurrentView({ type: 'studio' });
+    navigateToStudio();
   };
 
   return (
@@ -457,15 +475,25 @@ export function App() {
       ) : currentView.type === 'admin' ? (
         <AdminLayout onBackToStudio={navigateToStudio} />
       ) : currentView.type === 'privacy' ? (
-        <PrivacyPolicyPage onBack={navigateToHome} />
+        <PrivacyPolicyPage
+          onBack={() => navigateToHome()}
+          onNavigateSection={(sec) => navigateToHome(sec)}
+          onLaunchStudio={navigateToStudio}
+        />
       ) : currentView.type === 'terms' ? (
-        <TermsOfServicePage onBack={navigateToHome} />
+        <TermsOfServicePage
+          onBack={() => navigateToHome()}
+          onNavigateSection={(sec) => navigateToHome(sec)}
+          onLaunchStudio={navigateToStudio}
+        />
       ) : currentView.type === 'landing' ? (
         <>
           <LandingPage
             onLaunchStudio={navigateToStudio}
             onOpenAuth={() => setIsAuthOpen(true)}
             onOpenAdmin={navigateToAdmin}
+            onNavigateToPrivacy={navigateToPrivacy}
+            onNavigateToTerms={navigateToTerms}
             onSelectIndustryPreset={handleSelectIndustryFromLanding}
             onSelectPlan={() => setIsAuthOpen(true)}
           />
@@ -475,7 +503,7 @@ export function App() {
         <StudioWorkspace
           initialIndustry={selectedIndustry}
           onNavigateToAdmin={navigateToAdmin}
-          onNavigateToHome={navigateToHome}
+          onNavigateToHome={() => navigateToHome()}
         />
       )}
     </AuthProvider>

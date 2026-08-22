@@ -13,6 +13,8 @@ interface LandingPageProps {
   onLaunchStudio: () => void;
   onOpenAuth: () => void;
   onOpenAdmin: () => void;
+  onNavigateToPrivacy?: () => void;
+  onNavigateToTerms?: () => void;
   onSelectIndustryPreset: (industry: IndustryCategory) => void;
   onSelectPlan: (plan: 'free' | 'pro' | 'agency') => void;
 }
@@ -21,6 +23,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   onLaunchStudio,
   onOpenAuth,
   onOpenAdmin,
+  onNavigateToPrivacy,
+  onNavigateToTerms,
   onSelectIndustryPreset,
   onSelectPlan,
 }) => {
@@ -116,12 +120,20 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 {link}
               </a>
             ))}
-            <a href="/?page=privacy" className="hover:text-amber-300 transition-colors">
+            <button
+              type="button"
+              onClick={onNavigateToPrivacy}
+              className="hover:text-amber-300 transition-colors cursor-pointer"
+            >
               Privacy Policy
-            </a>
-            <a href="/?page=terms" className="hover:text-amber-300 transition-colors">
+            </button>
+            <button
+              type="button"
+              onClick={onNavigateToTerms}
+              className="hover:text-amber-300 transition-colors cursor-pointer"
+            >
               Terms of Service
-            </a>
+            </button>
             <button
               type="button"
               onClick={onOpenAdmin}

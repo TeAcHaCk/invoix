@@ -1,37 +1,103 @@
 import React from 'react';
-import { ArrowLeft, FileText } from 'lucide-react';
+import { ArrowLeft, FileText, ArrowRight } from 'lucide-react';
 
 interface TermsOfServicePageProps {
   onBack: () => void;
+  onNavigateSection?: (section: string) => void;
+  onLaunchStudio?: () => void;
 }
 
-export const TermsOfServicePage: React.FC<TermsOfServicePageProps> = ({ onBack }) => {
+export const TermsOfServicePage: React.FC<TermsOfServicePageProps> = ({
+  onBack,
+  onNavigateSection,
+  onLaunchStudio,
+}) => {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-200 font-['Plus_Jakarta_Sans',sans-serif]">
       {/* Header */}
       <header className="sticky top-0 z-40 bg-slate-950/90 backdrop-blur-xl border-b border-slate-800/60 px-4 sm:px-8 py-3.5">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div className="flex items-center space-x-3 cursor-pointer" onClick={onBack}>
+            <div className="p-1 rounded-xl bg-white/95 shadow-lg flex items-center justify-center">
+              <img src="/invoix-logo.png" alt="Invoix Logo" className="h-7 max-w-[120px] object-contain" />
+            </div>
+            <div>
+              <div className="flex items-center space-x-1.5">
+                <h1 className="text-base font-extrabold text-slate-100 tracking-tight font-['Outfit']">
+                  Invoix
+                </h1>
+                <span className="text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-1.5 py-0.2 rounded font-bold uppercase">
+                  Terms
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Center Nav */}
+          <nav className="hidden md:flex items-center space-x-8 text-xs font-semibold text-slate-300">
+            <button
+              type="button"
+              onClick={() => (onNavigateSection ? onNavigateSection('features') : onBack())}
+              className="hover:text-amber-400 transition-colors cursor-pointer"
+            >
+              Features
+            </button>
+            <button
+              type="button"
+              onClick={() => (onNavigateSection ? onNavigateSection('industries') : onBack())}
+              className="hover:text-amber-400 transition-colors cursor-pointer"
+            >
+              Industries
+            </button>
+            <button
+              type="button"
+              onClick={() => (onNavigateSection ? onNavigateSection('pricing') : onBack())}
+              className="hover:text-amber-400 transition-colors cursor-pointer"
+            >
+              Pricing
+            </button>
+            <button
+              type="button"
+              onClick={() => (onNavigateSection ? onNavigateSection('faq') : onBack())}
+              className="hover:text-amber-400 transition-colors cursor-pointer"
+            >
+              FAQ
+            </button>
+          </nav>
+
+          {/* Right Actions */}
           <div className="flex items-center space-x-3">
             <button
               type="button"
               onClick={onBack}
-              className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-amber-400 transition-colors cursor-pointer"
+              className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-300 text-xs font-semibold rounded-xl border border-slate-800 flex items-center space-x-1.5 transition-colors cursor-pointer"
             >
-              <ArrowLeft className="w-4 h-4" />
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Back to Home</span>
             </button>
-            <div className="flex items-center space-x-2">
-              <FileText className="w-5 h-5 text-amber-400" />
-              <h1 className="text-sm font-bold text-slate-100 font-['Outfit']">Terms of Service</h1>
-            </div>
+
+            {onLaunchStudio && (
+              <button
+                type="button"
+                onClick={onLaunchStudio}
+                className="hidden sm:flex px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 text-xs font-bold rounded-xl shadow-lg shadow-amber-500/20 items-center space-x-1.5 transition-all cursor-pointer"
+              >
+                <span>Launch Studio</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
-          <span className="text-[11px] text-slate-500">Last updated: August 2026</span>
         </div>
       </header>
 
       {/* Content */}
       <main className="max-w-4xl mx-auto px-4 sm:px-8 py-12 space-y-10 text-sm leading-relaxed text-slate-300">
         <div className="space-y-3">
-          <h2 className="text-2xl font-extrabold text-slate-100 font-['Outfit']">Terms of Service</h2>
+          <div className="flex items-center space-x-2">
+            <FileText className="w-6 h-6 text-amber-400" />
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-100 font-['Outfit']">Terms of Service</h2>
+          </div>
+          <p className="text-xs text-slate-400">Last updated: August 23, 2026</p>
           <p>
             Welcome to <strong className="text-slate-100">Invoix</strong>. By accessing or using our web application at{' '}
             <a href="https://invoix.app" className="text-amber-400 hover:underline">invoix.app</a>,
@@ -67,9 +133,9 @@ export const TermsOfServicePage: React.FC<TermsOfServicePageProps> = ({ onBack }
         <section className="space-y-3">
           <h3 className="text-lg font-bold text-slate-100 font-['Outfit']">3. Subscription Plans & Billing</h3>
           <ul className="list-disc pl-6 space-y-1.5">
-            <li><strong className="text-slate-200">Free Plan:</strong> Core features with limited cloud storage and document generation</li>
-            <li><strong className="text-slate-200">Pro Plan:</strong> Enhanced features at the monthly or annual rate displayed on our pricing page</li>
-            <li><strong className="text-slate-200">Agency Plan:</strong> Full-feature access with multi-client management at the displayed rate</li>
+            <li><strong className="text-slate-200">Free Plan:</strong> Core features with local vault storage and proposal builder</li>
+            <li><strong className="text-slate-200">Pro Plan:</strong> Cloud storage, custom branding, and audit certificate features at listed rate</li>
+            <li><strong className="text-slate-200">Agency Plan:</strong> Full-feature access with multi-client management at listed rate</li>
             <li>Prices are subject to change with 30 days advance notice to existing subscribers</li>
             <li>Refunds: We offer a 7-day money-back guarantee for new paid subscriptions</li>
           </ul>
@@ -99,63 +165,25 @@ export const TermsOfServicePage: React.FC<TermsOfServicePageProps> = ({ onBack }
         </section>
 
         <section className="space-y-3">
-          <h3 className="text-lg font-bold text-slate-100 font-['Outfit']">6. Data & Privacy</h3>
-          <p>
-            Your use of the Service is also governed by our{' '}
-            <a href="/?page=privacy" className="text-amber-400 hover:underline">Privacy Policy</a>,
-            which describes how we collect, use, and protect your information.
-          </p>
-        </section>
-
-        <section className="space-y-3">
-          <h3 className="text-lg font-bold text-slate-100 font-['Outfit']">7. Digital Signatures & Legal Validity</h3>
+          <h3 className="text-lg font-bold text-slate-100 font-['Outfit']">6. Digital Signatures & Legal Validity</h3>
           <ul className="list-disc pl-6 space-y-1.5">
             <li>Invoix provides digital signature and acceptance features for convenience</li>
             <li>The legal validity of digital signatures varies by jurisdiction</li>
-            <li>Invoix does not guarantee that digitally signed documents will be legally enforceable in all jurisdictions</li>
             <li>Users are responsible for verifying the legal requirements for electronic signatures in their jurisdiction</li>
           </ul>
         </section>
 
         <section className="space-y-3">
-          <h3 className="text-lg font-bold text-slate-100 font-['Outfit']">8. Limitation of Liability</h3>
+          <h3 className="text-lg font-bold text-slate-100 font-['Outfit']">7. Limitation of Liability</h3>
           <ul className="list-disc pl-6 space-y-1.5">
             <li>The Service is provided "as is" and "as available" without warranties of any kind</li>
-            <li>We are not liable for any financial losses, missed business opportunities, or damages arising from the use of documents generated through the Service</li>
+            <li>We are not liable for financial losses, missed business opportunities, or damages arising from use of documents generated through the Service</li>
             <li>Our total liability shall not exceed the amount you paid us in the 12 months preceding the claim</li>
-            <li>We are not responsible for data loss due to browser storage clearing, device failure, or user error</li>
           </ul>
         </section>
 
         <section className="space-y-3">
-          <h3 className="text-lg font-bold text-slate-100 font-['Outfit']">9. Service Availability</h3>
-          <p>
-            We strive to maintain 99.9% uptime but do not guarantee uninterrupted access. The Service may be
-            temporarily unavailable due to maintenance, updates, or circumstances beyond our control.
-          </p>
-        </section>
-
-        <section className="space-y-3">
-          <h3 className="text-lg font-bold text-slate-100 font-['Outfit']">10. Termination</h3>
-          <ul className="list-disc pl-6 space-y-1.5">
-            <li>You may stop using the Service and delete your account at any time</li>
-            <li>We may suspend or terminate your account for violations of these Terms</li>
-            <li>Upon termination, your cloud-stored data will be deleted within 30 days</li>
-            <li>Locally stored data on your device is not affected by account termination</li>
-          </ul>
-        </section>
-
-        <section className="space-y-3">
-          <h3 className="text-lg font-bold text-slate-100 font-['Outfit']">11. Changes to Terms</h3>
-          <p>
-            We reserve the right to modify these Terms at any time. Material changes will be communicated via
-            email or in-app notification at least 15 days before taking effect. Continued use of the Service
-            after changes take effect constitutes acceptance of the new Terms.
-          </p>
-        </section>
-
-        <section className="space-y-3">
-          <h3 className="text-lg font-bold text-slate-100 font-['Outfit']">12. Governing Law</h3>
+          <h3 className="text-lg font-bold text-slate-100 font-['Outfit']">8. Governing Law</h3>
           <p>
             These Terms are governed by and construed in accordance with the laws of India.
             Any disputes shall be subject to the exclusive jurisdiction of the courts in Bangalore, Karnataka, India.
@@ -163,7 +191,7 @@ export const TermsOfServicePage: React.FC<TermsOfServicePageProps> = ({ onBack }
         </section>
 
         <section className="space-y-3">
-          <h3 className="text-lg font-bold text-slate-100 font-['Outfit']">13. Contact Us</h3>
+          <h3 className="text-lg font-bold text-slate-100 font-['Outfit']">9. Contact Us</h3>
           <p>For questions about these Terms, please contact us at:</p>
           <p className="font-semibold text-amber-300">legal@invoix.app</p>
         </section>
