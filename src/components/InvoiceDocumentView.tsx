@@ -214,13 +214,16 @@ export const InvoiceDocumentView: React.FC<InvoiceDocumentViewProps> = ({
                             {item.dayTitle}
                           </div>
                         )}
-                        <ul className="space-y-0.5 text-slate-800 font-medium">
+                        <div className="space-y-1 text-slate-800 font-medium">
                           {item.services
                             .filter((svc) => svc.trim().length > 0)
                             .map((svc, idx) => (
-                              <li key={idx} className="leading-snug">{svc}</li>
+                              <div key={idx} className="flex items-start space-x-1.5 leading-snug">
+                                <span className="text-slate-900 font-bold select-none shrink-0">•</span>
+                                <span className="flex-1">{svc}</span>
+                              </div>
                             ))}
-                        </ul>
+                        </div>
                       </div>
                     ))
                   ) : (
@@ -233,19 +236,20 @@ export const InvoiceDocumentView: React.FC<InvoiceDocumentViewProps> = ({
                   <div className="font-bold text-[#111111] text-[13px] tracking-wide uppercase mb-1.5 font-['Outfit',sans-serif] whitespace-nowrap">
                     DELIVERABLES
                   </div>
-                  <ul className="list-disc list-inside space-y-1 text-slate-800 font-medium marker:text-[#111111]">
+                  <div className="space-y-1 text-slate-800 font-medium">
                     {doc.deliverables.filter((del) => del.included).length > 0 ? (
                       doc.deliverables
                         .filter((del) => del.included)
                         .map((del) => (
-                          <li key={del.id} className="leading-tight">
-                            <span className="-ml-1">{del.text}</span>
-                          </li>
+                          <div key={del.id} className="flex items-start space-x-1.5 leading-tight">
+                            <span className="text-slate-900 font-bold select-none shrink-0">•</span>
+                            <span className="flex-1">{del.text}</span>
+                          </div>
                         ))
                     ) : (
-                      <li className="text-slate-400 italic">No deliverables selected</li>
+                      <div className="text-slate-400 italic">No deliverables selected</div>
                     )}
-                  </ul>
+                  </div>
                 </div>
               </div>
 
@@ -306,7 +310,7 @@ export const InvoiceDocumentView: React.FC<InvoiceDocumentViewProps> = ({
                 <div className="w-full border-b border-[#8C692D] mt-2 mb-2"></div>
               </div>
 
-              {/* Terms & Conditions Section (2 Columns) */}
+              {/* Terms & Conditions Section (2 Columns with Proper Hanging Indent) */}
               <div className="mt-1">
                 <div className="font-bold text-[#8C692D] text-[13px] mb-2 font-['Outfit',sans-serif] flex items-center whitespace-nowrap">
                   <ShieldCheck className="w-3.5 h-3.5 mr-1.5 text-[#8C692D] shrink-0" />
@@ -314,22 +318,24 @@ export const InvoiceDocumentView: React.FC<InvoiceDocumentViewProps> = ({
                 </div>
                 <div className="grid grid-cols-2 gap-x-8 text-[10.2px] leading-[1.38] text-slate-800">
                   {/* Left Terms Column */}
-                  <ul className="list-disc list-inside space-y-1.5 marker:text-[#111111]">
+                  <div className="space-y-1.5">
                     {leftTerms.map((term, idx) => (
-                      <li key={idx} className="leading-[1.35]">
-                        <span className="-ml-1">{term}</span>
-                      </li>
+                      <div key={idx} className="flex items-start space-x-1.5">
+                        <span className="text-slate-900 font-bold select-none shrink-0 leading-[1.35]">•</span>
+                        <span className="flex-1 leading-[1.35]">{term}</span>
+                      </div>
                     ))}
-                  </ul>
+                  </div>
 
                   {/* Right Terms Column */}
-                  <ul className="list-disc list-inside space-y-1.5 marker:text-[#111111]">
+                  <div className="space-y-1.5">
                     {rightTerms.map((term, idx) => (
-                      <li key={idx} className="leading-[1.35]">
-                        <span className="-ml-1">{term}</span>
-                      </li>
+                      <div key={idx} className="flex items-start space-x-1.5">
+                        <span className="text-slate-900 font-bold select-none shrink-0 leading-[1.35]">•</span>
+                        <span className="flex-1 leading-[1.35]">{term}</span>
+                      </div>
                     ))}
-                  </ul>
+                  </div>
                 </div>
               </div>
             </div>
@@ -488,21 +494,33 @@ export const InvoiceDocumentView: React.FC<InvoiceDocumentViewProps> = ({
                     <span>Booking, Cancellation & Data Delivery Policy</span>
                   </h4>
                   <div className="grid grid-cols-2 gap-4 text-[10.5px] leading-relaxed">
-                    <div>
-                      <p className="font-semibold text-slate-900 mb-0.5">• Data Backup & SSD:</p>
-                      <p className="text-slate-600">Client should provide a Hard Disk or SSD (preferably 2TB) for complete high-resolution raw data backup after the event.</p>
+                    <div className="flex items-start space-x-1.5">
+                      <span className="text-slate-900 font-bold select-none shrink-0">•</span>
+                      <div>
+                        <p className="font-semibold text-slate-900 mb-0.5">Data Backup & SSD:</p>
+                        <p className="text-slate-600">Client should provide a Hard Disk or SSD (preferably 2TB) for complete high-resolution raw data backup after the event.</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-semibold text-slate-900 mb-0.5">• Event Cancellation Policy:</p>
-                      <p className="text-slate-600">More than 1 month before event = 50% advance refund. Within 1 month = No refund.</p>
+                    <div className="flex items-start space-x-1.5">
+                      <span className="text-slate-900 font-bold select-none shrink-0">•</span>
+                      <div>
+                        <p className="font-semibold text-slate-900 mb-0.5">Event Cancellation Policy:</p>
+                        <p className="text-slate-600">More than 1 month before event = 50% advance refund. Within 1 month = No refund.</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-semibold text-slate-900 mb-0.5">• Album Delivery Timeline:</p>
-                      <p className="text-slate-600">Albums will be delivered approximately within 30 days after the client completes photo selection.</p>
+                    <div className="flex items-start space-x-1.5">
+                      <span className="text-slate-900 font-bold select-none shrink-0">•</span>
+                      <div>
+                        <p className="font-semibold text-slate-900 mb-0.5">Album Delivery Timeline:</p>
+                        <p className="text-slate-600">Albums will be delivered approximately within 30 days after the client completes photo selection.</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-semibold text-slate-900 mb-0.5">• Outstation & Logistics:</p>
-                      <p className="text-slate-600">Travel, food and accommodation outside Bangalore will be provided by the client or billed separately.</p>
+                    <div className="flex items-start space-x-1.5">
+                      <span className="text-slate-900 font-bold select-none shrink-0">•</span>
+                      <div>
+                        <p className="font-semibold text-slate-900 mb-0.5">Outstation & Logistics:</p>
+                        <p className="text-slate-600">Travel, food and accommodation outside Bangalore will be provided by the client or billed separately.</p>
+                      </div>
                     </div>
                   </div>
                 </div>
