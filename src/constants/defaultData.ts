@@ -1,4 +1,10 @@
-import type { QuotationDocument, StudioProfile } from '../types';
+import type {
+  QuotationDocument,
+  StudioProfile,
+  CrewMemberItem,
+  WhyChooseUsItem,
+  InvoicePaymentRecord,
+} from '../types';
 
 export const DEFAULT_STUDIO: StudioProfile = {
   name: 'FUSION BELLS FILMS',
@@ -11,6 +17,7 @@ export const DEFAULT_STUDIO: StudioProfile = {
   phoneNumbers: '8970511524, 7411687671',
   email: 'info@fusionbellsfilms.com',
   website: 'fusionbellsfilms.com',
+  gstin: '29ABCDE1234F1Z5',
   upiId: '8970511524@upi',
   bankName: 'HDFC Bank',
   accountNumber: '50200088991122',
@@ -19,6 +26,93 @@ export const DEFAULT_STUDIO: StudioProfile = {
   authEnabled: true,
   adminUsername: 'fusionbells',
   adminPassword: 'fbf@2026',
+};
+
+export const DEFAULT_CREW_MEMBERS: CrewMemberItem[] = [
+  {
+    id: 'crew-1',
+    team: 'Candid Photographer',
+    role: 'Capturing portraits and moments of the couple, immediate family & friends in creative angles.',
+    enabled: true,
+  },
+  {
+    id: 'crew-2',
+    team: 'Candid Videographer',
+    role: 'Capturing portraits, interviews and moments of the couple, immediate family & friends in creative angles for the teaser and highlight film.',
+    enabled: true,
+  },
+  {
+    id: 'crew-3',
+    team: 'Traditional Photographer',
+    role: 'Capturing the entire coverage of the events such as rituals in detail and group photos on stage.',
+    enabled: true,
+  },
+  {
+    id: 'crew-4',
+    team: 'Traditional Videographer',
+    role: 'Capturing the entire coverage of the events such as rituals in detail and group photos on stage for the coverage film.',
+    enabled: true,
+  },
+  {
+    id: 'crew-5',
+    team: 'Drone Pilot',
+    role: 'Capturing breathtaking 4K aerial cinematic drone views of the venue, rituals and grand entries.',
+    enabled: false,
+  },
+];
+
+export const DEFAULT_WHY_CHOOSE_US: WhyChooseUsItem[] = [
+  {
+    id: 'why-1',
+    icon: '✨',
+    title: 'Timeless Storytelling',
+    description: 'Every photograph and film is crafted to capture genuine emotions and unforgettable memories.',
+    enabled: true,
+  },
+  {
+    id: 'why-2',
+    icon: '📸',
+    title: 'Professional Photography & Films',
+    description: "From candid moments to cinematic wedding films, we deliver high-quality visuals you'll cherish forever.",
+    enabled: true,
+  },
+  {
+    id: 'why-3',
+    icon: '❤️',
+    title: 'Personalized Experience',
+    description: 'We take the time to understand your vision and ensure every detail reflects your unique story.',
+    enabled: true,
+  },
+  {
+    id: 'why-4',
+    icon: '🎥',
+    title: 'Complete Wedding Coverage',
+    description: 'Pre-Wedding • Engagement • Haldi • Mehendi • Wedding • Reception • Destination Weddings',
+    enabled: true,
+  },
+  {
+    id: 'why-5',
+    icon: '⏱️',
+    title: 'Reliable & Timely Delivery',
+    description: 'Your memories are carefully edited and delivered on time without compromising quality.',
+    enabled: true,
+  },
+  {
+    id: 'why-6',
+    icon: '🤝',
+    title: 'Friendly & Professional Team',
+    description: 'Our experienced team makes you feel comfortable, ensuring natural expressions and stress-free photography throughout your special day.',
+    enabled: true,
+  },
+];
+
+export const DEFAULT_INVOICE_PAYMENT: InvoicePaymentRecord = {
+  status: 'UNPAID',
+  amountReceived: 0,
+  paymentDate: '',
+  paymentMode: 'UPI / Bank Transfer',
+  transactionRef: '',
+  notes: 'Thank you for your business!',
 };
 
 export const DEFAULT_SERVICES = [
@@ -52,27 +146,25 @@ export const DEFAULT_ADDITIONAL_SERVICES = [
 ];
 
 export const DEFAULT_DELIVERABLES_PRESETS = [
-  'Event Teaser',
-  'Professionally Edited High Resolution Photographs 100 pics',
-  'Cinematic Highlight Films',
+  'Event Teaser (60-90 seconds 4K)',
+  'Professionally Edited High Resolution Photographs (200+ pics)',
+  'Cinematic Highlight Films (3-5 mins)',
   'We will provide all the traditional full length video',
   'All Raw & Edited High-Res Photos on Cloud Drive / Pendrive',
   '1x Luxury Hardcover Photobook Album (40 Pages)',
 ];
 
 export const DEFAULT_TERMS_AND_CONDITIONS = [
-  'The booking will be confirmed only after receiving the agreed advance payment.',
-  'The advance amount is non-refundable in case of cancellation.',
-  'Any additional requirements requested after confirmation may be charged separately.',
-  'The remaining payment should be cleared as mutually agreed before/on the wedding day.',
-  'We reserve the right to use selected photographs/videos for our portfolio, website and social media, unless the client specifically requests otherwise.',
-  'Any change in date is subject to our availability.',
-  'The quotation is valid for the agreed date and package only and is subject to availability.',
-  'Additional hours or additional events will be charged separately.',
-  'Edited photographs and videos will be delivered within the agreed timeline.',
-  'Travel and accommodation charges, if applicable, will be additional.',
-  'Raw/unedited files will not be included unless specifically agreed.',
-  'The final number of photographs/videos depends on the coverage and event schedule.',
+  '30% of the payment will be considered as the booking fee and should be paid within 7 days after soft booking.',
+  'The remaining payment should be completed as mutually agreed before or on the last day of the event.',
+  'Post-production and editing will begin only after full payment is cleared.',
+  'Each event coverage duration is standard 7-8 hours. Additional hours will be charged separately.',
+  'Client should provide a Hard Disk or SSD (preferably 2TB) for complete high-resolution data backup after the event.',
+  'Albums will be delivered approximately within 30 days after the client completes photo selection.',
+  'Event Cancellation Policy: More than 1 month before event = 50% advance refund; Within 1 month = No refund.',
+  'Travel, food, accommodation, and outstation logistics outside Bangalore will be provided by the client or billed separately.',
+  'Fusion Bells Films retains the right to use selected photos and videos for portfolio, website, and social media showcase.',
+  'Quoted prices and packages are valid for 30 days from the quotation date.',
 ];
 
 export const getTodayFormattedDate = (): string => {
@@ -153,7 +245,8 @@ export const getDefaultDocument = (): QuotationDocument => ({
     eventDate: getTodayFormattedDate(),
     eventDateFrom: getTodayFormattedDate(),
     eventDateTo: getTodayFormattedDate(),
-    validUntilDate: '15 Days from quote date',
+    dueDate: getTodayFormattedDate(),
+    validUntilDate: '30 Days from quote date',
   },
   packageBannerTitle: '',
   eventCoverage: [
@@ -174,11 +267,17 @@ export const getDefaultDocument = (): QuotationDocument => ({
     { id: 'del-3', text: 'Cinematic Highlight Films (3-5 mins)', included: true },
     { id: 'del-4', text: 'We will provide all the traditional full length video', included: true },
   ],
+  crewMembers: DEFAULT_CREW_MEMBERS,
+  whyChooseUs: DEFAULT_WHY_CHOOSE_US,
+  includeCrewSection: true,
+  includeWhyChooseUs: true,
   pricingItems: [
     {
       id: 'price-1',
       description: 'Complete Photography & Cinematography Package',
       amount: 0,
+      qty: 1,
+      rate: 0,
     },
   ],
   totalInvestment: 0,
@@ -194,6 +293,7 @@ export const getDefaultDocument = (): QuotationDocument => ({
     advancePaidDate: '',
     paymentMode: 'UPI / Bank Transfer',
   },
+  invoicePayment: DEFAULT_INVOICE_PAYMENT,
   termsAndConditions: DEFAULT_TERMS_AND_CONDITIONS,
   footerNote: 'Thank you for choosing Fusion Bells Films to capture your special moments.',
   watermark: getSavedWatermarkConfig(),

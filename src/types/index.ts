@@ -33,6 +33,21 @@ export interface DeliverableItem {
   included: boolean;
 }
 
+export interface CrewMemberItem {
+  id: string;
+  team: string; // e.g. "Candid Photographer", "Candid Videographer", "Traditional Photographer", "Traditional Videographer", "Drone Pilot"
+  role: string; // e.g. "Capturing portraits and moments of the couple, immediate family & friends in creative angles."
+  enabled: boolean;
+}
+
+export interface WhyChooseUsItem {
+  id: string;
+  icon: string; // emoji or identifier
+  title: string;
+  description: string;
+  enabled: boolean;
+}
+
 export interface PricingItem {
   id: string;
   description: string;
@@ -53,6 +68,15 @@ export interface PaymentTermsConfig {
   advanceReceived?: number;
   advancePaidDate?: string;
   paymentMode?: string;
+}
+
+export interface InvoicePaymentRecord {
+  status: 'UNPAID' | 'PARTIALLY_PAID' | 'PAID';
+  amountReceived: number;
+  paymentDate?: string;
+  paymentMode?: string; // UPI, Bank Transfer, Cash, Card
+  transactionRef?: string;
+  notes?: string;
 }
 
 export interface WatermarkConfig {
@@ -77,6 +101,7 @@ export interface StudioProfile {
   phoneNumbers: string;
   email: string;
   website: string;
+  gstin?: string;
   upiId?: string;
   bankName?: string;
   accountNumber?: string;
@@ -96,12 +121,17 @@ export interface QuotationDocument {
   packageBannerTitle: string;
   eventCoverage: EventCoverageItem[];
   deliverables: DeliverableItem[];
+  crewMembers: CrewMemberItem[];
+  whyChooseUs: WhyChooseUsItem[];
+  includeCrewSection: boolean;
+  includeWhyChooseUs: boolean;
   pricingItems: PricingItem[];
   totalInvestment: number;
   discount: number;
   taxPercent: number; // 0 for none, 18 for GST
   taxType: 'none' | 'gst' | 'igst';
   paymentTerms: PaymentTermsConfig;
+  invoicePayment: InvoicePaymentRecord;
   termsAndConditions: string[];
   footerNote: string;
   watermark: WatermarkConfig;

@@ -1,7 +1,9 @@
 import React from 'react';
 import type { QuotationDocument } from '../types';
 import { WatermarkLayer } from './WatermarkLayer';
+import { FormalInvoiceView } from './FormalInvoiceView';
 import { formatCurrency } from '../utils/formatters';
+import { Users, Sparkles, ShieldCheck } from 'lucide-react';
 
 interface InvoiceDocumentViewProps {
   document: QuotationDocument;
@@ -14,7 +16,32 @@ export const InvoiceDocumentView: React.FC<InvoiceDocumentViewProps> = ({
   elementId = 'quotation-invoice-canvas',
   zoomScale = 1,
 }) => {
-  // Format event date(s)
+  // If INVOICE mode is selected, render the dedicated Formal Tax/Payment Invoice layout!
+  if (doc.type === 'INVOICE') {
+    return (
+      <div
+        className="canvas-viewport flex justify-center items-start transition-all duration-200"
+        style={{
+          transform: `scale(${zoomScale})`,
+          transformOrigin: 'top center',
+        }}
+      >
+        <div
+          id={elementId}
+          className="print-page bg-white shadow-2xl transition-all duration-200"
+          style={{
+            width: '210mm',
+            minHeight: '297mm',
+            boxSizing: 'border-box',
+          }}
+        >
+          <FormalInvoiceView document={doc} />
+        </div>
+      </div>
+    );
+  }
+
+  // Otherwise, render the Luxury Studio Quotation Proposal Layout!
   const getEventDateDisplay = () => {
     if (doc.details.eventDateMode === 'single') {
       return doc.details.eventDate || 'DD/MM/YYYY';
@@ -30,80 +57,89 @@ export const InvoiceDocumentView: React.FC<InvoiceDocumentViewProps> = ({
 
   // Calculations for payment terms
   const totalAmount = doc.totalInvestment || 0;
-  const advanceAmount = doc.paymentTerms.isCustomAmounts
-    ? doc.paymentTerms.advanceCustomAmount ?? Math.round((totalAmount * doc.paymentTerms.advancePercent) / 100)
-    : Math.round((totalAmount * doc.paymentTerms.advancePercent) / 100);
+  const advanceAmount = doc.paymentTerms?.isCustomAmounts
+    ? doc.paymentTerms?.advanceCustomAmount ?? Math.round((totalAmount * doc.paymentTerms?.advancePercent) / 100)
+    : Math.round((totalAmount * (doc.paymentTerms?.advancePercent || 30)) / 100);
 
-  const afterEventAmount = doc.paymentTerms.isCustomAmounts
-    ? doc.paymentTerms.afterEventCustomAmount ?? Math.round((totalAmount * doc.paymentTerms.afterEventPercent) / 100)
-    : Math.round((totalAmount * doc.paymentTerms.afterEventPercent) / 100);
+  const afterEventAmount = doc.paymentTerms?.isCustomAmounts
+    ? doc.paymentTerms?.afterEventCustomAmount ?? Math.round((totalAmount * doc.paymentTerms?.afterEventPercent) / 100)
+    : Math.round((totalAmount * (doc.paymentTerms?.afterEventPercent || 50)) / 100);
 
-  const balanceAmount = doc.paymentTerms.isCustomAmounts
-    ? doc.paymentTerms.balanceCustomAmount ?? Math.round((totalAmount * doc.paymentTerms.balancePercent) / 100)
+  const balanceAmount = doc.paymentTerms?.isCustomAmounts
+    ? doc.paymentTerms?.balanceCustomAmount ?? Math.round((totalAmount * doc.paymentTerms?.balancePercent) / 100)
     : Math.max(0, totalAmount - advanceAmount - afterEventAmount);
 
   // Split terms into 2 balanced columns
-  const halfLength = Math.ceil(doc.termsAndConditions.length / 2);
-  const leftTerms = doc.termsAndConditions.slice(0, halfLength);
-  const rightTerms = doc.termsAndConditions.slice(halfLength);
+  const termsList = doc.termsAndConditions || [];
+  const halfLength = Math.ceil(termsList.length / 2);
+  const leftTerms = termsList.slice(0, halfLength);
+  const rightTerms = termsList.slice(halfLength);
+
+  const activeCrew = (doc.crewMembers || []).filter((c) => c.enabled);
+  const activeWhyChoose = (doc.whyChooseUs || []).filter((w) => w.enabled);
+
+  const logoWidth = doc.studio.logoWidth || 320;
+  const logoHeight = doc.studio.logoHeight || 130;
 
   return (
     <div
-      className="transition-transform origin-top flex justify-center print:transform-none print:m-0"
+      className="canvas-viewport flex justify-center items-start transition-all duration-200"
       style={{
-        transform: zoomScale !== 1 ? `scale(${zoomScale})` : undefined,
+        transform: `scale(${zoomScale})`,
+        transformOrigin: 'top center',
       }}
     >
+      {/* A4 Sheet Container */}
       <div
         id={elementId}
-        className="w-[794px] min-h-[1123px] bg-white text-[#111111] relative p-8 shadow-2xl flex flex-col justify-between select-text print:shadow-none print:w-full print:p-6 print:min-h-0 print:border-none font-['Montserrat',sans-serif]"
+        className="print-page bg-white shadow-2xl relative transition-all duration-200"
         style={{
+          width: '210mm',
+          minHeight: '297mm',
           boxSizing: 'border-box',
         }}
       >
         {/* Dynamic Watermark Background Layer */}
         <WatermarkLayer config={doc.watermark} />
 
-        {/* Content Container (Layered above watermark) */}
-        <div className="relative z-10 flex flex-col h-full justify-between flex-1">
-          {/* TOP SECTION */}
+        {/* Content Container */}
+        <div className="relative z-10 p-8 sm:p-10 text-left font-['Plus_Jakarta_Sans',sans-serif] text-slate-900 flex flex-col justify-between h-full min-h-[297mm]">
           <div>
-            {/* Header / Logo */}
-            <div className="flex flex-col items-center justify-center pb-1">
+            {/* TOP HEADER SECTION */}
+            <div className="flex flex-col items-center justify-center text-center">
               {doc.studio.logoUrl ? (
-                <img
-                  src={doc.studio.logoUrl}
-                  alt={doc.studio.name}
-                  style={{
-                    width: `${doc.studio.logoWidth || 320}px`,
-                    maxHeight: `${doc.studio.logoHeight || 130}px`,
-                  }}
-                  className="max-w-[460px] object-contain mb-1 transition-all"
-                  onError={(e) => {
-                    e.currentTarget.style.display = 'none';
-                  }}
-                />
+                <div className="flex items-center justify-center mb-1">
+                  <img
+                    src={doc.studio.logoUrl}
+                    alt={doc.studio.name}
+                    style={{
+                      width: `${logoWidth}px`,
+                      maxHeight: `${logoHeight}px`,
+                      objectFit: 'contain',
+                    }}
+                  />
+                </div>
               ) : (
-                <div className="text-center py-1">
-                  <h1 className="text-2xl font-bold tracking-wider font-serif text-[#111111]">
+                <>
+                  <h1 className="text-3xl font-bold tracking-[0.05em] text-[#111111] font-['Outfit',sans-serif]">
                     {doc.studio.name}
                   </h1>
-                  <p className="text-[10px] tracking-[0.25em] text-[#666666] uppercase mt-0.5">
+                  <p className="text-[10px] tracking-[0.25em] text-[#8C692D] uppercase font-semibold mt-0.5">
                     {doc.studio.tagline}
                   </p>
-                </div>
+                </>
               )}
 
-              {/* Decorative top separator line matching reference */}
+              {/* Decorative top separator line */}
               <div className="w-full border-b border-[#8C692D] mt-2 mb-2"></div>
 
               {/* Document Type Title */}
               <h2 className="text-center font-bold tracking-[0.2em] text-[17px] text-[#111111] uppercase font-['Outfit',sans-serif]">
-                {doc.type}
+                QUOTATION & PROPOSAL
               </h2>
             </div>
 
-            {/* Bill To & Invoice Details Grid */}
+            {/* Bill To & Quotation Details Grid */}
             <div className="grid grid-cols-2 gap-8 my-2 text-[12.5px] leading-relaxed">
               {/* Left Column: Bill To */}
               <div>
@@ -124,21 +160,17 @@ export const InvoiceDocumentView: React.FC<InvoiceDocumentViewProps> = ({
                 </div>
               </div>
 
-              {/* Right Column: Invoice Details */}
+              {/* Right Column: Quotation Details */}
               <div className="pl-4">
                 <div className="font-bold text-[#8C692D] text-[13px] tracking-wide mb-1 uppercase font-['Outfit',sans-serif]">
-                  {doc.type === 'INVOICE' ? 'INVOICE DETAILS' : 'INVOICE DETAILS'}
+                  QUOTATION DETAILS
                 </div>
                 <div className="flex items-start text-slate-800">
-                  <span className="text-slate-600 min-w-[95px]">
-                    {doc.type === 'INVOICE' ? 'Invoice No.:' : 'Invoice No.:'}
-                  </span>
+                  <span className="text-slate-600 min-w-[95px]">Quotation No.:</span>
                   <span className="font-bold text-[#111111] ml-1">{doc.details.invoiceNo || '—'}</span>
                 </div>
                 <div className="flex items-start text-slate-800">
-                  <span className="text-slate-600 min-w-[95px]">
-                    {doc.type === 'INVOICE' ? 'Invoice Date:' : 'Invoice Date:'}
-                  </span>
+                  <span className="text-slate-600 min-w-[95px]">Date of Quote:</span>
                   <span className="font-bold text-[#111111] ml-1">{doc.details.invoiceDate || '—'}</span>
                 </div>
                 <div className="flex items-start text-slate-800">
@@ -190,13 +222,17 @@ export const InvoiceDocumentView: React.FC<InvoiceDocumentViewProps> = ({
                   DELIVERABLES
                 </div>
                 <ul className="list-disc list-inside space-y-1 text-slate-800 font-medium marker:text-[#111111]">
-                  {doc.deliverables
-                    .filter((d) => d.included)
-                    .map((del) => (
-                      <li key={del.id} className="leading-snug text-[11.5px]">
-                        <span className="-ml-1">{del.text}</span>
-                      </li>
-                    ))}
+                  {doc.deliverables.filter((del) => del.included).length > 0 ? (
+                    doc.deliverables
+                      .filter((del) => del.included)
+                      .map((del) => (
+                        <li key={del.id} className="leading-tight">
+                          <span className="-ml-1">{del.text}</span>
+                        </li>
+                      ))
+                  ) : (
+                    <li className="text-slate-400 italic">No deliverables selected</li>
+                  )}
                 </ul>
               </div>
             </div>
@@ -258,10 +294,69 @@ export const InvoiceDocumentView: React.FC<InvoiceDocumentViewProps> = ({
               <div className="w-full border-b border-[#8C692D] mt-2 mb-2"></div>
             </div>
 
+            {/* SECTION B: CREW AND ROLE AT THE EVENT (From User Reference Image) */}
+            {doc.includeCrewSection !== false && activeCrew.length > 0 && (
+              <div className="my-3">
+                <div className="font-bold text-[#8C692D] text-[13.5px] mb-1.5 font-['Outfit',sans-serif] flex items-center">
+                  <Users className="w-4 h-4 mr-1.5 text-[#8C692D]" />
+                  <span>Crew and Role at the Event</span>
+                </div>
+                <div className="border border-slate-300 rounded-lg overflow-hidden text-[11px]">
+                  <table className="w-full text-left">
+                    <thead>
+                      <tr className="bg-[#8fa6a0]/25 border-b border-slate-300 text-slate-900 font-['Outfit'] font-bold uppercase text-[10.5px]">
+                        <th className="py-1.5 px-3 w-1/3 border-r border-slate-300">Team</th>
+                        <th className="py-1.5 px-3">Role</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-200">
+                      {activeCrew.map((crew) => (
+                        <tr key={crew.id} className="hover:bg-slate-50/50">
+                          <td className="py-1.5 px-3 font-bold text-[#111111] border-r border-slate-200 align-top">
+                            {crew.team}
+                          </td>
+                          <td className="py-1.5 px-3 text-slate-700 leading-snug">
+                            {crew.role}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="w-full border-b border-[#8C692D] mt-3 mb-2"></div>
+              </div>
+            )}
+
+            {/* SECTION C: WHY CHOOSE US (From User Reference Image) */}
+            {doc.includeWhyChooseUs !== false && activeWhyChoose.length > 0 && (
+              <div className="my-3">
+                <div className="font-bold text-[#8C692D] text-[13.5px] mb-1.5 font-['Outfit',sans-serif] flex items-center">
+                  <Sparkles className="w-4 h-4 mr-1.5 text-[#8C692D]" />
+                  <span>Why Work With Fusion Bells Films?</span>
+                </div>
+                <p className="text-[10.5px] text-slate-700 leading-relaxed mb-2 font-medium italic">
+                  Your wedding is a once-in-a-lifetime celebration. We tell your love story with creativity, emotion, and attention to detail.
+                </p>
+                <div className="grid grid-cols-2 gap-x-6 gap-y-1.5 text-[10.5px]">
+                  {activeWhyChoose.map((item) => (
+                    <div key={item.id} className="flex items-start space-x-1.5">
+                      <span className="text-sm shrink-0">{item.icon}</span>
+                      <div>
+                        <span className="font-bold text-slate-900">{item.title}: </span>
+                        <span className="text-slate-600 leading-snug">{item.description}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="w-full border-b border-[#8C692D] mt-3 mb-2"></div>
+              </div>
+            )}
+
             {/* Terms & Conditions Section (2 Columns) */}
             <div className="mt-1">
-              <div className="font-bold text-[#8C692D] text-[13.5px] mb-1.5 font-['Outfit',sans-serif]">
-                Terms & Conditions
+              <div className="font-bold text-[#8C692D] text-[13.5px] mb-1.5 font-['Outfit',sans-serif] flex items-center">
+                <ShieldCheck className="w-4 h-4 mr-1.5 text-[#8C692D]" />
+                <span>Terms & Conditions</span>
               </div>
               <div className="grid grid-cols-2 gap-x-8 text-[10.2px] leading-[1.38] text-slate-800">
                 {/* Left Terms Column */}
