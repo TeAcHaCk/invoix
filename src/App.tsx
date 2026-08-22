@@ -7,6 +7,7 @@ import { InvoiceDocumentView } from './components/InvoiceDocumentView';
 import { StudioSettingsModal } from './components/StudioSettingsModal';
 import { HistoryVaultModal, saveDocumentToVault } from './components/HistoryVaultModal';
 import { WhatsAppShareModal } from './components/WhatsAppShareModal';
+import { PinLockScreen } from './components/PinLockScreen';
 import { exportDocumentToPdf, printDocument } from './utils/pdfGenerator';
 import confetti from 'canvas-confetti';
 import {
@@ -32,6 +33,17 @@ export function App() {
     return getDefaultDocument();
   });
 
+  const [isUnlocked, setIsUnlocked] = useState<boolean>(() => {
+    const sessionUnlocked = sessionStorage.getItem('fbf_session_unlocked');
+    if (sessionUnlocked === 'true') return true;
+
+    const rememberUntil = localStorage.getItem('fbf_device_unlocked_until');
+    if (rememberUntil && parseInt(rememberUntil, 10) > Date.now()) {
+      return true;
+    }
+    return false;
+  });
+
   const [zoomScale, setZoomScale] = useState<number>(0.92);
   const [isExporting, setIsExporting] = useState<boolean>(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
@@ -39,6 +51,22 @@ export function App() {
   const [isWhatsAppOpen, setIsWhatsAppOpen] = useState<boolean>(false);
   const [mobileActiveView, setMobileActiveView] = useState<'editor' | 'preview'>('editor');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const handleUnlock = (rememberDevice: boolean) => {
+    setIsUnlocked(true);
+    sessionStorage.setItem('fbf_session_unlocked', 'true');
+    if (rememberDevice) {
+      const thirtyDays = Date.now() + 30 * 24 * 60 * 60 * 1000;
+      localStorage.setItem('fbf_device_unlocked_until', thirtyDays.toString());
+    }
+    showToast('Studio access granted.');
+  };
+
+  const handleLockStudio = () => {
+    setIsUnlocked(false);
+    sessionStorage.removeItem('fbf_session_unlocked');
+    localStorage.removeItem('fbf_device_unlocked_until');
+  };
 
   // Autosave current draft to localStorage
   useEffect(() => {
@@ -115,6 +143,19 @@ export function App() {
     showToast(`Watermark ${!document.watermark.enabled ? 'Enabled' : 'Disabled'}`);
   };
 
+  // Studio Passcode Gate Screen
+  if (!isUnlocked && document.studio.pinSecurityEnabled !== false) {
+    return (
+      <PinLockScreen
+        expectedPin={document.studio.securityPin || '4882'}
+        onUnlock={handleUnlock}
+        studioName={document.studio.name}
+        studioTagline={document.studio.tagline}
+        logoUrl={document.studio.logoUrl}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-['Plus_Jakarta_Sans',sans-serif]">
       {/* Top Navbar */}
@@ -129,6 +170,7 @@ export function App() {
         onResetSample={handleResetSample}
         isExporting={isExporting}
         onToggleWatermark={handleToggleWatermark}
+        onLockStudio={handleLockStudio}
       />
 
       {/* Mobile View Toggle Bar */}

@@ -10,6 +10,7 @@ import {
   Sparkles,
   RotateCcw,
   Camera,
+  Lock,
 } from 'lucide-react';
 
 interface NavbarProps {
@@ -23,6 +24,7 @@ interface NavbarProps {
   onResetSample: () => void;
   isExporting: boolean;
   onToggleWatermark: () => void;
+  onLockStudio?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -36,6 +38,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onResetSample,
   isExporting,
   onToggleWatermark,
+  onLockStudio,
 }) => {
   return (
     <header className="bg-slate-950/90 backdrop-blur-md border-b border-slate-800/80 sticky top-0 z-40 px-4 lg:px-8 py-3 select-none">
@@ -149,6 +152,18 @@ export const Navbar: React.FC<NavbarProps> = ({
           >
             <Settings className="w-4 h-4" />
           </button>
+
+          {/* Lock Studio Portal */}
+          {onLockStudio && (
+            <button
+              type="button"
+              onClick={onLockStudio}
+              className="p-2 text-slate-400 hover:text-amber-300 hover:bg-slate-900 rounded-lg border border-slate-800 transition-colors"
+              title="Lock Studio Portal"
+            >
+              <Lock className="w-4 h-4 text-amber-400" />
+            </button>
+          )}
 
           {/* Reset to Sample */}
           <button

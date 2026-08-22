@@ -83,6 +83,8 @@ export interface StudioProfile {
   ifscCode?: string;
   accountHolder?: string;
   signatureUrl?: string;
+  securityPin?: string; // Default: '4882'
+  pinSecurityEnabled?: boolean;
 }
 
 export interface QuotationDocument {
