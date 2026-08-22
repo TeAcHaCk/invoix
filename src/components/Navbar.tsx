@@ -11,6 +11,7 @@ import {
   RotateCcw,
   Camera,
   Lock,
+  Plus,
 } from 'lucide-react';
 
 interface NavbarProps {
@@ -22,6 +23,7 @@ interface NavbarProps {
   onOpenVault: () => void;
   onOpenSettings: () => void;
   onResetSample: () => void;
+  onNewDocument?: () => void;
   isExporting: boolean;
   onToggleWatermark: () => void;
   onLockStudio?: () => void;
@@ -36,6 +38,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenVault,
   onOpenSettings,
   onResetSample,
+  onNewDocument,
   isExporting,
   onToggleWatermark,
   onLockStudio,
@@ -87,6 +90,19 @@ export const Navbar: React.FC<NavbarProps> = ({
             <Sparkles className="w-3.5 h-3.5 text-amber-400" />
             <span>Watermark: {doc.watermark.enabled ? 'ON' : 'OFF'}</span>
           </button>
+
+          {/* New Blank Document */}
+          {onNewDocument && (
+            <button
+              type="button"
+              onClick={onNewDocument}
+              className="flex items-center space-x-1.5 px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 text-xs font-semibold rounded-lg border border-amber-500/30 transition-colors"
+              title="Start a new blank quotation"
+            >
+              <Plus className="w-3.5 h-3.5 text-amber-400" />
+              <span>New</span>
+            </button>
+          )}
 
           {/* Save to Vault */}
           <button

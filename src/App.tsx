@@ -22,10 +22,17 @@ import {
 
 export function App() {
   const [document, setDocument] = useState<QuotationDocument>(() => {
-    const savedLast = localStorage.getItem('fbf_current_document');
+    // Clear legacy dummy cache if any
+    localStorage.removeItem('fbf_current_document');
+    localStorage.removeItem('fbf_current_document_v2');
+
+    const savedLast = localStorage.getItem('fbf_current_document_v3');
     if (savedLast) {
       try {
-        return JSON.parse(savedLast);
+        const parsed = JSON.parse(savedLast);
+        if (parsed && parsed.client?.nameOfEvent !== 'Walima' && parsed.client?.address !== 'Vivek Nagar, Bangalore') {
+          return parsed;
+        }
       } catch (e) {
         console.error('Error loading last document', e);
       }
@@ -87,7 +94,7 @@ export function App() {
 
   // Autosave current draft to localStorage
   useEffect(() => {
-    localStorage.setItem('fbf_current_document', JSON.stringify(document));
+    localStorage.setItem('fbf_current_document_v3', JSON.stringify(document));
   }, [document]);
 
   const showToast = (msg: string) => {
@@ -142,10 +149,21 @@ export function App() {
     showToast('Studio profile updated!');
   };
 
+  const handleNewDocument = () => {
+    if (window.confirm('Start a new blank quotation?')) {
+      const fresh = getDefaultDocument();
+      setDocument(fresh);
+      localStorage.setItem('fbf_current_document_v3', JSON.stringify(fresh));
+      showToast('New blank quotation started!');
+    }
+  };
+
   const handleResetSample = () => {
-    if (window.confirm('Reset all fields to the default Fusion Bells Films sample template?')) {
-      setDocument(getDefaultDocument());
-      showToast('Reset to default sample template');
+    if (window.confirm('Reset all fields to a fresh blank quotation template?')) {
+      const fresh = getDefaultDocument();
+      setDocument(fresh);
+      localStorage.setItem('fbf_current_document_v3', JSON.stringify(fresh));
+      showToast('Reset to fresh quotation template');
     }
   };
 
@@ -186,6 +204,7 @@ export function App() {
         onOpenVault={() => setIsVaultOpen(true)}
         onOpenSettings={() => setIsSettingsOpen(true)}
         onResetSample={handleResetSample}
+        onNewDocument={handleNewDocument}
         isExporting={isExporting}
         onToggleWatermark={handleToggleWatermark}
         onLockStudio={handleLockStudio}
