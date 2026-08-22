@@ -36,14 +36,9 @@ export const StudioLoginScreen: React.FC<StudioLoginScreenProps> = ({
       onLoginSuccess(remember);
     } else {
       setError(true);
-      setErrorMessage('Invalid studio username or password.');
+      setErrorMessage('Invalid username or password. Please try again.');
       setTimeout(() => setError(false), 2500);
     }
-  };
-
-  const handleFillDemo = () => {
-    setUsername(expectedUsername || 'fusionbells');
-    setPassword(expectedPassword || 'fbf@2026');
   };
 
   return (
@@ -97,7 +92,7 @@ export const StudioLoginScreen: React.FC<StudioLoginScreenProps> = ({
           {/* Username Field */}
           <div>
             <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-              Studio Username
+              Username
             </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
@@ -107,7 +102,7 @@ export const StudioLoginScreen: React.FC<StudioLoginScreenProps> = ({
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder="e.g. fusionbells"
+                placeholder="Enter username"
                 autoCapitalize="none"
                 autoCorrect="off"
                 required
@@ -119,7 +114,7 @@ export const StudioLoginScreen: React.FC<StudioLoginScreenProps> = ({
           {/* Password Field */}
           <div>
             <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-              Studio Password
+              Password
             </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
@@ -129,7 +124,7 @@ export const StudioLoginScreen: React.FC<StudioLoginScreenProps> = ({
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter password"
+                placeholder="••••••••"
                 required
                 className="w-full bg-slate-950 border border-slate-700/80 rounded-xl pl-10 pr-11 py-3 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400 transition-all font-sans"
               />
@@ -159,15 +154,8 @@ export const StudioLoginScreen: React.FC<StudioLoginScreenProps> = ({
                 onChange={(e) => setRemember(e.target.checked)}
                 className="rounded bg-slate-950 border-slate-700 text-amber-500 focus:ring-0 accent-amber-400 cursor-pointer"
               />
-              <span>Remember me (30 Days)</span>
+              <span>Remember me on this device</span>
             </label>
-            <button
-              type="button"
-              onClick={handleFillDemo}
-              className="text-[11px] text-amber-400 hover:underline"
-            >
-              Auto-Fill Default
-            </button>
           </div>
 
           {/* Submit Button */}
@@ -182,15 +170,11 @@ export const StudioLoginScreen: React.FC<StudioLoginScreenProps> = ({
         </form>
 
         {/* Footer Note */}
-        <div className="mt-6 pt-4 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between text-[11px] text-slate-500 gap-2">
-          <span className="flex items-center space-x-1">
+        <div className="mt-6 pt-4 border-t border-slate-800/80 flex items-center justify-center text-[11px] text-slate-500">
+          <span className="flex items-center space-x-1.5">
             <ShieldCheck className="w-3.5 h-3.5 text-amber-500/70" />
-            <span>Encrypted Session</span>
+            <span>Authorized Studio Personnel Only • 256-bit Encrypted</span>
           </span>
-          <div className="text-[10.5px] text-slate-400 text-center sm:text-right">
-            <span>Default: </span>
-            <code className="text-amber-300">fusionbells</code> / <code className="text-amber-300">fbf@2026</code>
-          </div>
         </div>
       </div>
     </div>
