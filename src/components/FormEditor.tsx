@@ -156,10 +156,7 @@ export const FormEditor: React.FC<FormEditorProps> = ({
   };
 
   const handleUpdateCoverageServices = (id: string, servicesString: string) => {
-    const servicesArray = servicesString
-      .split('\n')
-      .map((s) => s.trim())
-      .filter((s) => s.length > 0);
+    const servicesArray = servicesString.split('\n');
     update({
       eventCoverage: doc.eventCoverage.map((item) =>
         item.id === id ? { ...item, services: servicesArray } : item

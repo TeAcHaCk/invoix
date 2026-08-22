@@ -171,9 +171,11 @@ export const InvoiceDocumentView: React.FC<InvoiceDocumentViewProps> = ({
                         </div>
                       )}
                       <ul className="space-y-0.5 text-slate-800 font-medium">
-                        {item.services.map((svc, idx) => (
-                          <li key={idx} className="leading-snug">{svc}</li>
-                        ))}
+                        {item.services
+                          .filter((svc) => svc.trim().length > 0)
+                          .map((svc, idx) => (
+                            <li key={idx} className="leading-snug">{svc}</li>
+                          ))}
                       </ul>
                     </div>
                   ))
