@@ -222,50 +222,66 @@ export const StudioSettingsModal: React.FC<StudioSettingsModalProps> = ({
             </div>
           </div>
 
-          {/* Studio Access Security & PIN */}
+          {/* Studio Access Security & Credentials */}
           <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-4 space-y-3">
             <div className="flex items-center justify-between border-b border-slate-800 pb-2">
               <div className="flex items-center space-x-2">
                 <ShieldCheck className="w-4 h-4 text-amber-400" />
                 <span className="font-semibold text-amber-200 uppercase font-['Outfit']">
-                  Studio Security & Passcode
+                  Studio Security & Login Credentials
                 </span>
               </div>
               <label className="flex items-center space-x-2 cursor-pointer text-xs">
                 <input
                   type="checkbox"
-                  checked={formData.pinSecurityEnabled !== false}
+                  checked={formData.authEnabled !== false}
                   onChange={(e) =>
-                    setFormData({ ...formData, pinSecurityEnabled: e.target.checked })
+                    setFormData({ ...formData, authEnabled: e.target.checked })
                   }
                   className="rounded bg-slate-900 border-slate-700 text-amber-500 focus:ring-0 accent-amber-400 cursor-pointer"
                 />
-                <span className="text-slate-300">Require PIN to Open App</span>
+                <span className="text-slate-300">Require Login to Open App</span>
               </label>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-slate-300 font-medium mb-1">
-                  Studio Security PIN (Passcode):
+                  Studio Username:
                 </label>
                 <input
                   type="text"
-                  maxLength={6}
-                  value={formData.securityPin || '4882'}
+                  value={formData.adminUsername || 'fusionbells'}
                   onChange={(e) =>
                     setFormData({
                       ...formData,
-                      securityPin: e.target.value.replace(/[^0-9]/g, ''),
+                      adminUsername: e.target.value,
                     })
                   }
-                  placeholder="4882"
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-amber-300 font-mono font-bold text-sm tracking-widest focus:outline-none focus:border-amber-500"
+                  placeholder="fusionbells"
+                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 font-mono text-sm focus:outline-none focus:border-amber-500"
                 />
-                <p className="text-[11px] text-slate-500 mt-1">
-                  Default: <code>4882</code>. Used to unlock the app when visiting the URL.
-                </p>
+              </div>
+              <div>
+                <label className="block text-slate-300 font-medium mb-1">
+                  Studio Password:
+                </label>
+                <input
+                  type="text"
+                  value={formData.adminPassword || 'fbf@2026'}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      adminPassword: e.target.value,
+                    })
+                  }
+                  placeholder="fbf@2026"
+                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-amber-300 font-mono text-sm focus:outline-none focus:border-amber-500"
+                />
               </div>
             </div>
+            <p className="text-[11px] text-slate-500">
+              Default credentials: Username: <code>fusionbells</code> | Password: <code>fbf@2026</code>.
+            </p>
           </div>
         </div>
 

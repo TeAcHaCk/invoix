@@ -83,8 +83,9 @@ export interface StudioProfile {
   ifscCode?: string;
   accountHolder?: string;
   signatureUrl?: string;
-  securityPin?: string; // Default: '4882'
-  pinSecurityEnabled?: boolean;
+  authEnabled?: boolean;
+  adminUsername?: string; // Default: 'fusionbells'
+  adminPassword?: string; // Default: 'fbf@2026'
 }
 
 export interface QuotationDocument {

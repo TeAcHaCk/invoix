@@ -7,7 +7,7 @@ import { InvoiceDocumentView } from './components/InvoiceDocumentView';
 import { StudioSettingsModal } from './components/StudioSettingsModal';
 import { HistoryVaultModal, saveDocumentToVault } from './components/HistoryVaultModal';
 import { WhatsAppShareModal } from './components/WhatsAppShareModal';
-import { PinLockScreen } from './components/PinLockScreen';
+import { StudioLoginScreen } from './components/StudioLoginScreen';
 import { exportDocumentToPdf, printDocument } from './utils/pdfGenerator';
 import confetti from 'canvas-confetti';
 import {
@@ -51,6 +51,23 @@ export function App() {
   const [isWhatsAppOpen, setIsWhatsAppOpen] = useState<boolean>(false);
   const [mobileActiveView, setMobileActiveView] = useState<'editor' | 'preview'>('editor');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // Responsive mobile canvas auto-fit
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 640) {
+        const fitScale = Math.max(0.40, Math.min(0.55, (window.innerWidth - 32) / 794));
+        setZoomScale(fitScale);
+      } else if (window.innerWidth < 1024) {
+        setZoomScale(0.72);
+      } else {
+        setZoomScale(0.92);
+      }
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const handleUnlock = (rememberDevice: boolean) => {
     setIsUnlocked(true);
@@ -143,12 +160,13 @@ export function App() {
     showToast(`Watermark ${!document.watermark.enabled ? 'Enabled' : 'Disabled'}`);
   };
 
-  // Studio Passcode Gate Screen
-  if (!isUnlocked && document.studio.pinSecurityEnabled !== false) {
+  // Studio Authentication Gate Screen
+  if (!isUnlocked && document.studio.authEnabled !== false) {
     return (
-      <PinLockScreen
-        expectedPin={document.studio.securityPin || '4882'}
-        onUnlock={handleUnlock}
+      <StudioLoginScreen
+        expectedUsername={document.studio.adminUsername || 'fusionbells'}
+        expectedPassword={document.studio.adminPassword || 'fbf@2026'}
+        onLoginSuccess={handleUnlock}
         studioName={document.studio.name}
         studioTagline={document.studio.tagline}
         logoUrl={document.studio.logoUrl}

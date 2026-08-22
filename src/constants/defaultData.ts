@@ -16,8 +16,9 @@ export const DEFAULT_STUDIO: StudioProfile = {
   accountNumber: '50200088991122',
   ifscCode: 'HDFC0001234',
   accountHolder: 'FUSION BELLS FILMS',
-  securityPin: '4882',
-  pinSecurityEnabled: true,
+  authEnabled: true,
+  adminUsername: 'fusionbells',
+  adminPassword: 'fbf@2026',
 };
 
 export const DEFAULT_SERVICES = [
