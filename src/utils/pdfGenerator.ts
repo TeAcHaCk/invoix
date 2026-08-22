@@ -32,11 +32,19 @@ export async function exportDocumentToPdf(
         pdf.addPage('a4', 'portrait');
       }
 
+      // Generate ultra-crisp unscaled image regardless of device viewport/zoom
       const imgData = await toPng(pageEl, {
         quality: 0.98,
-        pixelRatio: 2.5,
+        pixelRatio: 2,
         backgroundColor: '#ffffff',
         cacheBust: true,
+        width: 794,
+        style: {
+          transform: 'none',
+          margin: '0',
+          maxWidth: 'none',
+          width: '794px',
+        },
         filter: (node) => {
           if (node instanceof HTMLElement && node.classList.contains('no-print')) {
             return false;
@@ -97,9 +105,16 @@ export async function generatePdfBlob(
 
       const imgData = await toPng(pageEl, {
         quality: 0.98,
-        pixelRatio: 2.5,
+        pixelRatio: 2,
         backgroundColor: '#ffffff',
         cacheBust: true,
+        width: 794,
+        style: {
+          transform: 'none',
+          margin: '0',
+          maxWidth: 'none',
+          width: '794px',
+        },
         filter: (node) => {
           if (node instanceof HTMLElement && node.classList.contains('no-print')) {
             return false;

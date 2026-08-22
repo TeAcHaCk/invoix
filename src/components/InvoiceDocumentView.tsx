@@ -30,8 +30,8 @@ export const InvoiceDocumentView: React.FC<InvoiceDocumentViewProps> = ({
           <div
             className="print-page bg-white shadow-2xl transition-all duration-200"
             style={{
-              width: '210mm',
-              minHeight: '297mm',
+              width: '794px',
+              minHeight: '1123px',
               boxSizing: 'border-box',
             }}
           >
@@ -98,8 +98,8 @@ export const InvoiceDocumentView: React.FC<InvoiceDocumentViewProps> = ({
         <div
           className="print-page bg-white shadow-2xl relative transition-all duration-200"
           style={{
-            width: '210mm',
-            minHeight: '297mm',
+            width: '794px',
+            minHeight: '1123px',
             boxSizing: 'border-box',
           }}
         >
@@ -107,7 +107,7 @@ export const InvoiceDocumentView: React.FC<InvoiceDocumentViewProps> = ({
           <WatermarkLayer config={doc.watermark} />
 
           {/* Content Container */}
-          <div className="relative z-10 p-8 sm:p-10 text-left font-['Plus_Jakarta_Sans',sans-serif] text-slate-900 flex flex-col justify-between h-full min-h-[297mm]">
+          <div className="relative z-10 p-8 sm:p-10 text-left font-['Plus_Jakarta_Sans',sans-serif] text-slate-900 flex flex-col justify-between h-full min-h-[1123px]">
             <div>
               {/* TOP HEADER SECTION */}
               <div className="flex flex-col items-center justify-center text-center">
@@ -137,21 +137,25 @@ export const InvoiceDocumentView: React.FC<InvoiceDocumentViewProps> = ({
                 {/* Decorative top separator line */}
                 <div className="w-full border-b border-[#8C692D] mt-2 mb-2"></div>
 
-                {/* Document Type Title */}
-                <div className="flex items-center justify-between w-full">
-                  <span className="text-[10px] text-slate-400 font-medium">Page 1 of {hasPage2 ? '2' : '1'}</span>
-                  <h2 className="font-bold tracking-[0.2em] text-[16px] text-[#111111] uppercase font-['Outfit',sans-serif]">
+                {/* Document Type Title Header */}
+                <div className="relative w-full flex items-center justify-center my-1">
+                  <span className="text-[10.5px] text-slate-400 font-medium absolute left-0 whitespace-nowrap">
+                    Page 1 of {hasPage2 ? '2' : '1'}
+                  </span>
+                  <h2 className="font-bold tracking-[0.2em] text-[16px] text-[#111111] uppercase font-['Outfit',sans-serif] whitespace-nowrap">
                     QUOTATION & PROPOSAL
                   </h2>
-                  <span className="text-[10px] text-amber-700 font-bold uppercase tracking-wider font-['Outfit']">Official Proposal</span>
+                  <span className="text-[10.5px] text-amber-700 font-bold uppercase tracking-wider font-['Outfit'] absolute right-0 whitespace-nowrap">
+                    Official Proposal
+                  </span>
                 </div>
               </div>
 
               {/* Bill To & Quotation Details Grid */}
-              <div className="grid grid-cols-2 gap-8 my-2 text-[12.5px] leading-relaxed">
+              <div className="grid grid-cols-2 gap-8 my-2.5 text-[12.5px] leading-relaxed">
                 {/* Left Column: Bill To */}
                 <div>
-                  <div className="font-bold text-[#111111] text-[13px] tracking-wide mb-1 uppercase font-['Outfit',sans-serif]">
+                  <div className="font-bold text-[#111111] text-[13px] tracking-wide mb-1 uppercase font-['Outfit',sans-serif] whitespace-nowrap">
                     BILL TO
                   </div>
                   <div className="flex items-start text-slate-800">
@@ -170,7 +174,7 @@ export const InvoiceDocumentView: React.FC<InvoiceDocumentViewProps> = ({
 
                 {/* Right Column: Quotation Details */}
                 <div className="pl-4">
-                  <div className="font-bold text-[#8C692D] text-[13px] tracking-wide mb-1 uppercase font-['Outfit',sans-serif]">
+                  <div className="font-bold text-[#8C692D] text-[13px] tracking-wide mb-1 uppercase font-['Outfit',sans-serif] whitespace-nowrap">
                     QUOTATION DETAILS
                   </div>
                   <div className="flex items-start text-slate-800">
@@ -199,7 +203,7 @@ export const InvoiceDocumentView: React.FC<InvoiceDocumentViewProps> = ({
               <div className="grid grid-cols-2 gap-8 my-2.5 text-[12px] leading-normal">
                 {/* Event Coverage Column */}
                 <div>
-                  <div className="font-bold text-[#111111] text-[13px] tracking-wide uppercase mb-1.5 font-['Outfit',sans-serif]">
+                  <div className="font-bold text-[#111111] text-[13px] tracking-wide uppercase mb-1.5 font-['Outfit',sans-serif] whitespace-nowrap">
                     EVENT COVERAGE
                   </div>
                   {doc.eventCoverage && doc.eventCoverage.length > 0 ? (
@@ -226,7 +230,7 @@ export const InvoiceDocumentView: React.FC<InvoiceDocumentViewProps> = ({
 
                 {/* Deliverables Column */}
                 <div className="pl-4">
-                  <div className="font-bold text-[#111111] text-[13px] tracking-wide uppercase mb-1.5 font-['Outfit',sans-serif]">
+                  <div className="font-bold text-[#111111] text-[13px] tracking-wide uppercase mb-1.5 font-['Outfit',sans-serif] whitespace-nowrap">
                     DELIVERABLES
                   </div>
                   <ul className="list-disc list-inside space-y-1 text-slate-800 font-medium marker:text-[#111111]">
@@ -304,8 +308,8 @@ export const InvoiceDocumentView: React.FC<InvoiceDocumentViewProps> = ({
 
               {/* Terms & Conditions Section (2 Columns) */}
               <div className="mt-1">
-                <div className="font-bold text-[#8C692D] text-[13px] mb-1.5 font-['Outfit',sans-serif] flex items-center">
-                  <ShieldCheck className="w-3.5 h-3.5 mr-1.5 text-[#8C692D]" />
+                <div className="font-bold text-[#8C692D] text-[13px] mb-2 font-['Outfit',sans-serif] flex items-center whitespace-nowrap">
+                  <ShieldCheck className="w-3.5 h-3.5 mr-1.5 text-[#8C692D] shrink-0" />
                   <span>Standard Booking Terms</span>
                 </div>
                 <div className="grid grid-cols-2 gap-x-8 text-[10.2px] leading-[1.38] text-slate-800">
@@ -357,8 +361,8 @@ export const InvoiceDocumentView: React.FC<InvoiceDocumentViewProps> = ({
           <div
             className="print-page bg-white shadow-2xl relative transition-all duration-200 page-break-before"
             style={{
-              width: '210mm',
-              minHeight: '297mm',
+              width: '794px',
+              minHeight: '1123px',
               boxSizing: 'border-box',
             }}
           >
@@ -366,7 +370,7 @@ export const InvoiceDocumentView: React.FC<InvoiceDocumentViewProps> = ({
             <WatermarkLayer config={doc.watermark} />
 
             {/* Content Container */}
-            <div className="relative z-10 p-8 sm:p-10 text-left font-['Plus_Jakarta_Sans',sans-serif] text-slate-900 flex flex-col justify-between h-full min-h-[297mm]">
+            <div className="relative z-10 p-8 sm:p-10 text-left font-['Plus_Jakarta_Sans',sans-serif] text-slate-900 flex flex-col justify-between h-full min-h-[1123px]">
               <div>
                 {/* TOP HEADER SECTION */}
                 <div className="flex flex-col items-center justify-center text-center">
@@ -392,12 +396,16 @@ export const InvoiceDocumentView: React.FC<InvoiceDocumentViewProps> = ({
                   <div className="w-full border-b border-[#8C692D] mt-2 mb-2"></div>
 
                   {/* Document Subtitle Title */}
-                  <div className="flex items-center justify-between w-full">
-                    <span className="text-[10px] text-slate-400 font-medium">Page 2 of 2</span>
-                    <h2 className="font-bold tracking-[0.2em] text-[15px] text-[#111111] uppercase font-['Outfit',sans-serif]">
+                  <div className="relative w-full flex items-center justify-center my-1">
+                    <span className="text-[10.5px] text-slate-400 font-medium absolute left-0 whitespace-nowrap">
+                      Page 2 of 2
+                    </span>
+                    <h2 className="font-bold tracking-[0.2em] text-[15px] text-[#111111] uppercase font-['Outfit',sans-serif] whitespace-nowrap">
                       STUDIO PROPOSAL & CREW ROLES
                     </h2>
-                    <span className="text-[10px] text-amber-700 font-bold uppercase tracking-wider font-['Outfit']">Service Scope</span>
+                    <span className="text-[10.5px] text-amber-700 font-bold uppercase tracking-wider font-['Outfit'] absolute right-0 whitespace-nowrap">
+                      Service Scope
+                    </span>
                   </div>
                 </div>
 
@@ -405,8 +413,8 @@ export const InvoiceDocumentView: React.FC<InvoiceDocumentViewProps> = ({
                 {doc.includeWhyChooseUs !== false && activeWhyChoose.length > 0 && (
                   <div className="my-4">
                     <div className="bg-amber-50/70 border border-amber-500/30 rounded-xl p-4">
-                      <div className="font-bold text-[#8C692D] text-[15px] mb-1 font-['Outfit',sans-serif] flex items-center">
-                        <Sparkles className="w-4 h-4 mr-2 text-[#8C692D]" />
+                      <div className="font-bold text-[#8C692D] text-[14.5px] mb-1 font-['Outfit',sans-serif] flex items-center whitespace-nowrap">
+                        <Sparkles className="w-4 h-4 mr-2 text-[#8C692D] shrink-0" />
                         <span>Why Work With Fusion Bells Films?</span>
                       </div>
                       <p className="text-[11.5px] text-slate-700 leading-relaxed mb-3 font-medium">
@@ -438,20 +446,22 @@ export const InvoiceDocumentView: React.FC<InvoiceDocumentViewProps> = ({
                 {/* SECTION 2: CREW AND ROLE AT THE EVENT (From Reference Image 1) */}
                 {doc.includeCrewSection !== false && activeCrew.length > 0 && (
                   <div className="my-5">
-                    <div className="font-bold text-[#111111] text-[15px] mb-2 font-['Outfit',sans-serif] flex items-center justify-between">
-                      <div className="flex items-center">
-                        <Users className="w-4 h-4 mr-2 text-[#8C692D]" />
+                    <div className="font-bold text-[#111111] text-[14.5px] mb-2.5 font-['Outfit',sans-serif] flex items-center justify-between">
+                      <div className="flex items-center whitespace-nowrap">
+                        <Users className="w-4 h-4 mr-2 text-[#8C692D] shrink-0" />
                         <span>Crew and Role at the Event</span>
                       </div>
-                      <span className="text-[10.5px] text-slate-500 font-normal">Dedicated On-Site Production Team</span>
+                      <span className="text-[10.5px] text-slate-500 font-normal whitespace-nowrap">
+                        Dedicated On-Site Production Team
+                      </span>
                     </div>
 
                     <div className="border-2 border-slate-900 rounded-xl overflow-hidden shadow-sm">
                       <table className="w-full text-left text-xs">
                         <thead>
                           <tr className="bg-[#8fa6a0]/35 border-b-2 border-slate-900 text-slate-950 font-['Outfit'] font-extrabold uppercase text-[11.5px] tracking-wider">
-                            <th className="py-3 px-4 w-1/3 border-r border-slate-400">Team</th>
-                            <th className="py-3 px-4">Role & On-Site Responsibility</th>
+                            <th className="py-2.5 px-4 w-1/3 border-r border-slate-400">Team</th>
+                            <th className="py-2.5 px-4">Role & On-Site Responsibility</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-300">
@@ -473,8 +483,8 @@ export const InvoiceDocumentView: React.FC<InvoiceDocumentViewProps> = ({
 
                 {/* SECTION 3: CONTRACTUAL POLICIES & DELIVERABLES TIMELINE */}
                 <div className="my-4 p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700 space-y-2">
-                  <h4 className="font-bold text-slate-900 text-xs uppercase tracking-wider font-['Outfit'] flex items-center">
-                    <ShieldCheck className="w-3.5 h-3.5 mr-1.5 text-amber-700" />
+                  <h4 className="font-bold text-slate-900 text-xs uppercase tracking-wider font-['Outfit'] flex items-center whitespace-nowrap">
+                    <ShieldCheck className="w-3.5 h-3.5 mr-1.5 text-amber-700 shrink-0" />
                     <span>Booking, Cancellation & Data Delivery Policy</span>
                   </h4>
                   <div className="grid grid-cols-2 gap-4 text-[10.5px] leading-relaxed">
@@ -500,13 +510,17 @@ export const InvoiceDocumentView: React.FC<InvoiceDocumentViewProps> = ({
 
               {/* PAGE 2 FOOTER */}
               <div className="mt-4 pt-3 border-t border-[#8C692D] flex items-center justify-between text-xs text-slate-600">
-                <div>
-                  <p className="font-bold text-slate-900">{doc.studio.name}</p>
-                  <p className="text-[10px] text-slate-500">{doc.studio.phoneNumbers} • {doc.studio.website}</p>
+                <div className="space-y-0.5">
+                  <p className="font-bold text-slate-900 leading-none">{doc.studio.name}</p>
+                  <p className="text-[10px] text-slate-500 leading-none">{doc.studio.phoneNumbers} • {doc.studio.website}</p>
                 </div>
-                <div className="text-right">
-                  <p className="text-[10.5px] font-bold text-amber-800 font-['Outfit'] uppercase">Real Moments, Timeless Stories</p>
-                  <p className="text-[9.5px] text-slate-400">Quotation Ref: {doc.details.invoiceNo}</p>
+                <div className="text-right space-y-0.5">
+                  <p className="text-[10.5px] font-bold text-amber-800 font-['Outfit'] uppercase whitespace-nowrap leading-none">
+                    Real Moments, Timeless Stories
+                  </p>
+                  <p className="text-[9.5px] text-slate-400 whitespace-nowrap leading-none">
+                    Quotation Ref: {doc.details.invoiceNo}
+                  </p>
                 </div>
               </div>
             </div>
