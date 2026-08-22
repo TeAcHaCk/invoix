@@ -83,6 +83,59 @@ export const getTodayFormattedDate = (): string => {
   return `${day}/${month}/${year}`;
 };
 
+export const DEFAULT_WATERMARK = {
+  enabled: true,
+  type: 'monogram' as const,
+  customText: 'FBF',
+  opacity: 0.08,
+  scale: 1.1,
+  rotation: 0,
+  positionY: 25,
+  customImageUrl: '/assets/watermark.png',
+};
+
+export const getSavedStudioProfile = (): StudioProfile => {
+  try {
+    const saved = localStorage.getItem('fbf_saved_studio_profile');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      return { ...DEFAULT_STUDIO, ...parsed };
+    }
+  } catch (e) {
+    console.error('Error reading saved studio profile', e);
+  }
+  return DEFAULT_STUDIO;
+};
+
+export const saveStudioProfileToStorage = (studio: StudioProfile): void => {
+  try {
+    localStorage.setItem('fbf_saved_studio_profile', JSON.stringify(studio));
+  } catch (e) {
+    console.error('Error saving studio profile', e);
+  }
+};
+
+export const getSavedWatermarkConfig = () => {
+  try {
+    const saved = localStorage.getItem('fbf_saved_watermark_config');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      return { ...DEFAULT_WATERMARK, ...parsed };
+    }
+  } catch (e) {
+    console.error('Error reading saved watermark config', e);
+  }
+  return DEFAULT_WATERMARK;
+};
+
+export const saveWatermarkConfigToStorage = (watermark: any): void => {
+  try {
+    localStorage.setItem('fbf_saved_watermark_config', JSON.stringify(watermark));
+  } catch (e) {
+    console.error('Error saving watermark config', e);
+  }
+};
+
 export const getDefaultDocument = (): QuotationDocument => ({
   id: 'doc_' + Date.now(),
   type: 'QUOTATION',
@@ -143,16 +196,7 @@ export const getDefaultDocument = (): QuotationDocument => ({
   },
   termsAndConditions: DEFAULT_TERMS_AND_CONDITIONS,
   footerNote: 'Thank you for choosing Fusion Bells Films to capture your special moments.',
-  watermark: {
-    enabled: true,
-    type: 'monogram',
-    customText: 'FBF',
-    opacity: 0.08,
-    scale: 1.1,
-    rotation: 0,
-    positionY: 25,
-    customImageUrl: '/assets/watermark.png',
-  },
-  studio: DEFAULT_STUDIO,
+  watermark: getSavedWatermarkConfig(),
+  studio: getSavedStudioProfile(),
   updatedAt: new Date().toISOString(),
 });

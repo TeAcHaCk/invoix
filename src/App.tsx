@@ -1,6 +1,10 @@
 import { useState, useEffect } from 'react';
 import type { QuotationDocument, StudioProfile } from './types';
-import { getDefaultDocument } from './constants/defaultData';
+import {
+  getDefaultDocument,
+  saveStudioProfileToStorage,
+  saveWatermarkConfigToStorage,
+} from './constants/defaultData';
 import { Navbar } from './components/Navbar';
 import { FormEditor } from './components/FormEditor';
 import { InvoiceDocumentView } from './components/InvoiceDocumentView';
@@ -142,11 +146,12 @@ export function App() {
   };
 
   const handleStudioSave = (updatedStudio: StudioProfile) => {
+    saveStudioProfileToStorage(updatedStudio);
     setDocument((prev) => ({
       ...prev,
       studio: updatedStudio,
     }));
-    showToast('Studio profile updated!');
+    showToast('Studio profile saved as permanent default!');
   };
 
   const handleNewDocument = () => {
@@ -168,14 +173,17 @@ export function App() {
   };
 
   const handleToggleWatermark = () => {
+    const nextEnabled = !document.watermark.enabled;
+    const updatedWatermark = {
+      ...document.watermark,
+      enabled: nextEnabled,
+    };
+    saveWatermarkConfigToStorage(updatedWatermark);
     setDocument((prev) => ({
       ...prev,
-      watermark: {
-        ...prev.watermark,
-        enabled: !prev.watermark.enabled,
-      },
+      watermark: updatedWatermark,
     }));
-    showToast(`Watermark ${!document.watermark.enabled ? 'Enabled' : 'Disabled'}`);
+    showToast(`Watermark ${nextEnabled ? 'Enabled' : 'Disabled'}`);
   };
 
   // Studio Authentication Gate Screen

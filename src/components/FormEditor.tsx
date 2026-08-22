@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import type { QuotationDocument, BillType } from '../types';
 import { sanitizeContactNumber } from '../utils/formatters';
-import { getTodayFormattedDate } from '../constants/defaultData';
+import { getTodayFormattedDate, saveStudioProfileToStorage, saveWatermarkConfigToStorage } from '../constants/defaultData';
 import { ServiceMatrixBuilder } from './ServiceMatrixBuilder';
 import { WatermarkControls } from './WatermarkControls';
 import { trimTransparentImage } from '../utils/imageTrim';
@@ -49,12 +49,12 @@ export const FormEditor: React.FC<FormEditorProps> = ({
         if (event.target?.result) {
           const rawUrl = event.target.result as string;
           const trimmedUrl = await trimTransparentImage(rawUrl);
-          update({
-            studio: {
-              ...doc.studio,
-              logoUrl: trimmedUrl,
-            },
-          });
+          const updatedStudio = {
+            ...doc.studio,
+            logoUrl: trimmedUrl,
+          };
+          saveStudioProfileToStorage(updatedStudio);
+          update({ studio: updatedStudio });
         }
       };
       reader.readAsDataURL(file);
@@ -62,32 +62,32 @@ export const FormEditor: React.FC<FormEditorProps> = ({
   };
 
   const handleLogoHeightChange = (height: number) => {
-    update({
-      studio: {
-        ...doc.studio,
-        logoHeight: height,
-      },
-    });
+    const updatedStudio = {
+      ...doc.studio,
+      logoHeight: height,
+    };
+    saveStudioProfileToStorage(updatedStudio);
+    update({ studio: updatedStudio });
   };
 
   const handleLogoWidthChange = (width: number) => {
-    update({
-      studio: {
-        ...doc.studio,
-        logoWidth: width,
-      },
-    });
+    const updatedStudio = {
+      ...doc.studio,
+      logoWidth: width,
+    };
+    saveStudioProfileToStorage(updatedStudio);
+    update({ studio: updatedStudio });
   };
 
   const handleResetTopLogo = () => {
-    update({
-      studio: {
-        ...doc.studio,
-        logoUrl: '/assets/logo.png',
-        logoHeight: 130,
-        logoWidth: 320,
-      },
-    });
+    const updatedStudio = {
+      ...doc.studio,
+      logoUrl: '/assets/logo.png',
+      logoHeight: 130,
+      logoWidth: 320,
+    };
+    saveStudioProfileToStorage(updatedStudio);
+    update({ studio: updatedStudio });
   };
 
   const handleBillTypeChange = (type: BillType) => {
@@ -1116,7 +1116,10 @@ export const FormEditor: React.FC<FormEditorProps> = ({
         {activeTab === 'watermark' && (
           <WatermarkControls
             config={doc.watermark}
-            onChange={(newConfig) => update({ watermark: newConfig })}
+            onChange={(newConfig) => {
+              saveWatermarkConfigToStorage(newConfig);
+              update({ watermark: newConfig });
+            }}
           />
         )}
       </div>
