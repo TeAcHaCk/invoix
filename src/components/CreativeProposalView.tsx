@@ -97,7 +97,7 @@ export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ docu
         <div className="relative z-10 p-10 text-left text-slate-900 flex flex-col justify-between h-full min-h-[1123px]">
           <div>
             {/* TOP HEADER SECTION */}
-            <div className="flex flex-col items-center justify-center text-center">
+            <div className="w-full text-center pb-1">
               {doc.studio.logoUrl ? (
                 <div className="flex items-center justify-center mb-1">
                   <img
@@ -111,14 +111,14 @@ export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ docu
                   />
                 </div>
               ) : (
-                <>
-                  <h1 className="text-2xl font-bold tracking-[0.05em] text-[#111111] font-['Outfit',sans-serif] leading-snug mb-2 block">
+                <div className="w-full flex flex-col items-center">
+                  <h1 className="text-2xl font-extrabold tracking-[0.05em] text-[#111111] font-['Outfit',sans-serif] whitespace-nowrap leading-normal mb-1">
                     {doc.studio.name}
                   </h1>
-                  <p className="text-[10.5px] tracking-[0.15em] text-[#8C692D] uppercase font-semibold leading-normal mt-1 mb-1 block">
+                  <p className="text-[10px] tracking-[0.15em] text-[#8C692D] uppercase font-semibold whitespace-nowrap leading-normal">
                     {doc.studio.tagline}
                   </p>
-                </>
+                </div>
               )}
 
               {/* Decorative top separator line */}
