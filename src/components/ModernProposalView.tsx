@@ -90,7 +90,7 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
       >
         <WatermarkLayer config={doc.watermark} />
 
-        <div className="relative z-10 p-8 sm:p-10 text-left text-slate-900 flex flex-col justify-between h-full min-h-[1123px]">
+        <div className="relative z-10 p-10 text-left text-slate-900 flex flex-col justify-between h-full min-h-[1123px]">
           <div>
             {/* Header / Brand Block */}
             <div className="flex items-start justify-between border-b-2 border-slate-900 pb-5">
@@ -200,12 +200,12 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
               <div className="mb-4">
                 <div className="flex items-center space-x-2 border-b border-slate-200/90 pb-1.5 mb-2.5">
                   <Layers className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                  <h4 className="text-[11px] font-bold text-slate-900 uppercase tracking-wide font-['Outfit'] leading-tight">
-                    {preset.scopeSectionTitle || 'SCOPE OF WORK & PHASES'}
+                  <h4 className="text-[11px] font-bold text-slate-900 uppercase tracking-normal font-['Outfit'] whitespace-nowrap">
+                    {preset.scopeSectionTitle || 'Project Phases & SOW Milestones'}
                   </h4>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <div className="grid grid-cols-2 gap-2.5">
                   {activeMilestones.slice(0, 4).map((m, idx) => (
                     <div
                       key={m.id || idx}
@@ -235,8 +235,8 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
               <div className="flex items-center justify-between border-b border-slate-200/90 pb-1.5 mb-2.5">
                 <div className="flex items-center space-x-2">
                   <Sparkles className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                  <h4 className="text-[11px] font-bold text-slate-900 uppercase tracking-wide font-['Outfit'] leading-tight">
-                    ITEMIZED INVESTMENT SCHEDULE
+                  <h4 className="text-[11px] font-bold text-slate-900 uppercase tracking-normal font-['Outfit'] whitespace-nowrap">
+                    Itemized Investment Schedule
                   </h4>
                 </div>
                 <span className="text-[10px] text-slate-400 font-mono">Currency: {currency.code} ({currency.symbol})</span>
@@ -325,9 +325,9 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
               {/* Payment Terms Milestones */}
               <div className="bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-[11px]">
                 <div className="flex items-center space-x-1.5 pb-1 mb-2 border-b border-slate-200/80">
-                  <Clock className="w-3.5 h-3.5 text-amber-700 shrink-0" />
-                  <span className="font-bold text-slate-900 uppercase tracking-wide text-[10px] font-['Outfit'] leading-tight">
-                    MILESTONE PAYMENT TERMS
+                  <Clock className="w-3 h-3 text-amber-700 shrink-0" />
+                  <span className="font-bold text-slate-900 uppercase tracking-normal text-[9px] font-['Outfit'] whitespace-nowrap">
+                    Milestone Payment Terms
                   </span>
                 </div>
                 <div className="space-y-1">
@@ -353,9 +353,9 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
               {/* Deliverables Checklist */}
               <div className="bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-[11px]">
                 <div className="flex items-center space-x-1.5 pb-1 mb-2 border-b border-slate-200/80">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                  <span className="font-bold text-slate-900 uppercase tracking-wide text-[10px] font-['Outfit'] leading-tight">
-                    INCLUDED DELIVERABLES
+                  <CheckCircle2 className="w-3 h-3 text-emerald-600 shrink-0" />
+                  <span className="font-bold text-slate-900 uppercase tracking-normal text-[9px] font-['Outfit'] whitespace-nowrap">
+                    Included Key Deliverables
                   </span>
                 </div>
                 <ul className="space-y-1 text-[10.5px] text-slate-700">
@@ -392,7 +392,7 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
         >
           <WatermarkLayer config={doc.watermark} />
 
-          <div className="relative z-10 p-8 sm:p-10 text-left font-['Plus_Jakarta_Sans',sans-serif] text-slate-900 flex flex-col justify-between h-full min-h-[1123px]">
+          <div className="relative z-10 p-10 text-left font-['Plus_Jakarta_Sans',sans-serif] text-slate-900 flex flex-col justify-between h-full min-h-[1123px]">
             <div>
               {/* Header Mini */}
               <div className="flex items-center justify-between border-b border-slate-200 pb-3 mb-4">
@@ -414,8 +414,8 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
                 <div className="mb-5">
                   <div className="flex items-center space-x-2 border-b border-slate-200/90 pb-1.5 mb-2.5">
                     <Award className="w-3.5 h-3.5 text-amber-700 shrink-0" />
-                    <h4 className="text-[11px] font-bold text-slate-900 uppercase tracking-wide font-['Outfit'] leading-tight">
-                      {preset.teamSectionTitle || 'ASSIGNED EXPERTS & KEY PERSONNEL'}
+                    <h4 className="text-[11px] font-bold text-slate-900 uppercase tracking-normal font-['Outfit'] whitespace-nowrap">
+                      {preset.teamSectionTitle || 'Assigned Experts & Key Personnel'}
                     </h4>
                   </div>
                   <div className="grid grid-cols-2 gap-2.5">
@@ -434,8 +434,8 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
                 <div className="mb-5">
                   <div className="flex items-center space-x-2 border-b border-slate-200/90 pb-1.5 mb-2.5">
                     <ShieldCheck className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
-                    <h4 className="text-[11px] font-bold text-slate-900 uppercase tracking-wide font-['Outfit'] leading-tight">
-                      WHY PARTNER WITH US & QUALITY COMMITMENTS
+                    <h4 className="text-[11px] font-bold text-slate-900 uppercase tracking-normal font-['Outfit'] whitespace-nowrap">
+                      Why Partner With Us & Quality Commitments
                     </h4>
                   </div>
                   <div className="grid grid-cols-2 gap-2.5">
@@ -457,8 +457,8 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
                 <div className="mb-5">
                   <div className="flex items-center space-x-2 border-b border-slate-200/90 pb-1.5 mb-2.5">
                     <FileText className="w-3.5 h-3.5 text-slate-700 shrink-0" />
-                    <h4 className="text-[11px] font-bold text-slate-900 uppercase tracking-wide font-['Outfit'] leading-tight">
-                      TERMS OF ENGAGEMENT & ACCEPTANCE CRITERIA
+                    <h4 className="text-[11px] font-bold text-slate-900 uppercase tracking-normal font-['Outfit'] whitespace-nowrap">
+                      Terms of Engagement & Acceptance Criteria
                     </h4>
                   </div>
                   <ul className="space-y-1.5 text-[10.5px] text-slate-600 pl-4 list-decimal">
