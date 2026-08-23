@@ -91,7 +91,7 @@ export const FormalInvoiceView: React.FC<FormalInvoiceViewProps> = ({ document: 
 
   return (
     <div
-      className="relative w-full h-full bg-white text-slate-900 text-left p-8 sm:p-10 flex flex-col justify-between select-text min-h-[1123px]"
+      className="relative w-full h-full bg-white text-slate-900 text-left p-10 flex flex-col justify-between select-text min-h-[1123px]"
       style={{ fontFamily: `"${fontFamily}", sans-serif` }}
     >
       {/* Top Header */}
@@ -162,10 +162,10 @@ export const FormalInvoiceView: React.FC<FormalInvoiceViewProps> = ({ document: 
 
             {/* Status Badge */}
             <div
-              className={`mt-2.5 px-3 py-1 rounded-full border text-[11px] font-bold tracking-normal uppercase font-['Outfit'] inline-flex items-center shadow-sm ${statusBadge.color}`}
+              className={`mt-2.5 px-3 py-1 rounded-full border text-[10.5px] font-bold tracking-normal uppercase font-['Outfit'] inline-flex items-center shadow-sm whitespace-nowrap gap-1.5 ${statusBadge.color}`}
             >
               {statusBadge.icon}
-              <span>{statusBadge.label}</span>
+              <span className="whitespace-nowrap">{statusBadge.label}</span>
             </div>
           </div>
         </div>
@@ -301,9 +301,9 @@ export const FormalInvoiceView: React.FC<FormalInvoiceViewProps> = ({ document: 
 
               {/* Offline Dynamic QR Code */}
               {qrCodeDataUrl && (
-                <div className="shrink-0 flex flex-col items-center bg-white p-1.5 rounded-lg border border-slate-200 shadow-sm">
-                  <img src={qrCodeDataUrl} alt="Payment QR" className="w-24 h-24 object-contain" />
-                  <span className="text-[9px] text-slate-500 font-bold uppercase tracking-normal font-['Outfit'] mt-1">
+                <div className="shrink-0 flex flex-col items-center bg-white p-2 rounded-lg border border-slate-200 shadow-sm min-w-[90px]">
+                  <img src={qrCodeDataUrl} alt="Payment QR" className="w-20 h-20 object-contain" />
+                  <span className="text-[9px] text-slate-500 font-bold uppercase tracking-normal font-['Outfit'] mt-1 whitespace-nowrap">
                     Scan to Pay
                   </span>
                 </div>
@@ -312,7 +312,7 @@ export const FormalInvoiceView: React.FC<FormalInvoiceViewProps> = ({ document: 
           </div>
 
           {/* Right: Subtotal, Tax & Net Due Totals */}
-          <div className="w-72 bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-1.5 text-xs shrink-0">
+          <div className="w-80 bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-1.5 text-xs shrink-0">
             <div className="flex justify-between text-slate-600 text-[11px]">
               <span>Subtotal:</span>
               <span className="font-mono font-medium">{formatCurrency(subtotal, currency)}</span>
@@ -334,21 +334,21 @@ export const FormalInvoiceView: React.FC<FormalInvoiceViewProps> = ({ document: 
               </div>
             )}
 
-            <div className="border-t border-slate-300 pt-1 flex justify-between font-bold text-sm text-slate-950">
-              <span className="font-['Outfit']">Total Amount:</span>
-              <span className="font-mono text-amber-950 font-extrabold">{formatCurrency(grandTotal, currency)}</span>
+            <div className="border-t border-slate-300 pt-1.5 flex justify-between font-bold text-sm text-slate-950">
+              <span className="font-['Outfit'] whitespace-nowrap">Total Amount:</span>
+              <span className="font-mono text-amber-950 font-extrabold whitespace-nowrap">{formatCurrency(grandTotal, currency)}</span>
             </div>
 
             {amountReceived > 0 && (
               <div className="flex justify-between text-emerald-800 text-[11px] pt-0.5">
                 <span>Amount Paid:</span>
-                <span className="font-mono font-bold">{formatCurrency(amountReceived, currency)}</span>
+                <span className="font-mono font-bold whitespace-nowrap">{formatCurrency(amountReceived, currency)}</span>
               </div>
             )}
 
-            <div className="border-t-2 border-slate-900 pt-1.5 flex justify-between font-extrabold text-sm text-red-700 bg-red-50/80 -mx-1 px-1 rounded">
-              <span className="font-['Outfit'] uppercase tracking-normal">Balance Due:</span>
-              <span className="font-mono">{formatCurrency(balanceDue, currency)}</span>
+            <div className="border-t-2 border-slate-900 pt-2 pb-1 flex justify-between items-center font-extrabold text-sm text-red-700 bg-red-50/80 -mx-1.5 px-2 rounded whitespace-nowrap">
+              <span className="font-['Outfit'] uppercase tracking-normal whitespace-nowrap">Balance Due:</span>
+              <span className="font-mono whitespace-nowrap">{formatCurrency(balanceDue, currency)}</span>
             </div>
           </div>
         </div>
