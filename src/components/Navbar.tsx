@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import type { QuotationDocument } from '../types';
 import { INDUSTRY_PRESETS } from '../constants/industryPresets';
 import { useAuth } from '../context/AuthContext';
+import { isPaidPlan } from '../utils/planLimits';
 import {
   Download,
   Printer,
@@ -22,6 +23,7 @@ import {
   ChevronDown,
   MoreHorizontal,
   Zap,
+  Lock,
 } from 'lucide-react';
 
 interface NavbarProps {
@@ -79,6 +81,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onToggleWatermark,
 }) => {
   const { user, profile, isAdmin, isCloudConnected } = useAuth();
+  const isPro = isPaidPlan(profile);
   const [copiedLink, setCopiedLink] = useState(false);
   const preset = INDUSTRY_PRESETS[doc.industry] || INDUSTRY_PRESETS.creative_agency;
   const shareDropdown = useDropdown();
@@ -194,22 +197,39 @@ export const Navbar: React.FC<NavbarProps> = ({
                   {copiedLink ? <Check className="w-4 h-4 text-emerald-400" /> : <Link className="w-4 h-4 text-slate-400" />}
                   <span>{copiedLink ? 'Link Copied!' : 'Copy Client Link'}</span>
                 </button>
+
+                {/* Interactive Preview — PRO ONLY */}
                 <button
                   type="button"
-                  onClick={() => { onOpenClientInteractive(); shareDropdown.setIsOpen(false); }}
-                  className="w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs text-slate-200 hover:bg-slate-800/60 transition-colors cursor-pointer"
+                  onClick={() => {
+                    if (!isPro && onOpenUpgrade) { onOpenUpgrade('pro'); shareDropdown.setIsOpen(false); return; }
+                    onOpenClientInteractive(); shareDropdown.setIsOpen(false);
+                  }}
+                  className={`w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs transition-colors cursor-pointer ${
+                    isPro ? 'text-slate-200 hover:bg-slate-800/60' : 'text-slate-500'
+                  }`}
                 >
                   <Eye className="w-4 h-4 text-emerald-400" />
-                  <span>Interactive Preview</span>
+                  <span className="flex-1 text-left">Interactive Preview</span>
+                  {!isPro && <Lock className="w-3 h-3 text-amber-400" />}
                 </button>
+
+                {/* WhatsApp Share — PRO ONLY */}
                 <button
                   type="button"
-                  onClick={() => { onOpenWhatsApp(); shareDropdown.setIsOpen(false); }}
-                  className="w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs text-slate-200 hover:bg-slate-800/60 transition-colors cursor-pointer"
+                  onClick={() => {
+                    if (!isPro && onOpenUpgrade) { onOpenUpgrade('pro'); shareDropdown.setIsOpen(false); return; }
+                    onOpenWhatsApp(); shareDropdown.setIsOpen(false);
+                  }}
+                  className={`w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs transition-colors cursor-pointer ${
+                    isPro ? 'text-slate-200 hover:bg-slate-800/60' : 'text-slate-500'
+                  }`}
                 >
                   <Share2 className="w-4 h-4 text-emerald-400" />
-                  <span>Share via WhatsApp</span>
+                  <span className="flex-1 text-left">Share via WhatsApp</span>
+                  {!isPro && <Lock className="w-3 h-3 text-amber-400" />}
                 </button>
+
                 <button
                   type="button"
                   onClick={() => { onPrint(); shareDropdown.setIsOpen(false); }}
@@ -357,6 +377,12 @@ export const Navbar: React.FC<NavbarProps> = ({
             {user && (
               <span className="text-[11px] font-bold hidden xl:inline max-w-[80px] truncate">
                 {profile?.business_name || user.email?.split('@')[0]}
+              </span>
+            )}
+            {isPro && (
+              <span className="text-[8px] bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 px-1.5 py-0.5 rounded-full font-extrabold uppercase tracking-wider hidden sm:inline-flex items-center gap-0.5">
+                <Crown className="w-2.5 h-2.5" />
+                {profile?.plan === 'agency' ? 'AGENCY' : 'PRO'}
               </span>
             )}
           </button>

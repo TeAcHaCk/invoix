@@ -6,6 +6,9 @@ import type {
   PricingItem,
   ScopeMilestoneItem,
   DeliverableItem,
+  CrewMemberItem,
+  WhyChooseUsItem,
+  SignatoryRecord,
 } from '../types';
 import { sanitizeContactNumber } from '../utils/formatters';
 import {
@@ -18,6 +21,8 @@ import { IndustryPresetSelector } from './IndustryPresetSelector';
 import { WatermarkControls } from './WatermarkControls';
 import { AdBanner } from './AdBanner';
 import { processLogoFile } from '../utils/imageTrim';
+import { useAuth } from '../context/AuthContext';
+import { isPaidPlan } from '../utils/planLimits';
 import {
   User,
   Layers,
@@ -37,17 +42,26 @@ import {
   Type,
   ArrowUp,
   ArrowDown,
+  ShieldCheck,
+  Award,
+  FileText,
+  FileSignature,
+  Lock,
 } from 'lucide-react';
 
 interface FormEditorProps {
   document: QuotationDocument;
   onChange: (doc: QuotationDocument) => void;
+  onOpenUpgrade?: (plan?: 'pro' | 'agency') => void;
 }
 
 export const FormEditor: React.FC<FormEditorProps> = ({
   document: doc,
   onChange,
+  onOpenUpgrade,
 }) => {
+  const { profile } = useAuth();
+  const isPro = isPaidPlan(profile);
   const [activeTab, setActiveTab] = useState<string>('industry');
   const logoFileInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -270,9 +284,79 @@ export const FormEditor: React.FC<FormEditorProps> = ({
     update({ deliverables: dels });
   };
 
-  // Terms handlers
-  const handleAddTerm = () => {
-    update({ termsAndConditions: [...doc.termsAndConditions, 'New commercial term or policy clause.'] });
+  // Crew / Assigned Specialists handlers
+  const handleToggleCrewSection = () => {
+    update({ includeCrewSection: !doc.includeCrewSection });
+  };
+
+  const handleAddCrewMember = () => {
+    const newMember: CrewMemberItem = {
+      id: `crew-${Date.now()}`,
+      team: 'Specialist Role / Team Member',
+      role: 'Key responsibility, qualifications, and domain expertise description.',
+      enabled: true,
+    };
+    update({ crewMembers: [...(doc.crewMembers || []), newMember] });
+  };
+
+  const handleCrewMemberChange = (id: string, field: keyof CrewMemberItem, val: any) => {
+    const updated = (doc.crewMembers || []).map((c) => (c.id === id ? { ...c, [field]: val } : c));
+    update({ crewMembers: updated });
+  };
+
+  const handleRemoveCrewMember = (id: string) => {
+    update({ crewMembers: (doc.crewMembers || []).filter((c) => c.id !== id) });
+  };
+
+  const handleMoveCrewMember = (index: number, direction: 'up' | 'down') => {
+    const targetIdx = direction === 'up' ? index - 1 : index + 1;
+    const list = [...(doc.crewMembers || [])];
+    if (targetIdx < 0 || targetIdx >= list.length) return;
+    const temp = list[index];
+    list[index] = list[targetIdx];
+    list[targetIdx] = temp;
+    update({ crewMembers: list });
+  };
+
+  // Why Partner With Us / Commitments handlers
+  const handleToggleWhyChooseUs = () => {
+    update({ includeWhyChooseUs: !doc.includeWhyChooseUs });
+  };
+
+  const handleAddWhyChooseUs = () => {
+    const newItem: WhyChooseUsItem = {
+      id: `why-${Date.now()}`,
+      icon: '🛡️',
+      title: 'Quality Commitment Title',
+      description: 'Detailed description of your service standard, speed, or guarantee.',
+      enabled: true,
+    };
+    update({ whyChooseUs: [...(doc.whyChooseUs || []), newItem] });
+  };
+
+  const handleWhyChooseUsChange = (id: string, field: keyof WhyChooseUsItem, val: any) => {
+    const updated = (doc.whyChooseUs || []).map((w) => (w.id === id ? { ...w, [field]: val } : w));
+    update({ whyChooseUs: updated });
+  };
+
+  const handleRemoveWhyChooseUs = (id: string) => {
+    update({ whyChooseUs: (doc.whyChooseUs || []).filter((w) => w.id !== id) });
+  };
+
+  const handleMoveWhyChooseUs = (index: number, direction: 'up' | 'down') => {
+    const targetIdx = direction === 'up' ? index - 1 : index + 1;
+    const list = [...(doc.whyChooseUs || [])];
+    if (targetIdx < 0 || targetIdx >= list.length) return;
+    const temp = list[index];
+    list[index] = list[targetIdx];
+    list[targetIdx] = temp;
+    update({ whyChooseUs: list });
+  };
+
+  // Terms handlers with Reordering & Preset Add
+  const handleAddTerm = (customText?: string) => {
+    const newTerm = customText || 'New commercial term or policy clause.';
+    update({ termsAndConditions: [...doc.termsAndConditions, newTerm] });
   };
 
   const handleTermChange = (idx: number, val: string) => {
@@ -283,6 +367,26 @@ export const FormEditor: React.FC<FormEditorProps> = ({
 
   const handleRemoveTerm = (idx: number) => {
     update({ termsAndConditions: doc.termsAndConditions.filter((_, i) => i !== idx) });
+  };
+
+  const handleMoveTerm = (index: number, direction: 'up' | 'down') => {
+    const targetIdx = direction === 'up' ? index - 1 : index + 1;
+    const list = [...doc.termsAndConditions];
+    if (targetIdx < 0 || targetIdx >= list.length) return;
+    const temp = list[index];
+    list[index] = list[targetIdx];
+    list[targetIdx] = temp;
+    update({ termsAndConditions: list });
+  };
+
+  // Signatory handlers
+  const handleSignatoryChange = (field: keyof SignatoryRecord, val: any) => {
+    update({
+      signatory: {
+        ...(doc.signatory || { enabled: true, signerName: '', signerTitle: '' }),
+        [field]: val,
+      },
+    });
   };
 
   const tabs = [
@@ -414,12 +518,19 @@ export const FormEditor: React.FC<FormEditorProps> = ({
               </label>
               <select
                 value={doc.fontFamily || 'Plus Jakarta Sans'}
-                onChange={(e) => update({ fontFamily: e.target.value })}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if ((val === 'Playfair Display' || val === 'Space Grotesk') && !isPro && onOpenUpgrade) {
+                    onOpenUpgrade('pro');
+                    return;
+                  }
+                  update({ fontFamily: val });
+                }}
                 className="w-full bg-slate-900/90 border border-slate-700/70 rounded-xl px-3.5 py-2.5 text-xs text-slate-100 focus:outline-none focus:border-amber-500 input-premium"
               >
                 {fontOptions.map((f) => (
                   <option key={f.value} value={f.value}>
-                    {f.name}
+                    {f.name} {(f.value === 'Playfair Display' || f.value === 'Space Grotesk') && !isPro ? '🔒 [PRO]' : ''}
                   </option>
                 ))}
               </select>
@@ -1114,15 +1225,30 @@ export const FormEditor: React.FC<FormEditorProps> = ({
                   </div>
 
                   <div className="flex items-center justify-between pt-2 border-t border-slate-800/60">
-                    <label className="flex items-center space-x-2 cursor-pointer text-[11px] text-slate-300">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!isPro && onOpenUpgrade) {
+                          onOpenUpgrade('pro');
+                          return;
+                        }
+                        handlePricingItemChange(item.id, 'isOptional', !item.isOptional);
+                      }}
+                      className="flex items-center space-x-2 cursor-pointer text-[11px] text-slate-300 hover:text-white"
+                    >
                       <input
                         type="checkbox"
                         checked={Boolean(item.isOptional)}
-                        onChange={(e) => handlePricingItemChange(item.id, 'isOptional', e.target.checked)}
-                        className="rounded border-slate-700 text-amber-500 focus:ring-amber-500"
+                        readOnly
+                        className="rounded border-slate-700 text-amber-500 focus:ring-amber-500 pointer-events-none"
                       />
                       <span>Optional Upsell Add-on (Client can tick on interactive proposal)</span>
-                    </label>
+                      {!isPro && (
+                        <span className="text-[9px] bg-amber-500/20 text-amber-300 border border-amber-500/40 px-1.5 py-0.5 rounded-full font-bold uppercase flex items-center gap-1">
+                          <Lock className="w-2.5 h-2.5" /> PRO
+                        </span>
+                      )}
+                    </button>
                   </div>
                 </div>
               ))}
@@ -1155,12 +1281,12 @@ export const FormEditor: React.FC<FormEditorProps> = ({
         )}
 
         {/* ========================================================= */}
-        {/* TAB 6: DELIVERABLES & VALUE PROPOSITIONS                  */}
+        {/* TAB 6: DELIVERABLES, TEAM & VALUE PROPOSITIONS            */}
         {/* ========================================================= */}
         {activeTab === 'deliverables' && (
-          <div className="space-y-4 animate-fadeIn">
-            {/* Deliverables Checklist */}
-            <div className="space-y-3">
+          <div className="space-y-5 animate-fadeIn">
+            {/* 1. Deliverables Checklist */}
+            <div className="bg-slate-950/70 border border-slate-800/80 rounded-2xl p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <label className="text-xs font-bold text-amber-300 uppercase tracking-wider flex items-center space-x-1.5 font-['Outfit']">
                   <CheckSquare className="w-3.5 h-3.5" />
@@ -1180,7 +1306,7 @@ export const FormEditor: React.FC<FormEditorProps> = ({
                 {doc.deliverables.map((del, idx) => (
                   <div
                     key={del.id}
-                    className="flex items-center space-x-2.5 bg-slate-950/70 border border-slate-800/80 rounded-xl p-2.5"
+                    className="flex items-center space-x-2.5 bg-slate-900/90 border border-slate-700/70 rounded-xl p-2.5"
                   >
                     <input
                       type="checkbox"
@@ -1192,14 +1318,14 @@ export const FormEditor: React.FC<FormEditorProps> = ({
                       type="text"
                       value={del.text}
                       onChange={(e) => handleDeliverableTextChange(del.id, e.target.value)}
-                      className="flex-1 bg-slate-900/90 border border-slate-700/70 rounded-xl px-3 py-1.5 text-xs text-slate-100 focus:outline-none focus:border-amber-500 input-premium"
+                      className="flex-1 bg-slate-950/80 border border-slate-700/70 rounded-xl px-3 py-1.5 text-xs text-slate-100 focus:outline-none focus:border-amber-500 input-premium"
                     />
                     <div className="flex items-center space-x-1">
                       <button
                         type="button"
                         onClick={() => handleMoveDeliverable(idx, 'up')}
                         disabled={idx === 0}
-                        className="p-1 text-slate-400 hover:text-amber-300 disabled:opacity-30 disabled:hover:text-slate-400 rounded cursor-pointer"
+                        className="p-1 text-slate-400 hover:text-amber-300 disabled:opacity-30 rounded cursor-pointer"
                         title="Move Up"
                       >
                         <ArrowUp className="w-3 h-3" />
@@ -1208,7 +1334,7 @@ export const FormEditor: React.FC<FormEditorProps> = ({
                         type="button"
                         onClick={() => handleMoveDeliverable(idx, 'down')}
                         disabled={idx === doc.deliverables.length - 1}
-                        className="p-1 text-slate-400 hover:text-amber-300 disabled:opacity-30 disabled:hover:text-slate-400 rounded cursor-pointer"
+                        className="p-1 text-slate-400 hover:text-amber-300 disabled:opacity-30 rounded cursor-pointer"
                         title="Move Down"
                       >
                         <ArrowDown className="w-3 h-3" />
@@ -1225,6 +1351,193 @@ export const FormEditor: React.FC<FormEditorProps> = ({
                   </div>
                 ))}
               </div>
+            </div>
+
+            {/* 2. Assigned Specialists & Key Personnel */}
+            <div className="bg-slate-950/70 border border-slate-800/80 rounded-2xl p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <Award className="w-3.5 h-3.5 text-amber-400" />
+                  <label className="text-xs font-bold text-slate-200 uppercase tracking-wider font-['Outfit']">
+                    Assigned Specialists & Team
+                  </label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <button
+                    type="button"
+                    onClick={handleToggleCrewSection}
+                    className={`px-2.5 py-1 rounded-full text-xs font-medium transition-all cursor-pointer ${
+                      doc.includeCrewSection
+                        ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                        : 'bg-slate-800 text-slate-400 border border-slate-700'
+                    }`}
+                  >
+                    {doc.includeCrewSection ? 'Section Enabled' : 'Disabled'}
+                  </button>
+                  {doc.includeCrewSection && (
+                    <button
+                      type="button"
+                      onClick={handleAddCrewMember}
+                      className="px-2.5 py-1 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 rounded-xl text-xs font-semibold cursor-pointer"
+                    >
+                      + Add Specialist
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {doc.includeCrewSection && (
+                <div className="space-y-2.5 pt-1">
+                  {(doc.crewMembers || []).map((crew, idx) => (
+                    <div
+                      key={crew.id}
+                      className="bg-slate-900/90 border border-slate-700/70 rounded-xl p-3 space-y-2"
+                    >
+                      <div className="flex items-center justify-between">
+                        <input
+                          type="text"
+                          value={crew.team}
+                          onChange={(e) => handleCrewMemberChange(crew.id, 'team', e.target.value)}
+                          placeholder="Role (e.g. Senior Full-Stack Engineer)"
+                          className="flex-1 bg-slate-950/80 border border-slate-700/70 rounded-xl px-3 py-1.5 text-xs text-amber-200 font-bold focus:outline-none focus:border-amber-500 mr-2"
+                        />
+                        <div className="flex items-center space-x-1">
+                          <button
+                            type="button"
+                            onClick={() => handleMoveCrewMember(idx, 'up')}
+                            disabled={idx === 0}
+                            className="p-1 text-slate-400 hover:text-amber-300 disabled:opacity-30 rounded cursor-pointer"
+                            title="Move Up"
+                          >
+                            <ArrowUp className="w-3 h-3" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleMoveCrewMember(idx, 'down')}
+                            disabled={idx === (doc.crewMembers?.length || 1) - 1}
+                            className="p-1 text-slate-400 hover:text-amber-300 disabled:opacity-30 rounded cursor-pointer"
+                            title="Move Down"
+                          >
+                            <ArrowDown className="w-3 h-3" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveCrewMember(crew.id)}
+                            className="p-1.5 text-slate-500 hover:text-red-400 cursor-pointer"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                      <input
+                        type="text"
+                        value={crew.role}
+                        onChange={(e) => handleCrewMemberChange(crew.id, 'role', e.target.value)}
+                        placeholder="Description of responsibilities and qualifications..."
+                        className="w-full bg-slate-950/80 border border-slate-700/70 rounded-xl px-3 py-1.5 text-xs text-slate-300 focus:outline-none focus:border-amber-500"
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* 3. Quality Commitments & Why Partner With Us */}
+            <div className="bg-slate-950/70 border border-slate-800/80 rounded-2xl p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                  <label className="text-xs font-bold text-slate-200 uppercase tracking-wider font-['Outfit']">
+                    Quality Commitments & Guarantees
+                  </label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <button
+                    type="button"
+                    onClick={handleToggleWhyChooseUs}
+                    className={`px-2.5 py-1 rounded-full text-xs font-medium transition-all cursor-pointer ${
+                      doc.includeWhyChooseUs
+                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                        : 'bg-slate-800 text-slate-400 border border-slate-700'
+                    }`}
+                  >
+                    {doc.includeWhyChooseUs ? 'Section Enabled' : 'Disabled'}
+                  </button>
+                  {doc.includeWhyChooseUs && (
+                    <button
+                      type="button"
+                      onClick={handleAddWhyChooseUs}
+                      className="px-2.5 py-1 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 rounded-xl text-xs font-semibold cursor-pointer"
+                    >
+                      + Add Commitment
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {doc.includeWhyChooseUs && (
+                <div className="space-y-2.5 pt-1">
+                  {(doc.whyChooseUs || []).map((item, idx) => (
+                    <div
+                      key={item.id}
+                      className="bg-slate-900/90 border border-slate-700/70 rounded-xl p-3 space-y-2"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2 flex-1 mr-2">
+                          <input
+                            type="text"
+                            value={item.icon || '🛡️'}
+                            onChange={(e) => handleWhyChooseUsChange(item.id, 'icon', e.target.value)}
+                            className="w-10 bg-slate-950/80 border border-slate-700/70 rounded-xl py-1.5 text-center text-sm focus:outline-none focus:border-amber-500"
+                            title="Emoji / Icon"
+                          />
+                          <input
+                            type="text"
+                            value={item.title}
+                            onChange={(e) => handleWhyChooseUsChange(item.id, 'title', e.target.value)}
+                            placeholder="Title (e.g. Enterprise-Grade Security)"
+                            className="flex-1 bg-slate-950/80 border border-slate-700/70 rounded-xl px-3 py-1.5 text-xs text-slate-100 font-bold focus:outline-none focus:border-amber-500"
+                          />
+                        </div>
+                        <div className="flex items-center space-x-1">
+                          <button
+                            type="button"
+                            onClick={() => handleMoveWhyChooseUs(idx, 'up')}
+                            disabled={idx === 0}
+                            className="p-1 text-slate-400 hover:text-amber-300 disabled:opacity-30 rounded cursor-pointer"
+                            title="Move Up"
+                          >
+                            <ArrowUp className="w-3 h-3" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleMoveWhyChooseUs(idx, 'down')}
+                            disabled={idx === (doc.whyChooseUs?.length || 1) - 1}
+                            className="p-1 text-slate-400 hover:text-amber-300 disabled:opacity-30 rounded cursor-pointer"
+                            title="Move Down"
+                          >
+                            <ArrowDown className="w-3 h-3" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveWhyChooseUs(item.id)}
+                            className="p-1.5 text-slate-500 hover:text-red-400 cursor-pointer"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                      <input
+                        type="text"
+                        value={item.description}
+                        onChange={(e) => handleWhyChooseUsChange(item.id, 'description', e.target.value)}
+                        placeholder="Detailed description of commitment..."
+                        className="w-full bg-slate-950/80 border border-slate-700/70 rounded-xl px-3 py-1.5 text-xs text-slate-300 focus:outline-none focus:border-amber-500"
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -1251,90 +1564,79 @@ export const FormEditor: React.FC<FormEditorProps> = ({
                         taxConfig: {
                           ...doc.taxConfig,
                           type: e.target.value as any,
+                          percent: e.target.value === 'none' ? 0 : doc.taxConfig?.percent || 18,
                         },
                       })
                     }
-                    className="w-full bg-slate-900/90 border border-slate-700/70 rounded-xl px-3.5 py-2.5 text-xs text-slate-100 focus:outline-none focus:border-amber-500 input-premium"
+                    className="w-full bg-slate-900/90 border border-slate-700/70 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-amber-500 input-premium"
                   >
-                    <option value="none">No Tax / 0% Tax</option>
-                    <option value="gst">India GST (CGST + SGST)</option>
-                    <option value="igst">India IGST (Inter-State)</option>
-                    <option value="vat">VAT (UK / EU / UAE)</option>
-                    <option value="sales_tax">US / Canada Sales Tax</option>
-                    <option value="custom">Custom Tax</option>
+                    <option value="none">No Tax / Tax Exempt</option>
+                    <option value="gst">GST (Goods & Services Tax)</option>
+                    <option value="vat">VAT (Value Added Tax)</option>
+                    <option value="sales_tax">Sales Tax</option>
+                    <option value="custom">Custom Tax Label</option>
                   </select>
                 </div>
 
                 <div>
-                  <label className="text-[11px] font-semibold text-slate-300 block mb-1">Tax Rate (%)</label>
+                  <label className="text-[11px] font-semibold text-slate-300 block mb-1">Tax Percentage (%)</label>
                   <input
                     type="number"
-                    value={doc.taxConfig?.percent ?? doc.taxPercent ?? 0}
+                    value={doc.taxConfig?.percent || doc.taxPercent || 0}
                     onChange={(e) => {
-                      const pct = Number(e.target.value);
+                      const p = Number(e.target.value);
                       update({
-                        taxPercent: pct,
-                        taxConfig: { ...doc.taxConfig, percent: pct },
+                        taxPercent: p,
+                        taxConfig: { ...doc.taxConfig, percent: p, type: doc.taxConfig?.type || 'gst' },
                       });
                     }}
-                    className="w-full bg-slate-900/90 border border-slate-700/70 rounded-xl px-3.5 py-2.5 text-xs text-slate-100 focus:outline-none focus:border-amber-500 font-mono input-premium"
+                    className="w-full bg-slate-900/90 border border-slate-700/70 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-amber-500 font-mono input-premium"
                   />
                 </div>
               </div>
             </div>
 
-            {/* Milestone Payment Structure */}
+            {/* Payment Milestone Structure */}
             <div className="bg-slate-950/70 border border-slate-800/80 rounded-2xl p-4 space-y-3">
               <label className="text-xs font-bold text-slate-200 uppercase tracking-wider block font-['Outfit']">
-                Milestone Payment Structure (%)
+                Milestone Payment Tranches
               </label>
 
               <div className="grid grid-cols-3 gap-2.5">
                 <div>
-                  <label className="text-[10px] text-slate-400 block mb-1">Advance Deposit %</label>
+                  <label className="text-[10px] text-slate-400 block mb-1">Advance %</label>
                   <input
                     type="number"
-                    value={doc.paymentTerms?.advancePercent || 30}
+                    value={doc.paymentTerms.advancePercent}
                     onChange={(e) =>
                       update({
-                        paymentTerms: {
-                          ...doc.paymentTerms,
-                          advancePercent: Number(e.target.value),
-                        },
+                        paymentTerms: { ...doc.paymentTerms, advancePercent: Number(e.target.value) },
                       })
                     }
                     className="w-full bg-slate-900/90 border border-slate-700/70 rounded-xl px-2.5 py-2 text-xs text-slate-100 font-mono text-center input-premium"
                   />
                 </div>
-
                 <div>
-                  <label className="text-[10px] text-slate-400 block mb-1">Interim Phase %</label>
+                  <label className="text-[10px] text-slate-400 block mb-1">Interim %</label>
                   <input
                     type="number"
-                    value={doc.paymentTerms?.afterEventPercent || 40}
+                    value={doc.paymentTerms.afterEventPercent}
                     onChange={(e) =>
                       update({
-                        paymentTerms: {
-                          ...doc.paymentTerms,
-                          afterEventPercent: Number(e.target.value),
-                        },
+                        paymentTerms: { ...doc.paymentTerms, afterEventPercent: Number(e.target.value) },
                       })
                     }
                     className="w-full bg-slate-900/90 border border-slate-700/70 rounded-xl px-2.5 py-2 text-xs text-slate-100 font-mono text-center input-premium"
                   />
                 </div>
-
                 <div>
-                  <label className="text-[10px] text-slate-400 block mb-1">Final Handover %</label>
+                  <label className="text-[10px] text-slate-400 block mb-1">Handover %</label>
                   <input
                     type="number"
-                    value={doc.paymentTerms?.balancePercent || 30}
+                    value={doc.paymentTerms.balancePercent}
                     onChange={(e) =>
                       update({
-                        paymentTerms: {
-                          ...doc.paymentTerms,
-                          balancePercent: Number(e.target.value),
-                        },
+                        paymentTerms: { ...doc.paymentTerms, balancePercent: Number(e.target.value) },
                       })
                     }
                     className="w-full bg-slate-900/90 border border-slate-700/70 rounded-xl px-2.5 py-2 text-xs text-slate-100 font-mono text-center input-premium"
@@ -1349,11 +1651,12 @@ export const FormEditor: React.FC<FormEditorProps> = ({
         {/* TAB 8: TERMS, WATERMARK & E-SIGNATURE                     */}
         {/* ========================================================= */}
         {activeTab === 'watermark-terms' && (
-          <div className="space-y-4 animate-fadeIn">
-            {/* Watermark Controls */}
+          <div className="space-y-5 animate-fadeIn">
+            {/* 1. Watermark Controls (Guarded for Pro users) */}
             <div className="bg-slate-950/70 border border-slate-800/80 rounded-2xl p-4">
               <WatermarkControls
                 config={doc.watermark}
+                onOpenUpgrade={onOpenUpgrade}
                 onChange={(w) => {
                   saveWatermarkConfigToStorage(w);
                   update({ watermark: w });
@@ -1361,40 +1664,189 @@ export const FormEditor: React.FC<FormEditorProps> = ({
               />
             </div>
 
-            {/* Terms & Conditions */}
-            <div className="bg-slate-950/70 border border-slate-800/80 rounded-2xl p-4 space-y-3">
+            {/* 2. Terms of Engagement & Policy Clauses */}
+            <div className="bg-slate-950/70 border border-slate-800/80 rounded-2xl p-4 space-y-3.5">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-slate-200 uppercase tracking-wider block font-['Outfit']">
-                  Contract Terms & Policy Clauses
-                </label>
+                <div className="flex items-center space-x-2">
+                  <FileText className="w-3.5 h-3.5 text-amber-400" />
+                  <label className="text-xs font-bold text-slate-200 uppercase tracking-wider font-['Outfit']">
+                    Commercial Terms & Policy Clauses ({doc.termsAndConditions.length})
+                  </label>
+                </div>
                 <button
                   type="button"
-                  onClick={handleAddTerm}
+                  onClick={() => handleAddTerm()}
                   className="px-2.5 py-1 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 rounded-xl text-xs font-semibold cursor-pointer"
                 >
                   + Add Clause
                 </button>
               </div>
 
+              {/* 1-Click Quick Clause Presets */}
+              <div className="p-3 bg-slate-900/70 border border-slate-800 rounded-xl space-y-1.5">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">
+                  Quick Insert Standard Clauses:
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => handleAddTerm('All custom source code and deliverable intellectual property transfer to client upon final milestone clearance.')}
+                    className="text-[10.5px] px-2 py-1 bg-slate-800 hover:bg-amber-500/20 hover:text-amber-300 text-slate-300 rounded-lg border border-slate-700/60 transition-colors cursor-pointer"
+                  >
+                    + IP & NDA Protection
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleAddTerm('Invoices are payable within 15 calendar days from milestone sign-off and issue date.')}
+                    className="text-[10.5px] px-2 py-1 bg-slate-800 hover:bg-amber-500/20 hover:text-amber-300 text-slate-300 rounded-lg border border-slate-700/60 transition-colors cursor-pointer"
+                  >
+                    + Net 15 Terms
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleAddTerm('Includes up to 2 rounds of design and scope iterations prior to staging sign-off.')}
+                    className="text-[10.5px] px-2 py-1 bg-slate-800 hover:bg-amber-500/20 hover:text-amber-300 text-slate-300 rounded-lg border border-slate-700/60 transition-colors cursor-pointer"
+                  >
+                    + 2 Scope Revisions
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleAddTerm('This quotation and bundled service pricing remain valid for 30 calendar days from issue.')}
+                    className="text-[10.5px] px-2 py-1 bg-slate-800 hover:bg-amber-500/20 hover:text-amber-300 text-slate-300 rounded-lg border border-slate-700/60 transition-colors cursor-pointer"
+                  >
+                    + 30-Day Validity
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleAddTerm('Includes 60 calendar days of post-release bug fixing and technical warranty for all outlined specifications.')}
+                    className="text-[10.5px] px-2 py-1 bg-slate-800 hover:bg-amber-500/20 hover:text-amber-300 text-slate-300 rounded-lg border border-slate-700/60 transition-colors cursor-pointer"
+                  >
+                    + 60-Day Warranty
+                  </button>
+                </div>
+              </div>
+
+              {/* Clause List with Reordering */}
               <div className="space-y-2">
                 {doc.termsAndConditions.map((term, idx) => (
-                  <div key={idx} className="flex items-center space-x-2">
+                  <div key={idx} className="flex items-center space-x-2 bg-slate-900/90 border border-slate-700/70 rounded-xl p-2">
+                    <span className="text-[11px] font-mono text-slate-500 w-5 text-center">{idx + 1}.</span>
                     <input
                       type="text"
                       value={term}
                       onChange={(e) => handleTermChange(idx, e.target.value)}
-                      className="flex-1 bg-slate-900/90 border border-slate-700/70 rounded-xl px-3 py-2 text-xs text-slate-200 input-premium"
+                      className="flex-1 bg-slate-950/80 border border-slate-700/70 rounded-xl px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-amber-500 input-premium"
                     />
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveTerm(idx)}
-                      className="p-2 text-slate-500 hover:text-red-400 cursor-pointer"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                    <div className="flex items-center space-x-1">
+                      <button
+                        type="button"
+                        onClick={() => handleMoveTerm(idx, 'up')}
+                        disabled={idx === 0}
+                        className="p-1 text-slate-400 hover:text-amber-300 disabled:opacity-30 rounded cursor-pointer"
+                        title="Move Up"
+                      >
+                        <ArrowUp className="w-3 h-3" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleMoveTerm(idx, 'down')}
+                        disabled={idx === doc.termsAndConditions.length - 1}
+                        className="p-1 text-slate-400 hover:text-amber-300 disabled:opacity-30 rounded cursor-pointer"
+                        title="Move Down"
+                      >
+                        <ArrowDown className="w-3 h-3" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveTerm(idx)}
+                        className="p-1.5 text-slate-500 hover:text-red-400 cursor-pointer"
+                        title="Delete Clause"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
+            </div>
+
+            {/* 3. Formal Signatory & Approval Sign-Off Block */}
+            <div className="bg-slate-950/70 border border-slate-800/80 rounded-2xl p-4 space-y-3.5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <FileSignature className="w-3.5 h-3.5 text-amber-400" />
+                  <label className="text-xs font-bold text-slate-200 uppercase tracking-wider font-['Outfit']">
+                    Authorized Signatory & Approval Block
+                  </label>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleSignatoryChange('enabled', !doc.signatory?.enabled)}
+                  className={`px-2.5 py-1 rounded-full text-xs font-medium transition-all cursor-pointer ${
+                    doc.signatory?.enabled !== false
+                      ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                      : 'bg-slate-800 text-slate-400 border border-slate-700'
+                  }`}
+                >
+                  {doc.signatory?.enabled !== false ? 'Sign-Off Enabled' : 'Disabled'}
+                </button>
+              </div>
+
+              {doc.signatory?.enabled !== false && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                  <div>
+                    <label className="text-[11px] font-semibold text-slate-300 block mb-1">
+                      Issuer Signatory Name
+                    </label>
+                    <input
+                      type="text"
+                      value={doc.signatory?.signerName || ''}
+                      onChange={(e) => handleSignatoryChange('signerName', e.target.value)}
+                      placeholder="e.g. Alex Mercer"
+                      className="w-full bg-slate-900/90 border border-slate-700/70 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-amber-500 input-premium"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] font-semibold text-slate-300 block mb-1">
+                      Signatory Designation / Title
+                    </label>
+                    <input
+                      type="text"
+                      value={doc.signatory?.signerTitle || ''}
+                      onChange={(e) => handleSignatoryChange('signerTitle', e.target.value)}
+                      placeholder="e.g. Managing Director / Partner"
+                      className="w-full bg-slate-900/90 border border-slate-700/70 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-amber-500 input-premium"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] font-semibold text-slate-300 block mb-1">
+                      Issue / Sign Date
+                    </label>
+                    <input
+                      type="text"
+                      value={doc.signatory?.signatureDate || doc.details.invoiceDate}
+                      onChange={(e) => handleSignatoryChange('signatureDate', e.target.value)}
+                      placeholder="DD/MM/YYYY"
+                      className="w-full bg-slate-900/90 border border-slate-700/70 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-amber-500 font-mono input-premium"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] font-semibold text-slate-300 block mb-1">
+                      Client Approver Name
+                    </label>
+                    <input
+                      type="text"
+                      value={doc.client.clientName || ''}
+                      onChange={(e) => handleClientChange('clientName', e.target.value)}
+                      placeholder="e.g. David Zhang (CTO)"
+                      className="w-full bg-slate-900/90 border border-slate-700/70 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-amber-500 input-premium"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}

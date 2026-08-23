@@ -24,6 +24,8 @@ import { InstallAppPrompt } from './components/InstallAppPrompt';
 import { UpgradePlanModal } from './components/UpgradePlanModal';
 import { saveDocument } from './services/documentService';
 import { exportDocumentToPdf, printDocument } from './utils/pdfGenerator';
+import { getVaultDocuments } from './utils/vaultStorage';
+import { isPaidPlan, FREE_PLAN_MAX_DOCUMENTS } from './utils/planLimits';
 import confetti from 'canvas-confetti';
 import {
   ZoomIn,
@@ -41,7 +43,7 @@ interface StudioWorkspaceProps {
 }
 
 function StudioWorkspace({ initialIndustry, onNavigateToAdmin, onNavigateToHome }: StudioWorkspaceProps) {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
 
   const [document, setDocument] = useState<QuotationDocument>(() => {
     if (initialIndustry) {
@@ -183,6 +185,15 @@ function StudioWorkspace({ initialIndustry, onNavigateToAdmin, onNavigateToHome 
   };
 
   const handleSaveToVault = async () => {
+    const vaultDocs = getVaultDocuments();
+    const isExisting = vaultDocs.some((d) => d.id === document.id);
+    if (!isPaidPlan(profile) && !isExisting && vaultDocs.length >= FREE_PLAN_MAX_DOCUMENTS) {
+      setUpgradePlan('pro');
+      setIsUpgradeOpen(true);
+      showToast(`Free plan limit (${FREE_PLAN_MAX_DOCUMENTS} proposals). Upgrade to Pro for unlimited storage.`);
+      return;
+    }
+
     const res = await saveDocument(document, user?.id);
     if (res.success) {
       confetti({ particleCount: 50, spread: 50, origin: { y: 0.8 } });
@@ -226,6 +237,13 @@ function StudioWorkspace({ initialIndustry, onNavigateToAdmin, onNavigateToHome 
   };
 
   const handleToggleWatermark = () => {
+    if (document.watermark?.enabled && !isPaidPlan(profile)) {
+      setUpgradePlan('pro');
+      setIsUpgradeOpen(true);
+      showToast('Watermark removal is exclusive to Invoix Pro.');
+      return;
+    }
+
     setDocument((prev) => {
       const updated = {
         ...prev,
@@ -332,6 +350,10 @@ function StudioWorkspace({ initialIndustry, onNavigateToAdmin, onNavigateToHome 
           <FormEditor
             document={document}
             onChange={setDocument}
+            onOpenUpgrade={(plan) => {
+              setUpgradePlan(plan || 'pro');
+              setIsUpgradeOpen(true);
+            }}
           />
         </div>
 
@@ -422,6 +444,10 @@ function StudioWorkspace({ initialIndustry, onNavigateToAdmin, onNavigateToHome 
         onClose={() => setIsVaultOpen(false)}
         onLoadDocument={handleLoadDocument}
         currentDocumentId={document.id}
+        onOpenUpgrade={(plan) => {
+          setUpgradePlan(plan || 'pro');
+          setIsUpgradeOpen(true);
+        }}
       />
 
       <WhatsAppShareModal

@@ -361,9 +361,21 @@ export const FormalInvoiceView: React.FC<FormalInvoiceViewProps> = ({ document: 
             <p className="font-bold text-slate-700 uppercase tracking-normal mb-0.5 font-['Outfit'] whitespace-nowrap">
               Terms & Payment Conditions:
             </p>
-            <p>1. Please quote Invoice Number on all bank transfer remittances.</p>
-            <p>2. Interest @ 1.5% per month will be charged on overdue payments.</p>
-            <p>3. This is a computer-generated commercial invoice.</p>
+            {doc.termsAndConditions && doc.termsAndConditions.length > 0 ? (
+              <div className="space-y-0.5">
+                {doc.termsAndConditions.slice(0, 3).map((term, idx) => (
+                  <p key={idx} className="line-clamp-1">
+                    {idx + 1}. {term}
+                  </p>
+                ))}
+              </div>
+            ) : (
+              <>
+                <p>1. Please quote Invoice Number on all bank transfer remittances.</p>
+                <p>2. Interest @ 1.5% per month will be charged on overdue payments.</p>
+                <p>3. This is a computer-generated commercial invoice.</p>
+              </>
+            )}
           </div>
 
           <div className="text-right flex flex-col items-end justify-end">

@@ -1,17 +1,34 @@
 import React, { useRef } from 'react';
 import type { WatermarkConfig } from '../types';
-import { Eye, EyeOff, Sliders, RotateCw, Image as ImageIcon, Type, Sparkles, Upload } from 'lucide-react';
+import { Eye, EyeOff, Sliders, RotateCw, Image as ImageIcon, Type, Sparkles, Upload, Lock } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { canDisableWatermark } from '../utils/planLimits';
 
 interface WatermarkControlsProps {
   config: WatermarkConfig;
   onChange: (newConfig: WatermarkConfig) => void;
+  onOpenUpgrade?: (plan?: 'pro' | 'agency') => void;
 }
 
-export const WatermarkControls: React.FC<WatermarkControlsProps> = ({ config, onChange }) => {
+export const WatermarkControls: React.FC<WatermarkControlsProps> = ({ config, onChange, onOpenUpgrade }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { profile } = useAuth();
+  const isPaid = canDisableWatermark(profile);
 
   const update = (partial: Partial<WatermarkConfig>) => {
     onChange({ ...config, ...partial });
+  };
+
+  const handleToggleClick = () => {
+    if (config.enabled && !isPaid) {
+      if (onOpenUpgrade) {
+        onOpenUpgrade('pro');
+      } else {
+        alert('Watermark removal is exclusive to Invoix Pro subscribers.');
+      }
+      return;
+    }
+    update({ enabled: !config.enabled });
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -38,29 +55,64 @@ export const WatermarkControls: React.FC<WatermarkControlsProps> = ({ config, on
           <h3 className="text-sm font-semibold tracking-wide text-amber-200 uppercase font-['Outfit']">
             Watermark Engine
           </h3>
+          {!isPaid && (
+            <span className="text-[9px] bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded font-mono font-bold">
+              FREE
+            </span>
+          )}
         </div>
         <button
           type="button"
-          onClick={() => update({ enabled: !config.enabled })}
-          className={`flex items-center space-x-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-all ${
+          onClick={handleToggleClick}
+          className={`flex items-center space-x-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-all cursor-pointer ${
             config.enabled
               ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 hover:bg-amber-500/30'
               : 'bg-slate-800 text-slate-400 border border-slate-700 hover:bg-slate-700'
           }`}
+          title={!isPaid ? 'Upgrade to Pro to disable watermark' : undefined}
         >
+          {!isPaid && <Lock className="w-3 h-3 text-amber-400" />}
           {config.enabled ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
           <span>{config.enabled ? 'Enabled' : 'Disabled'}</span>
         </button>
       </div>
 
-      {config.enabled && (
+      {/* FREE USER: Clean Locked State */}
+      {!isPaid ? (
+        <div className="mt-3 p-3.5 bg-slate-950/80 border border-amber-500/30 rounded-xl space-y-3">
+          <div className="flex items-start space-x-3">
+            <div className="p-2 bg-amber-500/10 rounded-lg text-amber-400 shrink-0 mt-0.5">
+              <Lock className="w-4 h-4" />
+            </div>
+            <div>
+              <h4 className="text-xs font-bold text-slate-100 font-['Outfit'] flex items-center gap-1.5">
+                <span>Default Invoix Watermark Active</span>
+                <span className="text-[9px] bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded font-mono">FREE TIER</span>
+              </h4>
+              <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
+                Free proposals include a subtle <span className="text-amber-200">"Created with Invoix"</span> watermark. Upgrade to <span className="text-amber-300 font-semibold">Invoix Pro</span> to remove all watermarks or upload your custom studio emblem.
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => onOpenUpgrade ? onOpenUpgrade('pro') : alert('Upgrade to Pro')}
+            className="w-full py-2 px-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 text-xs font-bold rounded-xl flex items-center justify-center space-x-2 shadow-md shadow-amber-500/20 transition-all cursor-pointer"
+          >
+            <Sparkles className="w-3.5 h-3.5 fill-slate-950" />
+            <span>Upgrade to Pro to Remove Watermark</span>
+          </button>
+        </div>
+      ) : config.enabled ? (
+        /* PRO / AGENCY USER: Unlocked Full Customization Suite */
         <div className="space-y-3.5 text-xs">
           {/* Watermark Type Selector */}
           <div className="grid grid-cols-2 gap-2">
             <button
               type="button"
               onClick={() => update({ type: 'monogram' })}
-              className={`flex items-center justify-center space-x-1.5 py-1.5 px-3 rounded-lg border text-xs font-medium transition-all ${
+              className={`flex items-center justify-center space-x-1.5 py-1.5 px-3 rounded-lg border text-xs font-medium transition-all cursor-pointer ${
                 config.type === 'monogram'
                   ? 'bg-amber-500/20 border-amber-500/50 text-amber-200 shadow-sm'
                   : 'bg-slate-800/60 border-slate-700/60 text-slate-400 hover:text-slate-200'
@@ -72,7 +124,7 @@ export const WatermarkControls: React.FC<WatermarkControlsProps> = ({ config, on
             <button
               type="button"
               onClick={() => update({ type: 'text' })}
-              className={`flex items-center justify-center space-x-1.5 py-1.5 px-3 rounded-lg border text-xs font-medium transition-all ${
+              className={`flex items-center justify-center space-x-1.5 py-1.5 px-3 rounded-lg border text-xs font-medium transition-all cursor-pointer ${
                 config.type === 'text'
                   ? 'bg-amber-500/20 border-amber-500/50 text-amber-200 shadow-sm'
                   : 'bg-slate-800/60 border-slate-700/60 text-slate-400 hover:text-slate-200'
@@ -111,7 +163,7 @@ export const WatermarkControls: React.FC<WatermarkControlsProps> = ({ config, on
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="flex-1 flex items-center justify-center space-x-1.5 py-1.5 px-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-slate-300 transition-colors"
+                  className="flex-1 flex items-center justify-center space-x-1.5 py-1.5 px-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-slate-300 transition-colors cursor-pointer"
                 >
                   <Upload className="w-3.5 h-3.5 text-amber-400" />
                   <span>Upload Custom Watermark</span>
@@ -120,7 +172,7 @@ export const WatermarkControls: React.FC<WatermarkControlsProps> = ({ config, on
                   <button
                     type="button"
                     onClick={() => update({ customImageUrl: '/assets/watermark.png' })}
-                    className="text-[11px] text-slate-400 hover:text-amber-300 underline"
+                    className="text-[11px] text-slate-400 hover:text-amber-300 underline cursor-pointer"
                   >
                     Reset
                   </button>
@@ -207,6 +259,10 @@ export const WatermarkControls: React.FC<WatermarkControlsProps> = ({ config, on
               />
             </div>
           </div>
+        </div>
+      ) : (
+        <div className="text-center py-4 text-xs text-slate-400">
+          Watermark is currently disabled.
         </div>
       )}
     </div>

@@ -20,13 +20,18 @@ import {
   Eye,
   ShieldCheck,
   Printer,
+  Crown,
+  Zap,
 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { isPaidPlan, FREE_PLAN_MAX_DOCUMENTS } from '../utils/planLimits';
 
 interface HistoryVaultModalProps {
   isOpen: boolean;
   onClose: () => void;
   onLoadDocument: (doc: QuotationDocument) => void;
   currentDocumentId: string;
+  onOpenUpgrade?: (plan?: 'pro' | 'agency') => void;
 }
 
 export const HistoryVaultModal: React.FC<HistoryVaultModalProps> = ({
@@ -34,7 +39,10 @@ export const HistoryVaultModal: React.FC<HistoryVaultModalProps> = ({
   onClose,
   onLoadDocument,
   currentDocumentId,
+  onOpenUpgrade,
 }) => {
+  const { profile } = useAuth();
+  const isPaid = isPaidPlan(profile);
   const [documents, setDocuments] = useState<QuotationDocument[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStatusFilter, setSelectedStatusFilter] = useState<'ALL' | 'APPROVED' | 'VIEWED' | 'DRAFT'>('ALL');
@@ -85,6 +93,14 @@ export const HistoryVaultModal: React.FC<HistoryVaultModalProps> = ({
 
   const handleDuplicate = (doc: QuotationDocument, e: React.MouseEvent) => {
     e.stopPropagation();
+    if (!isPaid && documents.length >= FREE_PLAN_MAX_DOCUMENTS) {
+      if (onOpenUpgrade) {
+        onOpenUpgrade('pro');
+      } else {
+        alert('Free plan limit reached (3 proposals). Upgrade to Pro for unlimited proposals.');
+      }
+      return;
+    }
     const newId = `doc_${Date.now()}`;
     const year = new Date().getFullYear();
     const rand = Math.floor(100 + Math.random() * 900);
@@ -129,6 +145,11 @@ export const HistoryVaultModal: React.FC<HistoryVaultModalProps> = ({
         try {
           const imported = JSON.parse(event.target?.result as string);
           if (Array.isArray(imported)) {
+            if (!isPaid && (documents.length + imported.length) > FREE_PLAN_MAX_DOCUMENTS) {
+              if (onOpenUpgrade) onOpenUpgrade('pro');
+              alert(`Free plan holds up to ${FREE_PLAN_MAX_DOCUMENTS} documents. Upgrade to Pro for unlimited storage.`);
+              return;
+            }
             imported.forEach((docItem) => saveDocumentToVault(docItem));
             setDocuments(getVaultDocuments());
             alert(`Successfully restored ${imported.length} documents into vault!`);
@@ -151,9 +172,25 @@ export const HistoryVaultModal: React.FC<HistoryVaultModalProps> = ({
               <Archive className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="text-sm font-bold text-slate-100 font-['Outfit']">
-                Document Vault & Lifecycle Intelligence ({documents.length})
-              </h2>
+              <div className="flex items-center space-x-2">
+                <h2 className="text-sm font-bold text-slate-100 font-['Outfit']">
+                  Document Vault & Intelligence
+                </h2>
+                {isPaid ? (
+                  <span className="text-[9px] bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded-full uppercase font-mono font-bold flex items-center gap-1">
+                    <Crown className="w-2.5 h-2.5" />
+                    <span>UNLIMITED PRO</span>
+                  </span>
+                ) : (
+                  <span className={`text-[9px] px-2 py-0.5 rounded-full uppercase font-mono font-bold border ${
+                    documents.length >= FREE_PLAN_MAX_DOCUMENTS
+                      ? 'bg-red-500/20 text-red-300 border-red-500/30'
+                      : 'bg-slate-800 text-slate-300 border-slate-700'
+                  }`}>
+                    {documents.length} / {FREE_PLAN_MAX_DOCUMENTS} SAVED (FREE)
+                  </span>
+                )}
+              </div>
               <p className="text-[11px] text-slate-400">
                 Track client views, audit certificates, and restore past proposals
               </p>
@@ -161,6 +198,17 @@ export const HistoryVaultModal: React.FC<HistoryVaultModalProps> = ({
           </div>
 
           <div className="flex items-center space-x-2">
+            {!isPaid && onOpenUpgrade && (
+              <button
+                type="button"
+                onClick={() => onOpenUpgrade('pro')}
+                className="px-2.5 py-1.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 text-xs font-bold rounded-xl flex items-center space-x-1 shadow-sm transition-all cursor-pointer"
+                title="Upgrade to Pro for unlimited storage"
+              >
+                <Zap className="w-3.5 h-3.5 fill-slate-950" />
+                <span className="hidden sm:inline">Upgrade Pro</span>
+              </button>
+            )}
             <button
               type="button"
               onClick={handleExportBackupJson}
