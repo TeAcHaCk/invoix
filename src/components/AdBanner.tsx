@@ -18,14 +18,9 @@ export const AdBanner: React.FC<AdBannerProps> = ({
   const { profile } = useAuth();
   const adRef = useRef<HTMLDivElement>(null);
 
-  // 1. Pro / Agency / Enterprise users get a 100% AD-FREE experience!
-  const isPaidUser = profile?.plan === 'pro' || profile?.plan === 'agency' || profile?.plan === 'enterprise';
-  if (isPaidUser) {
-    return null;
-  }
-
   const adsenseClientId = import.meta.env.VITE_ADSENSE_CLIENT_ID || 'ca-pub-9804625930174293';
-  const isLiveAdSense = typeof window !== 'undefined' && Boolean((window as any).adsbygoogle) && Boolean(adsenseClientId);
+  const isPaidUser = profile?.plan === 'pro' || profile?.plan === 'agency' || profile?.plan === 'enterprise';
+  const isLiveAdSense = typeof window !== 'undefined' && Boolean((window as any).adsbygoogle) && Boolean(adsenseClientId) && !isPaidUser;
 
   useEffect(() => {
     if (isLiveAdSense) {
@@ -36,6 +31,11 @@ export const AdBanner: React.FC<AdBannerProps> = ({
       }
     }
   }, [isLiveAdSense]);
+
+  // 1. Pro / Agency / Enterprise users get a 100% AD-FREE experience!
+  if (isPaidUser) {
+    return null;
+  }
 
   // If live AdSense is active on domain
   if (isLiveAdSense && adsenseClientId) {

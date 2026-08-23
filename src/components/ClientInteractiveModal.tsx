@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import type { QuotationDocument } from '../types';
 import { formatCurrency } from '../utils/formatters';
 import confetti from 'canvas-confetti';
@@ -34,13 +34,11 @@ export const ClientInteractiveModal: React.FC<ClientInteractiveModalProps> = ({
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   // Sync state when initialDoc changes
-  const [prevDocId, setPrevDocId] = useState(initialDoc.id);
-  if (initialDoc.id !== prevDocId) {
-    setPrevDocId(initialDoc.id);
+  useEffect(() => {
     setDoc(initialDoc);
     setSignerName(initialDoc.client.clientName || '');
     setIsSigned(Boolean(initialDoc.signatory?.clientSignedName));
-  }
+  }, [initialDoc]);
 
   if (!isOpen) return null;
 

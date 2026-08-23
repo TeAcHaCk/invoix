@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import type { StudioProfile } from '../types';
 import { Building2, X, Upload, Check, CreditCard } from 'lucide-react';
 import { trimTransparentImage } from '../utils/imageTrim';
@@ -19,12 +19,9 @@ export const StudioSettingsModal: React.FC<StudioSettingsModalProps> = ({
   const [formData, setFormData] = useState<StudioProfile>(studio);
   const logoInputRef = useRef<HTMLInputElement>(null);
 
-  // Sync state only when opening with new props
-  const [lastStudio, setLastStudio] = useState(studio);
-  if (studio !== lastStudio) {
-    setLastStudio(studio);
+  useEffect(() => {
     setFormData(studio);
-  }
+  }, [studio]);
 
   if (!isOpen) return null;
 
