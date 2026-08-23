@@ -1,3 +1,4 @@
+/// <reference types="node" />
 /**
  * Shared server-side helpers for the Invoix Vercel functions.
  *

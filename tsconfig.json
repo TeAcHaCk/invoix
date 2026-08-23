@@ -1,5 +1,17 @@
 {
   "files": [],
+  // Solution-style config. The referenced projects below each carry their own
+  // compilerOptions and are what `tsc -b` actually builds.
+  //
+  // These compilerOptions exist for one reason: Vercel compiles each /api
+  // function on its own and reads THIS file, not tsconfig.api.json. Without
+  // types: ["node"] here, the serverless functions fail to type-check on deploy
+  // with "Cannot find name 'Buffer'". The files also carry a
+  // /// <reference types="node" /> so they hold up under any config.
+  "compilerOptions": {
+    "types": ["node"],
+    "skipLibCheck": true
+  },
   "references": [
     { "path": "./tsconfig.app.json" },
     { "path": "./tsconfig.node.json" },
