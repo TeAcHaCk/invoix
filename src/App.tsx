@@ -21,6 +21,7 @@ import { LandingPage } from './components/landing/LandingPage';
 import { PrivacyPolicyPage } from './components/landing/PrivacyPolicyPage';
 import { TermsOfServicePage } from './components/landing/TermsOfServicePage';
 import { InstallAppPrompt } from './components/InstallAppPrompt';
+import { UpgradePlanModal } from './components/UpgradePlanModal';
 import { saveDocument } from './services/documentService';
 import { exportDocumentToPdf, printDocument } from './utils/pdfGenerator';
 import confetti from 'canvas-confetti';
@@ -68,6 +69,8 @@ function StudioWorkspace({ initialIndustry, onNavigateToAdmin, onNavigateToHome 
   const [isWhatsAppOpen, setIsWhatsAppOpen] = useState<boolean>(false);
   const [isInteractiveOpen, setIsInteractiveOpen] = useState<boolean>(false);
   const [isAuthOpen, setIsAuthOpen] = useState<boolean>(false);
+  const [isUpgradeOpen, setIsUpgradeOpen] = useState<boolean>(false);
+  const [upgradePlan, setUpgradePlan] = useState<'pro' | 'agency'>('pro');
   const [mobileActiveView, setMobileActiveView] = useState<'editor' | 'preview'>('editor');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -278,6 +281,10 @@ function StudioWorkspace({ initialIndustry, onNavigateToAdmin, onNavigateToHome 
         onOpenSettings={() => setIsSettingsOpen(true)}
         onOpenAuth={() => setIsAuthOpen(true)}
         onOpenAdmin={onNavigateToAdmin}
+        onOpenUpgrade={(plan) => {
+          setUpgradePlan(plan || 'pro');
+          setIsUpgradeOpen(true);
+        }}
         onNavigateToHome={onNavigateToHome}
         onNewDocument={handleNewDocument}
         onResetSample={handleResetSample}
@@ -434,6 +441,12 @@ function StudioWorkspace({ initialIndustry, onNavigateToAdmin, onNavigateToHome 
         isOpen={isAuthOpen}
         onClose={() => setIsAuthOpen(false)}
       />
+
+      <UpgradePlanModal
+        isOpen={isUpgradeOpen}
+        onClose={() => setIsUpgradeOpen(false)}
+        defaultPlan={upgradePlan}
+      />
     </div>
   );
 }
@@ -474,6 +487,8 @@ function parseCurrentRoute(): {
 
 export function App() {
   const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [isUpgradeOpen, setIsUpgradeOpen] = useState(false);
+  const [upgradePlan, setUpgradePlan] = useState<'pro' | 'agency'>('pro');
   const [selectedIndustry, setSelectedIndustry] = useState<IndustryCategory | undefined>(undefined);
   const [currentView, setCurrentView] = useState(parseCurrentRoute);
 
@@ -570,9 +585,21 @@ export function App() {
             onNavigateToPrivacy={navigateToPrivacy}
             onNavigateToTerms={navigateToTerms}
             onSelectIndustryPreset={handleSelectIndustryFromLanding}
-            onSelectPlan={() => setIsAuthOpen(true)}
+            onSelectPlan={(plan) => {
+              if (plan === 'free') {
+                navigateToStudio();
+              } else {
+                setUpgradePlan(plan);
+                setIsUpgradeOpen(true);
+              }
+            }}
           />
           <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
+          <UpgradePlanModal
+            isOpen={isUpgradeOpen}
+            onClose={() => setIsUpgradeOpen(false)}
+            defaultPlan={upgradePlan}
+          />
         </>
       ) : (
         <StudioWorkspace

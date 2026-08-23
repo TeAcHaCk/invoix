@@ -21,6 +21,7 @@ import {
   Globe,
   ChevronDown,
   MoreHorizontal,
+  Zap,
 } from 'lucide-react';
 
 interface NavbarProps {
@@ -34,6 +35,7 @@ interface NavbarProps {
   onOpenSettings: () => void;
   onOpenAuth: () => void;
   onOpenAdmin?: () => void;
+  onOpenUpgrade?: (plan?: 'pro' | 'agency') => void;
   onNavigateToHome?: () => void;
   onResetSample?: () => void;
   onNewDocument?: () => void;
@@ -70,6 +72,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenSettings,
   onOpenAuth,
   onOpenAdmin,
+  onOpenUpgrade,
   onNavigateToHome,
   onNewDocument,
   isExporting,
@@ -315,6 +318,19 @@ export const Navbar: React.FC<NavbarProps> = ({
             >
               <Crown className="w-4 h-4 text-amber-400" />
               <span className="text-[10px] font-bold uppercase hidden lg:inline font-['Outfit']">Admin</span>
+            </button>
+          )}
+
+          {/* === UPGRADE PRO BUTTON === */}
+          {(!profile || profile.plan === 'free') && onOpenUpgrade && (
+            <button
+              type="button"
+              onClick={() => onOpenUpgrade('pro')}
+              className="flex items-center space-x-1.5 px-3 py-1.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 rounded-xl text-xs font-bold shadow-md shadow-amber-500/20 transition-all cursor-pointer"
+              title="Upgrade to Invoix Pro with Razorpay"
+            >
+              <Zap className="w-3.5 h-3.5 fill-slate-950" />
+              <span className="hidden md:inline font-['Outfit']">Upgrade Pro</span>
             </button>
           )}
 
