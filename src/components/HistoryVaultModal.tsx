@@ -6,6 +6,7 @@ import {
   saveDocumentToVault,
 } from '../utils/vaultStorage';
 import { formatCurrency } from '../utils/formatters';
+import { SUPPORTED_CURRENCIES } from '../constants/currencies';
 import {
   Archive,
   X,
@@ -256,7 +257,7 @@ export const HistoryVaultModal: React.FC<HistoryVaultModalProps> = ({
           ) : (
             filteredDocs.map((doc) => {
               const isCurrent = doc.id === currentDocumentId;
-              const currency = doc.currency || { symbol: '$', code: 'USD' };
+              const currency = doc.currency || SUPPORTED_CURRENCIES[0];
               const isApproved = Boolean(doc.status === 'APPROVED' || doc.signatory?.clientSignedName);
               const isViewed = Boolean((doc.status === 'VIEWED' || (doc.viewCount && doc.viewCount > 0)) && !isApproved);
 

@@ -2,7 +2,7 @@ import type { CurrencyConfig } from '../types';
 
 export const formatCurrency = (
   amount: number,
-  currencyOrSymbol: CurrencyConfig | string = '₹',
+  currencyOrSymbol: CurrencyConfig | Partial<CurrencyConfig> | string = '₹',
   options?: { showFraction?: boolean; suffixDash?: boolean }
 ): string => {
   if (isNaN(amount) || amount === null || amount === undefined) {
