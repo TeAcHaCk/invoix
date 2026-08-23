@@ -4,100 +4,62 @@ import jsPDF from 'jspdf';
 /**
  * High-fidelity multi-page A4 PDF exporter.
  *
- * Strategy: Clone each .print-page into a hidden, full-width (794px) offscreen
- * container so the capture is completely independent of the viewport zoom/scale.
- * Uses PNG (lossless) at 3× pixel-ratio for razor-sharp 300 DPI print quality.
- * Computes the actual aspect ratio of each page so nothing gets stretched.
+ * Strategy: Temporarily remove the viewport zoom/scale transform from the
+ * parent wrapper, capture the REAL DOM element (with all Tailwind styles
+ * already applied) using PNG at 3× pixel-ratio, then restore the transform.
+ * No DOM cloning needed — this guarantees pixel-perfect output.
  */
 
-const A4_WIDTH_PX = 794;   // 210mm at 96 DPI
-const A4_HEIGHT_PX = 1123;  // 297mm at 96 DPI
-const PIXEL_RATIO = 3;      // 3× = ~288 DPI print quality
-
-/** Copy all stylesheets into the offscreen host so Tailwind / fonts apply. */
-function injectStyles(host: HTMLElement): void {
-  const doc = host.ownerDocument!;
-  for (const sheet of Array.from(document.styleSheets)) {
-    try {
-      if (sheet.href) {
-        const link = doc.createElement('link');
-        link.rel = 'stylesheet';
-        link.href = sheet.href;
-        host.prepend(link);
-      } else if (sheet.cssRules) {
-        const style = doc.createElement('style');
-        style.textContent = Array.from(sheet.cssRules)
-          .map((r) => r.cssText)
-          .join('\n');
-        host.prepend(style);
-      }
-    } catch {
-      // Cross-origin stylesheets – skip
-    }
-  }
-}
+const A4_WIDTH_PX = 794;
+const A4_HEIGHT_PX = 1123;
+const PIXEL_RATIO = 3;
 
 /**
- * Clone a page element into a hidden offscreen container at full A4 width.
- * Returns the container (caller must remove it after capture).
+ * Temporarily unscale all ancestor transforms so the capture happens at
+ * the element's natural 794px width, regardless of mobile zoom level.
+ * Returns a restore function that puts everything back.
  */
-function clonePageOffscreen(pageEl: HTMLElement): HTMLElement {
-  const host = document.createElement('div');
-  host.setAttribute('aria-hidden', 'true');
-  Object.assign(host.style, {
-    position: 'fixed',
-    left: '-9999px',
-    top: '0',
-    width: `${A4_WIDTH_PX}px`,
-    minHeight: `${A4_HEIGHT_PX}px`,
-    overflow: 'hidden',
-    zIndex: '-1',
-    backgroundColor: '#ffffff',
-    // Prevent any inherited transforms / scaling
-    transform: 'none',
-    transformOrigin: 'top left',
-  });
+function unscaleAncestors(el: HTMLElement): () => void {
+  const restores: Array<{ el: HTMLElement; original: string }> = [];
 
-  // Deep clone the page node
-  const clone = pageEl.cloneNode(true) as HTMLElement;
-  Object.assign(clone.style, {
-    width: `${A4_WIDTH_PX}px`,
-    minHeight: `${A4_HEIGHT_PX}px`,
-    margin: '0',
-    transform: 'none',
-    maxWidth: 'none',
-    boxSizing: 'border-box',
-  });
+  let node: HTMLElement | null = el.parentElement;
+  while (node) {
+    const computed = getComputedStyle(node);
+    if (computed.transform && computed.transform !== 'none') {
+      restores.push({ el: node, original: node.style.transform });
+      node.style.transform = 'none';
+    }
+    node = node.parentElement;
+  }
 
-  host.appendChild(clone);
-  injectStyles(host);
-  document.body.appendChild(host);
-
-  return host;
+  return () => {
+    for (const r of restores) {
+      r.el.style.transform = r.original;
+    }
+  };
 }
 
-/** Capture a single page element as a high-quality PNG data URL. */
 async function capturePageAsPng(pageEl: HTMLElement): Promise<string> {
-  const host = clonePageOffscreen(pageEl);
+  // 1. Remove parent scaling transforms
+  const restoreTransforms = unscaleAncestors(pageEl);
 
-  // Let the browser layout & paint the cloned tree (fonts, images, etc.)
+  // 2. Force browser reflow so the element paints at full size
+  void pageEl.offsetHeight;
   await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
-  await new Promise((r) => setTimeout(r, 120));
-
-  const target = host.firstElementChild as HTMLElement;
 
   try {
-    const dataUrl = await toPng(target, {
+    const dataUrl = await toPng(pageEl, {
       pixelRatio: PIXEL_RATIO,
       backgroundColor: '#ffffff',
       cacheBust: true,
       width: A4_WIDTH_PX,
-      height: target.scrollHeight || A4_HEIGHT_PX,
+      height: pageEl.scrollHeight || A4_HEIGHT_PX,
       style: {
         transform: 'none',
         margin: '0',
         maxWidth: 'none',
         width: `${A4_WIDTH_PX}px`,
+        minHeight: `${A4_HEIGHT_PX}px`,
       },
       filter: (node) => {
         if (node instanceof HTMLElement && node.classList.contains('no-print')) {
@@ -108,8 +70,19 @@ async function capturePageAsPng(pageEl: HTMLElement): Promise<string> {
     });
     return dataUrl;
   } finally {
-    document.body.removeChild(host);
+    // 3. Restore original transforms immediately
+    restoreTransforms();
   }
+}
+
+/** Decode actual pixel dimensions of a data-URL image. */
+function getImageDimensions(dataUrl: string): Promise<{ width: number; height: number }> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
+    img.onerror = () => resolve({ width: A4_WIDTH_PX * PIXEL_RATIO, height: A4_HEIGHT_PX * PIXEL_RATIO });
+    img.src = dataUrl;
+  });
 }
 
 export async function exportDocumentToPdf(
@@ -152,7 +125,7 @@ export async function exportDocumentToPdf(
 
       const imgData = await capturePageAsPng(pageElements[i]);
 
-      // Decode actual image dimensions to preserve aspect ratio
+      // Compute proper fit to A4 without stretching
       const dims = await getImageDimensions(imgData);
       const imgAspect = dims.width / dims.height;
       const a4Aspect = pdfW / pdfH;
@@ -163,11 +136,8 @@ export async function exportDocumentToPdf(
       let drawY = 0;
 
       if (imgAspect > a4Aspect) {
-        // Image is wider than A4 – fit width, center vertically
         drawH = pdfW / imgAspect;
-        drawY = 0; // top-align
       } else {
-        // Image is taller than A4 – fit height, center horizontally
         drawW = pdfH * imgAspect;
         drawX = (pdfW - drawW) / 2;
       }
@@ -175,7 +145,7 @@ export async function exportDocumentToPdf(
       pdf.addImage(imgData, 'PNG', drawX, drawY, drawW, drawH, undefined, 'FAST');
     }
 
-    // Save – mobile-safe blob download
+    // Mobile-safe download
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
     if (isMobile) {
@@ -261,16 +231,6 @@ export async function generatePdfBlob(
     console.error('Error generating PDF blob:', err);
     return null;
   }
-}
-
-/** Utility: get pixel dimensions of a data-URL image. */
-function getImageDimensions(dataUrl: string): Promise<{ width: number; height: number }> {
-  return new Promise((resolve) => {
-    const img = new Image();
-    img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
-    img.onerror = () => resolve({ width: A4_WIDTH_PX * PIXEL_RATIO, height: A4_HEIGHT_PX * PIXEL_RATIO });
-    img.src = dataUrl;
-  });
 }
 
 export function printDocument(): void {
