@@ -112,10 +112,10 @@ export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ docu
                 </div>
               ) : (
                 <>
-                  <h1 className="text-2xl font-bold tracking-[0.05em] text-[#111111] font-['Outfit',sans-serif] leading-snug mb-1.5 block">
+                  <h1 className="text-2xl font-bold tracking-[0.05em] text-[#111111] font-['Outfit',sans-serif] leading-snug mb-2 block">
                     {doc.studio.name}
                   </h1>
-                  <p className="text-[10px] tracking-[0.15em] text-[#8C692D] uppercase font-semibold leading-normal mb-1 block whitespace-nowrap">
+                  <p className="text-[10.5px] tracking-[0.15em] text-[#8C692D] uppercase font-semibold leading-normal mt-1 mb-1 block">
                     {doc.studio.tagline}
                   </p>
                 </>
@@ -202,19 +202,19 @@ export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ docu
                       key={item.id || idx}
                       className="bg-slate-50/60 border border-slate-200 rounded p-2.5 text-[11px]"
                     >
-                      <div className="font-bold text-slate-900 mb-1 flex items-center space-x-1.5">
-                        <span className="w-4 h-4 rounded-full bg-amber-500 text-slate-950 text-[9px] font-extrabold flex items-center justify-center">
+                      <div className="font-bold text-slate-900 mb-2 flex items-start space-x-2">
+                        <span className="w-4 h-4 rounded-full bg-amber-500 text-slate-950 text-[9px] font-extrabold flex items-center justify-center shrink-0 mt-0.5">
                           {idx + 1}
                         </span>
-                        <span className="font-['Outfit'] uppercase tracking-normal text-[11px] text-amber-950">
+                        <span className="font-['Outfit'] uppercase tracking-normal text-[11px] text-amber-950 leading-snug block flex-1">
                           {item.dayTitle}
                         </span>
                       </div>
-                      <div className="grid grid-cols-2 gap-x-3 gap-y-1 pl-5">
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 pl-6 mt-1.5">
                         {item.services.map((service, sIdx) => (
-                          <div key={sIdx} className="flex items-center space-x-1 text-slate-700">
-                            <span className="text-amber-600 text-[10px]">◆</span>
-                            <span className="font-medium text-[10.5px]">{service}</span>
+                          <div key={sIdx} className="flex items-start space-x-1.5 text-slate-700 leading-tight">
+                            <span className="text-amber-600 text-[10px] shrink-0 mt-0.5">◆</span>
+                            <span className="font-medium text-[10.5px] leading-tight">{service}</span>
                           </div>
                         ))}
                       </div>
@@ -256,30 +256,30 @@ export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ docu
               </div>
 
               {/* 3-Step Milestone Terms Bar */}
-              <div className="grid grid-cols-3 divide-x divide-slate-200 bg-slate-50 p-2.5 text-center text-[10.5px]">
-                <div>
-                  <span className="text-[10px] text-slate-500 font-bold uppercase block font-['Outfit']">
+              <div className="grid grid-cols-3 divide-x divide-slate-200 bg-slate-50 p-3 text-center text-[10.5px]">
+                <div className="flex flex-col justify-between items-center px-1.5 min-h-[50px]">
+                  <span className="text-[9.5px] text-slate-500 font-bold uppercase leading-tight block font-['Outfit'] mb-1">
                     {doc.paymentTerms?.paymentMilestoneLabels?.advanceLabel || `${advPct}% Advance Booking`}
                   </span>
-                  <strong className="text-slate-900 font-mono text-[12px]">
+                  <strong className="text-slate-900 font-mono text-[12px] block mt-auto whitespace-nowrap">
                     {formatCurrency(advanceAmount, currency)}
                   </strong>
                 </div>
 
-                <div>
-                  <span className="text-[10px] text-slate-500 font-bold uppercase block font-['Outfit']">
+                <div className="flex flex-col justify-between items-center px-1.5 min-h-[50px]">
+                  <span className="text-[9.5px] text-slate-500 font-bold uppercase leading-tight block font-['Outfit'] mb-1">
                     {doc.paymentTerms?.paymentMilestoneLabels?.afterEventLabel || `${midPct}% Interim Phase`}
                   </span>
-                  <strong className="text-slate-900 font-mono text-[12px]">
+                  <strong className="text-slate-900 font-mono text-[12px] block mt-auto whitespace-nowrap">
                     {formatCurrency(afterEventAmount, currency)}
                   </strong>
                 </div>
 
-                <div>
-                  <span className="text-[10px] text-slate-500 font-bold uppercase block font-['Outfit']">
+                <div className="flex flex-col justify-between items-center px-1.5 min-h-[50px]">
+                  <span className="text-[9.5px] text-slate-500 font-bold uppercase leading-tight block font-['Outfit'] mb-1">
                     {doc.paymentTerms?.paymentMilestoneLabels?.balanceLabel || `${balPct}% Final Handover`}
                   </span>
-                  <strong className="text-slate-900 font-mono text-[12px]">
+                  <strong className="text-slate-900 font-mono text-[12px] block mt-auto whitespace-nowrap">
                     {formatCurrency(balanceAmount, currency)}
                   </strong>
                 </div>
