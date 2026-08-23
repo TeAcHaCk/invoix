@@ -24,7 +24,7 @@ export const AdBanner: React.FC<AdBannerProps> = ({
     return null;
   }
 
-  const adsenseClientId = import.meta.env.VITE_ADSENSE_CLIENT_ID;
+  const adsenseClientId = import.meta.env.VITE_ADSENSE_CLIENT_ID || 'ca-pub-9804625930174293';
   const isLiveAdSense = typeof window !== 'undefined' && Boolean((window as any).adsbygoogle) && Boolean(adsenseClientId);
 
   useEffect(() => {
