@@ -48,20 +48,68 @@
 
     <!-- Structured Data (JSON-LD) -->
     <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "SoftwareApplication",
-      "name": "Invoix",
-      "url": "https://invoix.app",
-      "applicationCategory": "BusinessApplication",
-      "operatingSystem": "Web",
-      "offers": {
-        "@type": "Offer",
-        "price": "0",
-        "priceCurrency": "USD"
+    [
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "Invoix",
+        "url": "https://www.invoix.app",
+        "applicationCategory": "BusinessApplication",
+        "operatingSystem": "Web, Android, iOS, Windows, macOS",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        },
+        "description": "Create stunning, professional quotations and invoices with interactive add-ons, digital e-signatures, payment QR codes, and cloud sync."
       },
-      "description": "Create stunning, professional quotations and invoices with interactive add-ons, digital e-signatures, payment QR codes, and cloud sync."
-    }
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "Invoix",
+        "url": "https://www.invoix.app",
+        "logo": "https://www.invoix.app/invoix-logo.png",
+        "sameAs": []
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "How do my clients view and sign the proposals?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "When you click Copy Client Link or send via WhatsApp, your client receives a private URL. They can open it on their smartphone or laptop, select optional upsell services, draw their digital signature on the touchscreen, and legally approve the proposal in seconds."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Are the digital e-signatures legally binding?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. Every approval captures the client's handwritten signature data URL, authorized signatory name, timestamp, and agreed scope of work, creating an audit-ready digital contract record."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How do the offline dynamic payment QR codes work?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Our QR engine renders in your browser using standard UPI and payment protocol formats. Just enter your UPI ID or payment link, and the QR code is automatically generated on your invoices."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can I export clean multi-page A4 PDFs?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. With one click, the platform generates pixel-perfect A4 vector PDFs (210×297mm standard) ready for formal email attachments or print."
+            }
+          }
+        ]
+      }
+    ]
     </script>
 
     <!-- Google Fonts -->
