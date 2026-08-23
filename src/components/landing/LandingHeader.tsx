@@ -27,9 +27,9 @@ export const LandingHeader: React.FC<LandingHeaderProps> = ({
           </div>
           <div>
             <div className="flex items-center space-x-1.5">
-              <h1 className="text-base font-extrabold text-slate-100 tracking-tight font-['Outfit']">
+              <span className="text-base font-extrabold text-slate-100 tracking-tight font-['Outfit']">
                 Invoix
-              </h1>
+              </span>
               <span className="text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-1.5 py-0.2 rounded font-bold uppercase">
                 Studio
               </span>
