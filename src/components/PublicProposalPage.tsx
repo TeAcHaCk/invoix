@@ -42,6 +42,7 @@ export const PublicProposalPage: React.FC<PublicProposalPageProps> = ({ document
   const [signerName, setSignerName] = useState('');
   const [isApproved, setIsApproved] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [signError, setSignError] = useState<string | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [copiedLabel, setCopiedLabel] = useState<string | null>(null);
@@ -322,6 +323,7 @@ export const PublicProposalPage: React.FC<PublicProposalPageProps> = ({ document
     }
 
     setIsSubmitting(true);
+    setSignError(null);
 
     // Cryptographic SHA-256 Hash Generation
     const signature = await generateContractSignatureHash({
@@ -345,7 +347,7 @@ export const PublicProposalPage: React.FC<PublicProposalPageProps> = ({ document
 
     const sigType = signatureMode === 'draw' ? 'drawn' : signatureMode === 'upload' ? 'uploaded' : 'typed';
 
-    const success = await approveDocumentPublicly(
+    const result = await approveDocumentPublicly(
       documentId,
       signatoryData,
       document.pricingItems,
@@ -361,7 +363,21 @@ export const PublicProposalPage: React.FC<PublicProposalPageProps> = ({ document
 
     setIsSubmitting(false);
 
-    if (success) {
+    if (!result.success) {
+      // Someone already signed this proposal (another device, or the sender).
+      // Show the signed state rather than an inviting-but-doomed form.
+      if (result.alreadySigned) {
+        const { doc: refreshed } = await fetchPublicDocument(documentId);
+        if (refreshed) {
+          setDocument(refreshed);
+        }
+        setIsApproved(true);
+      }
+      setSignError(result.error || 'We could not record your signature. Please try again.');
+      return;
+    }
+
+    if (result.success) {
       setIsApproved(true);
       setDocument({
         ...document,
@@ -1024,6 +1040,20 @@ export const PublicProposalPage: React.FC<PublicProposalPageProps> = ({ document
                   )}
                 </div>
               </div>
+
+              {/* Signing Failure Notice */}
+              {signError && (
+                <div
+                  role="alert"
+                  className="flex items-start space-x-3 bg-rose-950/50 border border-rose-500/40 rounded-xl p-4"
+                >
+                  <AlertCircle className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
+                  <div className="space-y-0.5">
+                    <p className="text-sm font-bold text-rose-200">Signature not recorded</p>
+                    <p className="text-xs text-rose-300/90 leading-relaxed">{signError}</p>
+                  </div>
+                </div>
+              )}
 
               {/* Submit Button */}
               <div className="pt-2 flex justify-end">

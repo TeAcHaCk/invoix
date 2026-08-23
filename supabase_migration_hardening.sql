@@ -207,15 +207,15 @@ CREATE OR REPLACE FUNCTION public.sign_document(
 )
 RETURNS JSONB AS $$
 DECLARE
-  v_id      TEXT;
-  v_data    JSONB;
-  v_status  TEXT;
-  v_items   JSONB;
-  v_total   NUMERIC;
-  v_audit   JSONB;
+  v_id        TEXT;
+  v_data      JSONB;
+  v_existing  TEXT;
+  v_items     JSONB;
+  v_total     NUMERIC;
+  v_audit     JSONB;
 BEGIN
-  SELECT id, document_data, status
-    INTO v_id, v_data, v_status
+  SELECT id, document_data
+    INTO v_id, v_data
     FROM public.documents
    WHERE share_token = p_token AND is_public = TRUE
    LIMIT 1;
@@ -224,7 +224,12 @@ BEGIN
     RAISE EXCEPTION 'Document not found or link expired' USING ERRCODE = 'P0002';
   END IF;
 
-  IF v_status = 'APPROVED' THEN
+  -- Gate on the signature itself, NOT the status column. The status column can
+  -- drift out of step with document_data, and the client portal decides whether
+  -- to show the signing form from the signature — so this must match it.
+  v_existing := coalesce(v_data -> 'signatory' ->> 'clientSignedName', '');
+
+  IF v_existing <> '' THEN
     RAISE EXCEPTION 'This document has already been signed' USING ERRCODE = '23505';
   END IF;
 

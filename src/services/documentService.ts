@@ -38,6 +38,17 @@ export const saveDocument = async (
     return { success: true, isCloud: false };
   }
 
+  // "Approved" is derived from the signature, never carried forward on its own.
+  // Letting a stale status: 'APPROVED' survive without a signature is what made
+  // the status column drift out of step with document_data and caused
+  // sign_document to reject genuinely unsigned proposals.
+  const isSigned = Boolean(document.signatory?.clientSignedName);
+  const derivedStatus = isSigned
+    ? 'APPROVED'
+    : document.status && document.status !== 'APPROVED'
+    ? document.status
+    : 'DRAFT';
+
   try {
     const payload = {
       id: document.id,
@@ -51,7 +62,7 @@ export const saveDocument = async (
       client_email: document.client.email || '',
       total_investment: document.totalInvestment || 0,
       currency_code: document.currency.code,
-      status: document.signatory?.clientSignedName ? 'APPROVED' : document.status || 'DRAFT',
+      status: derivedStatus,
       views_count: document.viewCount || 0,
       is_public: true,
       document_data: document,
@@ -169,6 +180,16 @@ export const recordDocumentView = async (shareToken: string): Promise<void> => {
   }
 };
 
+export interface ApprovalResult {
+  success: boolean;
+  /** The document was already signed by someone else — not a failure to retry. */
+  alreadySigned?: boolean;
+  /** Message safe to show the client. */
+  error?: string;
+  /** The server's authoritative copy, when it returned one. */
+  doc?: QuotationDocument;
+}
+
 export const approveDocumentPublicly = async (
   shareToken: string,
   signatory: SignatoryRecord,
@@ -181,7 +202,7 @@ export const approveDocumentPublicly = async (
     signatureAlgo?: 'sha-256' | 'fallback';
     certificateId?: string;
   }
-): Promise<boolean> => {
+): Promise<ApprovalResult> => {
   const now = new Date();
 
   const auditRecord = {
@@ -222,22 +243,46 @@ export const approveDocumentPublicly = async (
 
       if (!error && data) {
         // Mirror the server's authoritative copy into the local vault.
-        saveDocumentToVault(data as QuotationDocument);
-        return true;
+        const serverDoc = data as QuotationDocument;
+        saveDocumentToVault(serverDoc);
+        return { success: true, doc: serverDoc };
       }
       if (error) {
         console.error('Failed to sign document in cloud:', error.message);
-        return false;
+        // sign_document raises 23505 when a signature is already on file.
+        const alreadySigned =
+          error.code === '23505' || /already been signed/i.test(error.message || '');
+        return {
+          success: false,
+          alreadySigned,
+          error: alreadySigned
+            ? 'This proposal has already been signed and approved.'
+            : 'We could not record your signature. Please try again or contact the sender.',
+        };
       }
     } catch (e) {
       console.error('Failed to sign document in cloud:', e);
-      return false;
+      return {
+        success: false,
+        error: 'We could not reach the signing service. Please check your connection and try again.',
+      };
     }
   }
 
   // Offline / no-cloud fallback: apply the approval to the local copy only.
   const local = findLocalByToken(shareToken);
-  if (!local) return false;
+  if (!local) {
+    return { success: false, error: 'Document not found or this link has expired.' };
+  }
+
+  if (local.signatory?.clientSignedName) {
+    return {
+      success: false,
+      alreadySigned: true,
+      error: 'This proposal has already been signed and approved.',
+      doc: local,
+    };
+  }
 
   const items = updatedPricingItems || local.pricingItems;
   const finalTotal =
@@ -246,7 +291,7 @@ export const approveDocumentPublicly = async (
       .filter((i) => !i.isOptional || i.selected)
       .reduce((sum, i) => sum + (i.qty && i.rate ? i.qty * i.rate : i.amount || 0), 0);
 
-  saveDocumentToVault({
+  const approved: QuotationDocument = {
     ...local,
     status: 'APPROVED',
     approvedAt: now.toISOString(),
@@ -254,9 +299,10 @@ export const approveDocumentPublicly = async (
     pricingItems: items,
     totalInvestment: finalTotal,
     signatory,
-  });
+  };
+  saveDocumentToVault(approved);
 
-  return true;
+  return { success: true, doc: approved };
 };
 
 export const deleteDocument = async (id: string, userId?: string): Promise<void> => {
