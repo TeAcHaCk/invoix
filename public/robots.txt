@@ -1,2 +1,10 @@
+# Allow all search engine crawlers (Google, Bing, Yahoo, DuckDuckGo)
 User-agent: *
-Disallow: /
+Allow: /
+
+# Exclude private admin and internal workspace routes from search index
+Disallow: /admin
+Disallow: /#admin
+
+# XML Sitemap Location
+Sitemap: https://invoix.app/sitemap.xml
