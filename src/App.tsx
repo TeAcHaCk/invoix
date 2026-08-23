@@ -281,7 +281,9 @@ function StudioWorkspace({ initialIndustry, onNavigateToAdmin, onNavigateToHome 
         {/* Right Side: Live Document Preview Canvas */}
         <div
           className={`flex-1 bg-slate-900/60 overflow-y-auto p-4 sm:p-8 flex flex-col items-center justify-start relative ${
-            mobileActiveView === 'editor' ? 'hidden lg:flex' : 'flex'
+            mobileActiveView === 'editor'
+              ? 'max-lg:fixed max-lg:-left-[9999px] max-lg:top-0 max-lg:w-[850px] max-lg:h-screen max-lg:overflow-hidden max-lg:opacity-0 max-lg:pointer-events-none'
+              : 'flex'
           }`}
         >
           {/* Zoom & Canvas Floating Action Bar */}

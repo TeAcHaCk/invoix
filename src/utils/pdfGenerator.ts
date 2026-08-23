@@ -19,22 +19,65 @@ const PIXEL_RATIO = 3;
  * the element's natural 794px width, regardless of mobile zoom level.
  * Returns a restore function that puts everything back.
  */
+interface StyleRestore {
+  el: HTMLElement;
+  transform: string;
+  display: string;
+  visibility: string;
+  opacity: string;
+  position: string;
+  left: string;
+}
+
+/**
+ * Temporarily unscale all ancestor transforms and un-hide any hidden ancestor
+ * elements so capture works even if the user is on mobile in the Form Editor tab.
+ * Returns a restore function that puts everything back immediately after capture.
+ */
 function unscaleAncestors(el: HTMLElement): () => void {
-  const restores: Array<{ el: HTMLElement; original: string }> = [];
+  const restores: StyleRestore[] = [];
 
   let node: HTMLElement | null = el.parentElement;
   while (node) {
     const computed = getComputedStyle(node);
-    if (computed.transform && computed.transform !== 'none') {
-      restores.push({ el: node, original: node.style.transform });
-      node.style.transform = 'none';
+    const hasTransform = computed.transform && computed.transform !== 'none';
+    const isHidden = computed.display === 'none' || computed.visibility === 'hidden';
+
+    if (hasTransform || isHidden) {
+      restores.push({
+        el: node,
+        transform: node.style.transform,
+        display: node.style.display,
+        visibility: node.style.visibility,
+        opacity: node.style.opacity,
+        position: node.style.position,
+        left: node.style.left,
+      });
+
+      if (hasTransform) {
+        node.style.transform = 'none';
+      }
+      if (computed.display === 'none') {
+        node.style.display = 'block';
+        node.style.position = 'fixed';
+        node.style.left = '-9999px';
+        node.style.opacity = '0';
+      }
+      if (computed.visibility === 'hidden') {
+        node.style.visibility = 'visible';
+      }
     }
     node = node.parentElement;
   }
 
   return () => {
     for (const r of restores) {
-      r.el.style.transform = r.original;
+      r.el.style.transform = r.transform;
+      r.el.style.display = r.display;
+      r.el.style.visibility = r.visibility;
+      r.el.style.opacity = r.opacity;
+      r.el.style.position = r.position;
+      r.el.style.left = r.left;
     }
   };
 }
