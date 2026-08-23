@@ -106,15 +106,16 @@ function StudioWorkspace({ initialIndustry, onNavigateToAdmin, onNavigateToHome 
 
   const handleExportPdf = async () => {
     setIsExporting(true);
-    showToast('Rendering high-fidelity PDF pages...');
+    showToast('Rendering high-fidelity A4 PDF...');
     try {
+      // Always target the dedicated, unscaled export canvas for 100% reliable mobile & desktop export
       const success = await exportDocumentToPdf(
-        'quotation-preview-container',
+        'quotation-pdf-export-canvas',
         `Quotation-${document.details.invoiceNo || 'Document'}.pdf`
       );
       if (success) {
         confetti({ particleCount: 80, spread: 60, origin: { y: 0.7 } });
-        showToast('PDF successfully generated!');
+        showToast('PDF successfully downloaded!');
       } else {
         showToast('Failed to export PDF. Please try printing.');
       }
@@ -360,6 +361,16 @@ function StudioWorkspace({ initialIndustry, onNavigateToAdmin, onNavigateToHome 
         isOpen={isAuthOpen}
         onClose={() => setIsAuthOpen(false)}
       />
+
+      {/* Dedicated Offscreen A4 Canvas for Guaranteed Mobile & Background PDF Rendering */}
+      <div
+        id="quotation-pdf-export-canvas"
+        className="fixed -left-[9999px] top-0 pointer-events-none opacity-0 select-none no-print"
+        style={{ width: '794px' }}
+        aria-hidden="true"
+      >
+        <InvoiceDocumentView document={document} elementId="quotation-pdf-export-inner" zoomScale={1} />
+      </div>
     </div>
   );
 }

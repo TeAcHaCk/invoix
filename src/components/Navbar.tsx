@@ -95,31 +95,31 @@ export const Navbar: React.FC<NavbarProps> = ({
     <header className="bg-slate-950/90 backdrop-blur-xl border-b border-slate-800/60 sticky top-0 z-40 px-4 lg:px-8 py-3 select-none font-['Plus_Jakarta_Sans',sans-serif]">
       <div className="max-w-[1700px] mx-auto flex items-center justify-between gap-4">
         {/* Left: Studio Brand & Title */}
-        <div className="flex items-center space-x-3 min-w-0">
+        <div className="flex items-center space-x-2.5 min-w-0 shrink">
           {onNavigateToHome && (
             <button
               type="button"
               onClick={onNavigateToHome}
-              className="p-2 rounded-xl glass text-slate-400 hover:text-amber-400 transition-colors hidden sm:flex items-center space-x-1 cursor-pointer shrink-0"
+              className="p-1.5 rounded-xl glass text-slate-400 hover:text-amber-400 transition-colors hidden sm:flex items-center space-x-1 cursor-pointer shrink-0"
               title="Return to Landing Page"
             >
-              <Globe className="w-4 h-4" />
-              <span className="text-[11px] font-semibold">Home</span>
+              <Globe className="w-3.5 h-3.5" />
+              <span className="text-[10.5px] font-semibold">Home</span>
             </button>
           )}
 
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 p-0.5 shadow-lg shadow-amber-500/20 flex items-center justify-center shrink-0">
-            <div className="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center text-lg">
+          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 p-0.5 shadow-lg shadow-amber-500/20 flex items-center justify-center shrink-0">
+            <div className="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center text-base sm:text-lg">
               {preset.icon || '💼'}
             </div>
           </div>
-          <div className="min-w-0">
-            <div className="flex items-center space-x-2">
-              <h1 className="text-sm md:text-base font-bold text-amber-100 tracking-wide font-['Outfit'] truncate">
-                {doc.studio.name || 'QUOTATION & INVOICE STUDIO'}
+          <div className="min-w-0 max-w-[130px] sm:max-w-none">
+            <div className="flex items-center space-x-1.5">
+              <h1 className="text-xs sm:text-sm md:text-base font-bold text-amber-100 tracking-wide font-['Outfit'] truncate">
+                {doc.studio.name || 'INVOIX STUDIO'}
               </h1>
               <span
-                className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider shrink-0 ${
+                className={`hidden sm:inline-flex text-[9.5px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider shrink-0 ${
                   doc.type === 'INVOICE'
                     ? 'bg-blue-500/20 text-blue-300 border border-blue-500/40'
                     : 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
@@ -157,16 +157,17 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
 
         {/* Right: Grouped Actions */}
-        <div className="flex items-center space-x-2">
-          {/* === PRIMARY: Save === */}
+        {/* Right: Grouped Actions */}
+        <div className="flex items-center space-x-1.5 sm:space-x-2 shrink-0">
+          {/* === PRIMARY: Save (Desktop only; on mobile accessible via More dropdown) === */}
           <button
             type="button"
             onClick={onSaveToVault}
-            className="flex items-center space-x-1.5 px-3.5 py-2 glass hover:bg-slate-800/70 text-slate-200 text-xs font-semibold rounded-xl transition-all cursor-pointer"
+            className="hidden sm:flex items-center space-x-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 glass hover:bg-slate-800/70 text-slate-200 text-xs font-semibold rounded-xl transition-all cursor-pointer"
             title="Save draft to vault & cloud"
           >
             <Save className="w-3.5 h-3.5 text-emerald-400" />
-            <span className="hidden sm:inline">Save</span>
+            <span>Save</span>
           </button>
 
           {/* === SHARE DROPDOWN === */}
@@ -174,7 +175,8 @@ export const Navbar: React.FC<NavbarProps> = ({
             <button
               type="button"
               onClick={() => shareDropdown.setIsOpen(!shareDropdown.isOpen)}
-              className="flex items-center space-x-1.5 px-3.5 py-2 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 text-xs font-bold rounded-xl border border-emerald-500/30 transition-all cursor-pointer"
+              className="flex items-center space-x-1 px-2.5 py-1.5 sm:px-3.5 sm:py-2 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 text-xs font-bold rounded-xl border border-emerald-500/30 transition-all cursor-pointer"
+              title="Share quotation link or WhatsApp"
             >
               <Share2 className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Share</span>
@@ -224,26 +226,35 @@ export const Navbar: React.FC<NavbarProps> = ({
             type="button"
             onClick={onExportPdf}
             disabled={isExporting}
-            className="flex items-center space-x-1.5 px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 text-xs font-extrabold rounded-xl shadow-lg shadow-amber-500/20 transition-all disabled:opacity-50 cursor-pointer"
+            className="flex items-center space-x-1.5 px-3 py-1.5 sm:px-4 sm:py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 text-xs font-extrabold rounded-xl shadow-lg shadow-amber-500/20 transition-all disabled:opacity-50 cursor-pointer"
             title="Download crisp A4 PDF"
           >
             <Download className="w-3.5 h-3.5 stroke-[2.5]" />
-            <span>{isExporting ? 'Exporting...' : 'PDF'}</span>
+            <span>{isExporting ? '...' : 'PDF'}</span>
           </button>
 
-          {/* === MORE DROPDOWN (Document Management) === */}
+          {/* === MORE DROPDOWN (Document Management & Mobile Settings) === */}
           <div ref={moreDropdown.ref} className="relative">
             <button
               type="button"
               onClick={() => moreDropdown.setIsOpen(!moreDropdown.isOpen)}
-              className="p-2 glass hover:bg-slate-800/70 text-slate-400 hover:text-slate-200 rounded-xl transition-colors cursor-pointer"
+              className="p-1.5 sm:p-2 glass hover:bg-slate-800/70 text-slate-400 hover:text-slate-200 rounded-xl transition-colors cursor-pointer"
               title="More options"
             >
               <MoreHorizontal className="w-4 h-4" />
             </button>
 
             {moreDropdown.isOpen && (
-              <div className="absolute right-0 top-full mt-2 w-52 glass rounded-2xl p-2 shadow-2xl shadow-black/40 border border-slate-700/50 z-50 modal-enter">
+              <div className="absolute right-0 top-full mt-2 w-56 glass rounded-2xl p-2 shadow-2xl shadow-black/40 border border-slate-700/50 z-50 modal-enter">
+                <button
+                  type="button"
+                  onClick={() => { onSaveToVault(); moreDropdown.setIsOpen(false); }}
+                  className="sm:hidden w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs text-slate-200 hover:bg-slate-800/60 transition-colors cursor-pointer"
+                >
+                  <Save className="w-4 h-4 text-emerald-400" />
+                  <span>Save to Vault</span>
+                </button>
+
                 {onNewDocument && (
                   <button
                     type="button"
@@ -254,6 +265,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     <span>New Document</span>
                   </button>
                 )}
+
                 <button
                   type="button"
                   onClick={() => { onOpenVault(); moreDropdown.setIsOpen(false); }}
@@ -262,6 +274,38 @@ export const Navbar: React.FC<NavbarProps> = ({
                   <Archive className="w-4 h-4 text-amber-400" />
                   <span>Document Vault</span>
                 </button>
+
+                <button
+                  type="button"
+                  onClick={() => { onOpenSettings(); moreDropdown.setIsOpen(false); }}
+                  className="sm:hidden w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs text-slate-200 hover:bg-slate-800/60 transition-colors cursor-pointer"
+                >
+                  <Settings className="w-4 h-4 text-slate-400" />
+                  <span>Business Settings</span>
+                </button>
+
+                {canInstall && (
+                  <button
+                    type="button"
+                    onClick={() => { triggerInstall(); moreDropdown.setIsOpen(false); }}
+                    className="md:hidden w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs text-amber-300 hover:bg-slate-800/60 transition-colors cursor-pointer"
+                  >
+                    <Download className="w-4 h-4 text-amber-400" />
+                    <span>Install Invoix App</span>
+                  </button>
+                )}
+
+                {isAdmin && onOpenAdmin && (
+                  <button
+                    type="button"
+                    onClick={() => { onOpenAdmin(); moreDropdown.setIsOpen(false); }}
+                    className="md:hidden w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs text-amber-300 hover:bg-slate-800/60 transition-colors cursor-pointer"
+                  >
+                    <Crown className="w-4 h-4 text-amber-400" />
+                    <span>Super Admin Panel</span>
+                  </button>
+                )}
+
                 <button
                   type="button"
                   onClick={() => { onToggleWatermark(); moreDropdown.setIsOpen(false); }}
@@ -275,14 +319,14 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
 
           {/* Divider */}
-          <div className="w-px h-6 bg-slate-800 hidden md:block" />
+          <div className="w-px h-5 bg-slate-800 hidden sm:block" />
 
-          {/* === INSTALL PWA APP BUTTON === */}
+          {/* === INSTALL PWA APP BUTTON (Desktop) === */}
           {canInstall && (
             <button
               type="button"
               onClick={triggerInstall}
-              className="p-2 bg-slate-900 hover:bg-slate-800 text-amber-300 border border-amber-500/30 rounded-xl transition-colors flex items-center space-x-1.5 cursor-pointer"
+              className="hidden md:flex p-2 bg-slate-900 hover:bg-slate-800 text-amber-300 border border-amber-500/30 rounded-xl transition-colors items-center space-x-1.5 cursor-pointer"
               title="Install Invoix Desktop/Mobile App"
             >
               <Download className="w-4 h-4 text-amber-400" />
@@ -295,18 +339,18 @@ export const Navbar: React.FC<NavbarProps> = ({
             <button
               type="button"
               onClick={onOpenAdmin}
-              className="p-2 bg-gradient-to-br from-amber-400/15 to-amber-600/15 text-amber-300 border border-amber-500/30 hover:bg-amber-500/25 rounded-xl transition-colors flex items-center space-x-1 cursor-pointer"
+              className="hidden md:flex p-2 bg-gradient-to-br from-amber-400/15 to-amber-600/15 text-amber-300 border border-amber-500/30 hover:bg-amber-500/25 rounded-xl transition-colors items-center space-x-1 cursor-pointer"
               title="Open SaaS Super Admin Control Panel"
             >
               <Crown className="w-4 h-4 text-amber-400" />
-              <span className="text-[10px] font-bold uppercase hidden md:inline font-['Outfit']">Admin</span>
+              <span className="text-[10px] font-bold uppercase hidden lg:inline font-['Outfit']">Admin</span>
             </button>
           )}
 
           <button
             type="button"
             onClick={onOpenSettings}
-            className="p-2 text-slate-400 hover:text-amber-300 hover:bg-slate-800/50 rounded-xl transition-colors cursor-pointer"
+            className="hidden sm:flex p-2 text-slate-400 hover:text-amber-300 hover:bg-slate-800/50 rounded-xl transition-colors cursor-pointer"
             title="Business & Profile Settings"
           >
             <Settings className="w-4 h-4" />
@@ -315,14 +359,14 @@ export const Navbar: React.FC<NavbarProps> = ({
           <button
             type="button"
             onClick={onOpenAuth}
-            className={`p-2 rounded-xl border transition-colors flex items-center space-x-1.5 cursor-pointer ${
+            className={`p-1.5 sm:p-2 rounded-xl border transition-colors flex items-center space-x-1.5 cursor-pointer ${
               user
                 ? 'bg-amber-500/15 text-amber-300 border-amber-500/30 hover:bg-amber-500/25'
                 : 'glass text-slate-300 hover:text-white hover:bg-slate-800/60'
             }`}
             title={user ? `Signed in as ${user.email}` : 'Sign In / Connect Cloud'}
           >
-            <User className="w-4 h-4" />
+            <User className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             {user && (
               <span className="text-[11px] font-bold hidden xl:inline max-w-[80px] truncate">
                 {profile?.business_name || user.email?.split('@')[0]}
