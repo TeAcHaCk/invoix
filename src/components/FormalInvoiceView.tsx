@@ -134,7 +134,7 @@ export const FormalInvoiceView: React.FC<FormalInvoiceViewProps> = ({ document: 
 
           {/* Invoice Badge & Meta */}
           <div className="text-right flex flex-col items-end shrink-0 min-w-[200px]">
-            <div className="text-2xl font-extrabold text-slate-900 tracking-wider font-['Outfit'] uppercase whitespace-nowrap leading-tight">
+            <div className="text-2xl font-extrabold text-slate-900 tracking-normal font-['Outfit'] uppercase whitespace-nowrap leading-tight">
               {doc.taxConfig?.type === 'none' ? 'COMMERCIAL INVOICE' : 'TAX INVOICE'}
             </div>
 
@@ -163,7 +163,7 @@ export const FormalInvoiceView: React.FC<FormalInvoiceViewProps> = ({ document: 
 
             {/* Status Badge */}
             <div
-              className={`mt-2.5 px-3 py-1 rounded-full border text-[11px] font-bold tracking-wider uppercase font-['Outfit'] inline-flex items-center shadow-sm ${statusBadge.color}`}
+              className={`mt-2.5 px-3 py-1 rounded-full border text-[11px] font-bold tracking-normal uppercase font-['Outfit'] inline-flex items-center shadow-sm ${statusBadge.color}`}
             >
               {statusBadge.icon}
               <span>{statusBadge.label}</span>
@@ -174,7 +174,7 @@ export const FormalInvoiceView: React.FC<FormalInvoiceViewProps> = ({ document: 
         {/* Bill To / Client Section */}
         <div className="grid grid-cols-2 gap-6 my-4 bg-slate-50 border border-slate-200/90 rounded-xl p-3.5 text-xs">
           <div>
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block font-['Outfit'] mb-1">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-normal block font-['Outfit'] mb-1 whitespace-nowrap">
               BILLED TO / CLIENT:
             </span>
             <div className="font-bold text-sm text-slate-900">
@@ -197,7 +197,7 @@ export const FormalInvoiceView: React.FC<FormalInvoiceViewProps> = ({ document: 
 
           <div className="text-right flex flex-col justify-between">
             <div>
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block font-['Outfit'] mb-1">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-normal block font-['Outfit'] mb-1 whitespace-nowrap">
                 SERVICE / PROJECT SUMMARY:
               </span>
               <div className="font-semibold text-xs text-slate-800">
@@ -224,7 +224,7 @@ export const FormalInvoiceView: React.FC<FormalInvoiceViewProps> = ({ document: 
         <div className="mt-3 border border-slate-200 rounded-lg overflow-hidden">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
-              <tr className="bg-slate-900 text-slate-200 text-[10px] font-bold uppercase tracking-wider font-['Outfit']">
+              <tr className="bg-slate-900 text-slate-200 text-[10px] font-bold uppercase tracking-normal font-['Outfit']">
                 <th className="py-2.5 px-3 w-8 text-center">#</th>
                 <th className="py-2.5 px-3">Item / Service Description</th>
                 <th className="py-2.5 px-3 text-center w-16">Qty</th>
@@ -268,7 +268,7 @@ export const FormalInvoiceView: React.FC<FormalInvoiceViewProps> = ({ document: 
           <div className="flex-1 bg-slate-50 border border-slate-200/90 rounded-xl p-3 text-xs">
             <div className="flex items-start justify-between">
               <div className="space-y-1 pr-2">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block font-['Outfit']">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-normal block font-['Outfit'] whitespace-nowrap">
                   PAYMENT INSTRUCTIONS & BANK DETAILS:
                 </span>
                 {doc.studio.bankName && (
@@ -304,7 +304,7 @@ export const FormalInvoiceView: React.FC<FormalInvoiceViewProps> = ({ document: 
               {qrCodeDataUrl && (
                 <div className="shrink-0 flex flex-col items-center bg-white p-1.5 rounded-lg border border-slate-200 shadow-sm">
                   <img src={qrCodeDataUrl} alt="Payment QR" className="w-24 h-24 object-contain" />
-                  <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider font-['Outfit'] mt-1">
+                  <span className="text-[9px] text-slate-500 font-bold uppercase tracking-normal font-['Outfit'] mt-1">
                     Scan to Pay
                   </span>
                 </div>
@@ -348,7 +348,7 @@ export const FormalInvoiceView: React.FC<FormalInvoiceViewProps> = ({ document: 
             )}
 
             <div className="border-t-2 border-slate-900 pt-1.5 flex justify-between font-extrabold text-sm text-red-700 bg-red-50/80 -mx-1 px-1 rounded">
-              <span className="font-['Outfit'] uppercase tracking-wider">Balance Due:</span>
+              <span className="font-['Outfit'] uppercase tracking-normal">Balance Due:</span>
               <span className="font-mono">{formatCurrency(balanceDue, currency)}</span>
             </div>
           </div>
@@ -359,7 +359,7 @@ export const FormalInvoiceView: React.FC<FormalInvoiceViewProps> = ({ document: 
       <div>
         <div className="border-t border-slate-200 pt-3 grid grid-cols-2 gap-6 text-[10px] text-slate-500">
           <div>
-            <p className="font-bold text-slate-700 uppercase tracking-wider mb-0.5 font-['Outfit']">
+            <p className="font-bold text-slate-700 uppercase tracking-normal mb-0.5 font-['Outfit'] whitespace-nowrap">
               Terms & Payment Conditions:
             </p>
             <p>1. Please quote Invoice Number on all bank transfer remittances.</p>

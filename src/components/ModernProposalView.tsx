@@ -111,7 +111,7 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
                     {doc.studio.name}
                   </h1>
                 )}
-                <p className="text-[10.5px] font-semibold text-slate-600 tracking-wider uppercase">
+                <p className="text-[10.5px] font-semibold text-slate-600 tracking-normal uppercase">
                   {doc.studio.tagline}
                 </p>
                 <div className="text-[10px] text-slate-500 mt-1 space-y-0.5">
@@ -166,7 +166,7 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
             {/* Client & Project Banner */}
             <div className="grid grid-cols-2 gap-4 my-4 bg-slate-50 border border-slate-200/80 rounded-xl p-3.5">
               <div>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider font-['Outfit'] mb-1">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal font-['Outfit'] mb-1">
                   PREPARED FOR / CLIENT:
                 </p>
                 <h3 className="text-sm font-bold text-slate-950">
@@ -180,7 +180,7 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
               </div>
 
               <div>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider font-['Outfit'] mb-1">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal font-['Outfit'] mb-1">
                   PROJECT / ENGAGEMENT:
                 </p>
                 <h3 className="text-sm font-bold text-amber-900">
@@ -245,7 +245,7 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
               <div className="border border-slate-200 rounded-lg overflow-hidden">
                 <table className="w-full text-left text-xs border-collapse">
                   <thead>
-                    <tr className="bg-slate-900 text-slate-200 text-[10px] font-bold uppercase tracking-wider font-['Outfit']">
+                    <tr className="bg-slate-900 text-slate-200 text-[10px] font-bold uppercase tracking-normal font-['Outfit']">
                       <th className="py-2 px-3 w-8 text-center">#</th>
                       <th className="py-2 px-3">Item / Service Description</th>
                       <th className="py-2 px-3 text-center w-16">Qty</th>
@@ -397,14 +397,14 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
               {/* Header Mini */}
               <div className="flex items-center justify-between border-b border-slate-200 pb-3 mb-4">
                 <div className="flex items-center space-x-2">
-                  <h2 className="font-bold text-sm tracking-wider uppercase font-['Outfit'] text-slate-950">
+                  <h2 className="font-bold text-sm tracking-normal uppercase font-['Outfit'] text-slate-950 whitespace-nowrap">
                     {doc.studio.name}
                   </h2>
                   <span className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono">
                     Ref: {doc.details.invoiceNo}
                   </span>
                 </div>
-                <span className="text-[10px] text-slate-400 uppercase tracking-widest font-['Outfit']">
+                <span className="text-[10px] text-slate-400 uppercase tracking-normal font-['Outfit'] whitespace-nowrap">
                   Proposal Addendum & Sign-off
                 </span>
               </div>
@@ -476,7 +476,7 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
                 <div className="mt-4 pt-3 border-t-2 border-slate-900 grid grid-cols-2 gap-8">
                   {/* Service Provider Signature */}
                   <div>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider font-['Outfit'] mb-1">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal font-['Outfit'] mb-1 whitespace-nowrap">
                       ISSUED BY:
                     </p>
                     <p className="font-bold text-xs text-slate-900">{doc.studio.name}</p>
@@ -501,7 +501,7 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
 
                   {/* Client Acceptance Signature */}
                   <div>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider font-['Outfit'] mb-1">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal font-['Outfit'] mb-1 whitespace-nowrap">
                       ACCEPTED & APPROVED BY CLIENT:
                     </p>
                     <p className="font-bold text-xs text-slate-900">
