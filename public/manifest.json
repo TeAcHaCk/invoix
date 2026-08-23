@@ -1,0 +1,25 @@
+{
+  "name": "Invoix — Quotation & Invoice Platform",
+  "short_name": "Invoix",
+  "description": "Create stunning quotations, interactive proposals, and GST invoices with e-signatures and payment QR codes.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#020617",
+  "theme_color": "#f59e0b",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/invoix-logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/invoix-logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["business", "finance", "productivity"]
+}

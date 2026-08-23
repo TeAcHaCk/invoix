@@ -16,6 +16,7 @@ import {
 import { SUPPORTED_CURRENCIES } from '../constants/currencies';
 import { IndustryPresetSelector } from './IndustryPresetSelector';
 import { WatermarkControls } from './WatermarkControls';
+import { AdBanner } from './AdBanner';
 import { trimTransparentImage } from '../utils/imageTrim';
 import {
   User,
@@ -1302,6 +1303,11 @@ export const FormEditor: React.FC<FormEditorProps> = ({
             </div>
           </div>
         )}
+
+        {/* Free-tier AdSense Placement (Auto-hidden for Pro users) */}
+        <div className="pt-6 border-t border-slate-800/80">
+          <AdBanner format="rectangle" />
+        </div>
       </div>
     </div>
   );

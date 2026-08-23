@@ -1,6 +1,7 @@
 import React from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { ArrowRight, User, Crown, LayoutDashboard } from 'lucide-react';
+import { useInstallApp } from '../InstallAppPrompt';
+import { ArrowRight, User, Crown, Download } from 'lucide-react';
 
 interface LandingHeaderProps {
   onLaunchStudio: () => void;
@@ -14,6 +15,7 @@ export const LandingHeader: React.FC<LandingHeaderProps> = ({
   onOpenAdmin,
 }) => {
   const { user, profile, isAdmin } = useAuth();
+  const { canInstall, triggerInstall } = useInstallApp();
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-slate-950/80 backdrop-blur-lg border-b border-slate-800/80 px-4 sm:px-8 py-3.5 select-none font-['Plus_Jakarta_Sans',sans-serif]">
@@ -84,14 +86,25 @@ export const LandingHeader: React.FC<LandingHeaderProps> = ({
             </button>
           )}
 
+          {canInstall && (
+            <button
+              type="button"
+              onClick={triggerInstall}
+              className="flex items-center space-x-1.5 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-amber-300 text-xs font-semibold rounded-xl border border-amber-500/30 shadow-sm transition-all cursor-pointer"
+              title="Install Invoix on this device"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Install App</span>
+            </button>
+          )}
+
           <button
             type="button"
             onClick={onLaunchStudio}
-            className="px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 text-xs font-bold rounded-xl shadow-lg shadow-amber-500/20 flex items-center space-x-1.5 transition-all"
+            className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 text-xs font-bold rounded-xl shadow-lg shadow-amber-500/20 hover:shadow-amber-500/30 transition-all cursor-pointer"
           >
-            <LayoutDashboard className="w-3.5 h-3.5" />
-            <span>Open Studio</span>
-            <ArrowRight className="w-3.5 h-3.5" />
+            <span>Launch Studio</span>
+            <ArrowRight className="w-3.5 h-3.5 stroke-[2.5]" />
           </button>
         </div>
       </div>

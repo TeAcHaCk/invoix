@@ -20,6 +20,7 @@ import { AdminLayout } from './components/admin/AdminLayout';
 import { LandingPage } from './components/landing/LandingPage';
 import { PrivacyPolicyPage } from './components/landing/PrivacyPolicyPage';
 import { TermsOfServicePage } from './components/landing/TermsOfServicePage';
+import { InstallAppPrompt } from './components/InstallAppPrompt';
 import { saveDocument } from './services/documentService';
 import { exportDocumentToPdf, printDocument } from './utils/pdfGenerator';
 import confetti from 'canvas-confetti';
@@ -506,6 +507,7 @@ export function App() {
           onNavigateToHome={() => navigateToHome()}
         />
       )}
+      <InstallAppPrompt />
     </AuthProvider>
   );
 }

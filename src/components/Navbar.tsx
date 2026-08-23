@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import type { QuotationDocument } from '../types';
 import { INDUSTRY_PRESETS } from '../constants/industryPresets';
 import { useAuth } from '../context/AuthContext';
+import { useInstallApp } from './InstallAppPrompt';
 import {
   Download,
   Printer,
@@ -76,6 +77,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onToggleWatermark,
 }) => {
   const { user, profile, isAdmin, isCloudConnected } = useAuth();
+  const { canInstall, triggerInstall } = useInstallApp();
   const [copiedLink, setCopiedLink] = useState(false);
   const preset = INDUSTRY_PRESETS[doc.industry] || INDUSTRY_PRESETS.creative_agency;
   const shareDropdown = useDropdown();
@@ -274,6 +276,19 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {/* Divider */}
           <div className="w-px h-6 bg-slate-800 hidden md:block" />
+
+          {/* === INSTALL PWA APP BUTTON === */}
+          {canInstall && (
+            <button
+              type="button"
+              onClick={triggerInstall}
+              className="p-2 bg-slate-900 hover:bg-slate-800 text-amber-300 border border-amber-500/30 rounded-xl transition-colors flex items-center space-x-1.5 cursor-pointer"
+              title="Install Invoix Desktop/Mobile App"
+            >
+              <Download className="w-4 h-4 text-amber-400" />
+              <span className="text-[10px] font-bold uppercase hidden lg:inline font-['Outfit']">Install App</span>
+            </button>
+          )}
 
           {/* === ACCOUNT CLUSTER === */}
           {isAdmin && onOpenAdmin && (

@@ -5,6 +5,7 @@ import { IndustryShowcaseSection } from './IndustryShowcaseSection';
 import { FeatureGridSection } from './FeatureGridSection';
 import { PricingSection } from './PricingSection';
 import { FaqSection } from './FaqSection';
+import { AdBanner } from '../AdBanner';
 import type { IndustryCategory } from '../../types';
 import { ArrowRight, CheckCircle2 } from 'lucide-react';
 import { useScrollReveal } from '../../hooks/useScrollReveal';
@@ -43,6 +44,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       <main>
         {/* Hero Section */}
         <LandingHero onStartFree={onLaunchStudio} />
+
+        {/* Dynamic AdSense Horizontal Banner (Free visitors) */}
+        <div className="max-w-5xl mx-auto px-4 py-2">
+          <AdBanner format="horizontal" onUpgradeClick={() => onSelectPlan('pro')} />
+        </div>
 
         {/* Feature Grid */}
         <FeatureGridSection />
