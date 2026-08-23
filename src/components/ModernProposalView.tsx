@@ -198,9 +198,9 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
             {/* Project Scope / Phases (If present) */}
             {doc.includeScopeSection !== false && activeMilestones.length > 0 && (
               <div className="mb-4">
-                <div className="flex items-center space-x-1.5 border-b border-slate-200 pb-1 mb-2">
-                  <Layers className="w-3.5 h-3.5 text-amber-600" />
-                  <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider font-['Outfit']">
+                <div className="flex items-center space-x-2 border-b border-slate-200/90 pb-1.5 mb-2.5">
+                  <Layers className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                  <h4 className="text-[11px] font-bold text-slate-900 uppercase tracking-wide font-['Outfit'] leading-tight">
                     {preset.scopeSectionTitle || 'SCOPE OF WORK & PHASES'}
                   </h4>
                 </div>
@@ -232,10 +232,10 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
 
             {/* Itemized Investment & Pricing Table */}
             <div className="mb-4">
-              <div className="flex items-center justify-between border-b border-slate-200 pb-1 mb-2">
-                <div className="flex items-center space-x-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-                  <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider font-['Outfit']">
+              <div className="flex items-center justify-between border-b border-slate-200/90 pb-1.5 mb-2.5">
+                <div className="flex items-center space-x-2">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                  <h4 className="text-[11px] font-bold text-slate-900 uppercase tracking-wide font-['Outfit'] leading-tight">
                     ITEMIZED INVESTMENT SCHEDULE
                   </h4>
                 </div>
@@ -324,10 +324,12 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
             <div className="grid grid-cols-2 gap-3 mb-2">
               {/* Payment Terms Milestones */}
               <div className="bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-[11px]">
-                <p className="font-bold text-slate-900 uppercase tracking-wider text-[10px] font-['Outfit'] flex items-center mb-1.5">
-                  <Clock className="w-3 h-3 mr-1 text-amber-700" />
-                  <span>MILESTONE PAYMENT STRUCTURE</span>
-                </p>
+                <div className="flex items-center space-x-1.5 pb-1 mb-2 border-b border-slate-200/80">
+                  <Clock className="w-3.5 h-3.5 text-amber-700 shrink-0" />
+                  <span className="font-bold text-slate-900 uppercase tracking-wide text-[10px] font-['Outfit'] leading-tight">
+                    MILESTONE PAYMENT TERMS
+                  </span>
+                </div>
                 <div className="space-y-1">
                   <div className="flex justify-between items-center text-[10.5px]">
                     <span className="text-slate-600">{doc.paymentTerms?.paymentMilestoneLabels?.advanceLabel || `${advPct}% Advance Deposit`}:</span>
@@ -350,11 +352,13 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
 
               {/* Deliverables Checklist */}
               <div className="bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-[11px]">
-                <p className="font-bold text-slate-900 uppercase tracking-wider text-[10px] font-['Outfit'] flex items-center mb-1.5">
-                  <CheckCircle2 className="w-3 h-3 mr-1 text-emerald-600" />
-                  <span>INCLUDED KEY DELIVERABLES</span>
-                </p>
-                <ul className="space-y-0.5 text-[10.5px] text-slate-700">
+                <div className="flex items-center space-x-1.5 pb-1 mb-2 border-b border-slate-200/80">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                  <span className="font-bold text-slate-900 uppercase tracking-wide text-[10px] font-['Outfit'] leading-tight">
+                    INCLUDED DELIVERABLES
+                  </span>
+                </div>
+                <ul className="space-y-1 text-[10.5px] text-slate-700">
                   {activeDeliverables.slice(0, 4).map((d) => (
                     <li key={d.id} className="flex items-start space-x-1.5 leading-tight">
                       <span className="text-emerald-600 font-bold shrink-0">✓</span>
@@ -408,9 +412,9 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
               {/* Assigned Specialists / Team Section */}
               {doc.includeCrewSection && activeTeam.length > 0 && (
                 <div className="mb-5">
-                  <div className="flex items-center space-x-1.5 border-b border-slate-200 pb-1 mb-2">
-                    <Award className="w-3.5 h-3.5 text-amber-700" />
-                    <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider font-['Outfit']">
+                  <div className="flex items-center space-x-2 border-b border-slate-200/90 pb-1.5 mb-2.5">
+                    <Award className="w-3.5 h-3.5 text-amber-700 shrink-0" />
+                    <h4 className="text-[11px] font-bold text-slate-900 uppercase tracking-wide font-['Outfit'] leading-tight">
                       {preset.teamSectionTitle || 'ASSIGNED EXPERTS & KEY PERSONNEL'}
                     </h4>
                   </div>
@@ -428,9 +432,9 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
               {/* Guarantees & Why Work With Us */}
               {doc.includeWhyChooseUs && activeWhy.length > 0 && (
                 <div className="mb-5">
-                  <div className="flex items-center space-x-1.5 border-b border-slate-200 pb-1 mb-2">
-                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-700" />
-                    <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider font-['Outfit']">
+                  <div className="flex items-center space-x-2 border-b border-slate-200/90 pb-1.5 mb-2.5">
+                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
+                    <h4 className="text-[11px] font-bold text-slate-900 uppercase tracking-wide font-['Outfit'] leading-tight">
                       WHY PARTNER WITH US & QUALITY COMMITMENTS
                     </h4>
                   </div>
@@ -451,13 +455,13 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
               {/* Commercial Terms & Conditions */}
               {doc.termsAndConditions && doc.termsAndConditions.length > 0 && (
                 <div className="mb-5">
-                  <div className="flex items-center space-x-1.5 border-b border-slate-200 pb-1 mb-2">
-                    <FileText className="w-3.5 h-3.5 text-slate-700" />
-                    <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider font-['Outfit']">
+                  <div className="flex items-center space-x-2 border-b border-slate-200/90 pb-1.5 mb-2.5">
+                    <FileText className="w-3.5 h-3.5 text-slate-700 shrink-0" />
+                    <h4 className="text-[11px] font-bold text-slate-900 uppercase tracking-wide font-['Outfit'] leading-tight">
                       TERMS OF ENGAGEMENT & ACCEPTANCE CRITERIA
                     </h4>
                   </div>
-                  <ul className="space-y-1 text-[10.5px] text-slate-600 pl-4 list-decimal">
+                  <ul className="space-y-1.5 text-[10.5px] text-slate-600 pl-4 list-decimal">
                     {doc.termsAndConditions.map((term, tIdx) => (
                       <li key={tIdx} className="leading-tight">
                         {term}
