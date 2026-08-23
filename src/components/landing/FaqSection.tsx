@@ -9,7 +9,7 @@ export const FaqSection: React.FC = () => {
   const faqs = [
     {
       q: 'How do my clients view and sign the proposals?',
-      a: 'When you click "Copy Client Link" or send via WhatsApp, your client receives a private URL (e.g. yoursite.com/?view=doc_123). They can open it on their smartphone or laptop, select any optional upsell services they want, draw their digital signature on the touchscreen, and legally approve the proposal in seconds.',
+      a: 'When you click "Copy Client Link" or send via WhatsApp, your client receives a private URL secured by a unique, unguessable link token. They can open it on their smartphone or laptop, select any optional upsell services they want, draw their digital signature on the touchscreen, and legally approve the proposal in seconds.',
     },
     {
       q: 'Are the digital e-signatures legally binding?',

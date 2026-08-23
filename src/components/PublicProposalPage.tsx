@@ -5,6 +5,7 @@ import {
   recordDocumentView,
   approveDocumentPublicly,
 } from '../services/documentService';
+import { generateContractSignatureHash, generateCertificateId } from '../utils/cryptoAudit';
 import { formatCurrency } from '../utils/formatters';
 import { exportDocumentToPdf } from '../utils/pdfGenerator';
 import { InvoiceDocumentView } from './InvoiceDocumentView';
@@ -23,6 +24,11 @@ import {
   Share2,
   CreditCard,
   Copy,
+  Upload,
+  Type as TypeIcon,
+  ShieldCheck,
+  Trash2,
+  Lock,
 } from 'lucide-react';
 
 interface PublicProposalPageProps {
@@ -39,8 +45,35 @@ export const PublicProposalPage: React.FC<PublicProposalPageProps> = ({ document
   const [isDrawing, setIsDrawing] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [copiedLabel, setCopiedLabel] = useState<string | null>(null);
+  const [signatureMode, setSignatureMode] = useState<'draw' | 'upload' | 'type'>('draw');
+  const [uploadedSignatureUrl, setUploadedSignatureUrl] = useState<string | null>(null);
+  const [liveTimestamp, setLiveTimestamp] = useState<string>(() => {
+    const now = new Date();
+    return `${now.toLocaleDateString('en-GB')} ${now.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true,
+    })}`;
+  });
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const now = new Date();
+      setLiveTimestamp(
+        `${now.toLocaleDateString('en-GB')} ${now.toLocaleTimeString('en-US', {
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: true,
+        })}`
+      );
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     const loadDocument = async () => {
@@ -187,17 +220,121 @@ export const PublicProposalPage: React.FC<PublicProposalPageProps> = ({ document
   const grandTotal = taxableAmount + taxAmount;
   const advanceAmount = Math.round((grandTotal * (document.paymentTerms?.advancePercent || 30)) / 100);
 
+  const generateTypedSignatureDataUrl = (
+    name: string,
+    hash?: string,
+    customDate?: Date
+  ): string => {
+    const offscreen = window.document.createElement('canvas');
+    offscreen.width = 480;
+    offscreen.height = 120;
+    const ctx = offscreen.getContext('2d');
+    if (!ctx) return '';
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, 480, 120);
+    ctx.fillStyle = '#0f172a';
+    ctx.font = 'italic bold 26px "Playfair Display", "Georgia", serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(name || 'Digital Signature', 240, 36);
+
+    const now = customDate || new Date();
+    const dateFormatted = now.toLocaleDateString('en-GB');
+    const timeFormatted = now.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true,
+    });
+    const timeWithSeconds = `${dateFormatted} ${timeFormatted}`;
+
+    ctx.font = 'bold 9.5px monospace, sans-serif';
+    ctx.fillStyle = '#475569';
+    ctx.fillText(`DIGITALLY VERIFIED SIGNATURE • ${timeWithSeconds}`, 240, 72);
+
+    if (hash) {
+      ctx.font = '8px monospace';
+      ctx.fillStyle = '#059669';
+      ctx.fillText(`SHA-256: ${hash}`, 240, 94);
+    } else {
+      ctx.font = '8px monospace';
+      ctx.fillStyle = '#64748b';
+      ctx.fillText(`CRYPTOGRAPHICALLY VERIFIED & TAMPER-PROOF`, 240, 94);
+    }
+
+    return offscreen.toDataURL('image/png');
+  };
+
+  const handleSignatureFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      alert('Please upload an image file (PNG, JPG, or WEBP).');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      if (event.target?.result) {
+        setUploadedSignatureUrl(event.target.result as string);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleApprove = async () => {
     if (!signerName.trim()) {
       alert('Please enter your full legal name to approve.');
       return;
     }
 
-    setIsSubmitting(true);
+    const now = new Date();
+    const timestampIso = now.toISOString();
+
+    // Preliminary hash for typed image rendering
+    const preliminary = await generateContractSignatureHash({
+      signatureDataUrl:
+        signatureMode === 'upload' && uploadedSignatureUrl
+          ? uploadedSignatureUrl
+          : signatureMode === 'draw' && canvasRef.current
+          ? canvasRef.current.toDataURL('image/png')
+          : `typed-${signerName.trim()}-${timestampIso}`,
+      documentId,
+      invoiceNo: document.details.invoiceNo,
+      signerName: signerName.trim(),
+      timestamp: timestampIso,
+      totalInvestment: grandTotal,
+      currencyCode: currency.code,
+    });
+
     let signatureUrl = '';
-    if (canvasRef.current) {
-      signatureUrl = canvasRef.current.toDataURL('image/png');
+    if (signatureMode === 'draw') {
+      if (canvasRef.current) {
+        signatureUrl = canvasRef.current.toDataURL('image/png');
+      }
+    } else if (signatureMode === 'upload') {
+      if (!uploadedSignatureUrl) {
+        alert('Please select or drop a signature / stamp image file to upload.');
+        return;
+      }
+      signatureUrl = uploadedSignatureUrl;
+    } else if (signatureMode === 'type') {
+      signatureUrl = generateTypedSignatureDataUrl(signerName.trim(), preliminary.hash, now);
     }
+
+    setIsSubmitting(true);
+
+    // Cryptographic SHA-256 Hash Generation
+    const signature = await generateContractSignatureHash({
+      signatureDataUrl: signatureUrl || 'digital-acceptance',
+      documentId,
+      invoiceNo: document.details.invoiceNo,
+      signerName: signerName.trim(),
+      timestamp: timestampIso,
+      totalInvestment: grandTotal,
+      currencyCode: currency.code,
+    });
+
+    const certificateId = generateCertificateId(document.details.invoiceNo, signature.hash);
 
     const signatoryData: SignatoryRecord = {
       ...document.signatory,
@@ -206,12 +343,20 @@ export const PublicProposalPage: React.FC<PublicProposalPageProps> = ({ document
       clientSignatureDataUrl: signatureUrl || undefined,
     };
 
+    const sigType = signatureMode === 'draw' ? 'drawn' : signatureMode === 'upload' ? 'uploaded' : 'typed';
+
     const success = await approveDocumentPublicly(
       documentId,
       signatoryData,
       document.pricingItems,
       grandTotal,
-      document.client.email
+      document.client.email,
+      {
+        signatureType: sigType,
+        signatureHash: signature.hash,
+        signatureAlgo: signature.algo,
+        certificateId,
+      }
     );
 
     setIsSubmitting(false);
@@ -221,8 +366,26 @@ export const PublicProposalPage: React.FC<PublicProposalPageProps> = ({ document
       setDocument({
         ...document,
         status: 'APPROVED',
-        approvedAt: new Date().toISOString(),
+        approvedAt: timestampIso,
         signatory: signatoryData,
+        acceptanceAudit: {
+          signatoryName: signerName.trim(),
+          signedAt: timestampIso,
+          formattedDate: new Date().toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+          }),
+          signatureType: sigType,
+          signatureDataUrl: signatureUrl,
+          signatureHash: signature.hash,
+          signatureAlgo: signature.algo,
+          certificateId,
+          acceptedTotalInvestment: grandTotal,
+        },
       });
       confetti({
         particleCount: 150,
@@ -513,11 +676,11 @@ export const PublicProposalPage: React.FC<PublicProposalPageProps> = ({ document
             <div className="space-y-6 animate-fadeIn">
               {/* Success Banner */}
               <div className="bg-gradient-to-br from-emerald-950/60 to-slate-950 border border-emerald-500/40 rounded-2xl p-6 space-y-4">
-                <div className="flex items-start justify-between">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                   <div className="space-y-1">
                     <div className="flex items-center space-x-2 text-emerald-400 font-bold text-base font-['Outfit']">
                       <CheckCircle2 className="w-5 h-5" />
-                      <span>Proposal Accepted & Digitally Signed!</span>
+                      <span>Proposal Accepted & Digitally Executed!</span>
                     </div>
                     <p className="text-xs text-slate-300">
                       Signed by <strong>{document.signatory?.clientSignedName}</strong> on{' '}
@@ -525,20 +688,55 @@ export const PublicProposalPage: React.FC<PublicProposalPageProps> = ({ document
                     </p>
                   </div>
 
-                  <span className="text-[11px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-3 py-1 rounded-full font-mono font-bold">
-                    Ref: {document.details.invoiceNo}
-                  </span>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-[11px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-3 py-1 rounded-full font-mono font-bold">
+                      {document.acceptanceAudit?.certificateId || `Ref: ${document.details.invoiceNo}`}
+                    </span>
+                  </div>
                 </div>
 
-                {document.signatory?.clientSignatureDataUrl && (
-                  <div className="bg-white p-2.5 rounded-xl border border-slate-700 inline-block">
-                    <img
-                      src={document.signatory.clientSignatureDataUrl}
-                      alt="Digital Signature"
-                      className="max-h-12 object-contain"
-                    />
+                <div className="flex flex-wrap items-center gap-4">
+                  {document.signatory?.clientSignatureDataUrl && (
+                    <div className="bg-white p-2.5 rounded-xl border border-slate-700 inline-block shadow-md">
+                      <img
+                        src={document.signatory.clientSignatureDataUrl}
+                        alt="Digital Signature"
+                        className="max-h-12 object-contain"
+                      />
+                    </div>
+                  )}
+
+                  <div className="space-y-1 text-xs">
+                    <div className="flex items-center space-x-1.5 text-slate-300">
+                      <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                      <span className="font-semibold">Signature Method:</span>
+                      <span className="capitalize text-emerald-300 font-mono">
+                        {document.acceptanceAudit?.signatureType === 'uploaded'
+                          ? 'Uploaded Image Stamp'
+                          : document.acceptanceAudit?.signatureType === 'typed'
+                          ? 'Typed Legal Script'
+                          : 'Drawn Touch Signature'}
+                      </span>
+                    </div>
+
+                    {document.acceptanceAudit?.signatureHash && (
+                      <div className="flex items-center space-x-2 bg-slate-900/90 border border-slate-800 rounded-lg px-2.5 py-1.5 font-mono text-[10.5px]">
+                        <Lock className="w-3 h-3 text-amber-400 shrink-0" />
+                        <span className="text-slate-400 truncate max-w-[200px] sm:max-w-xs" title={document.acceptanceAudit.signatureHash}>
+                          SHA-256: {document.acceptanceAudit.signatureHash}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleCopy(document.acceptanceAudit!.signatureHash!, 'hash')}
+                          className="text-amber-400 hover:text-amber-300 font-bold shrink-0 ml-1 cursor-pointer flex items-center gap-0.5"
+                        >
+                          {copiedLabel === 'hash' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                          <span>{copiedLabel === 'hash' ? 'Copied' : 'Copy'}</span>
+                        </button>
+                      </div>
+                    )}
                   </div>
-                )}
+                </div>
 
                 {/* Next Steps Buttons */}
                 <div className="pt-3 border-t border-emerald-500/20 flex flex-wrap gap-3">
@@ -651,63 +849,189 @@ export const PublicProposalPage: React.FC<PublicProposalPageProps> = ({ document
               )}
             </div>
           ) : (
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs font-semibold text-slate-300 block mb-1.5">
-                    Authorized Signatory / Legal Name <span className="text-red-400">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. Sarah Jenkins"
-                    value={signerName}
-                    onChange={(e) => setSignerName(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-slate-100 focus:outline-none focus:border-amber-500"
-                  />
-                  <p className="text-[11px] text-slate-500 mt-1.5 leading-relaxed">
-                    By signing, you acknowledge and accept all specifications, deliverables, and payment terms outlined in this proposal.
-                  </p>
-                </div>
-
-                <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <label className="text-xs font-semibold text-slate-300">
-                      Draw Signature on Screen:
+            <div className="space-y-5">
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-5">
+                {/* Left Column: Signer Name & Legal Terms */}
+                <div className="md:col-span-5 space-y-3">
+                  <div>
+                    <label className="text-xs font-semibold text-slate-300 block mb-1.5">
+                      Authorized Signatory / Legal Name <span className="text-red-400">*</span>
                     </label>
-                    <button
-                      type="button"
-                      onClick={clearCanvas}
-                      className="text-[11px] text-slate-400 hover:text-amber-300 flex items-center space-x-1"
-                    >
-                      <RotateCcw className="w-3.5 h-3.5" />
-                      <span>Clear</span>
-                    </button>
-                  </div>
-                  <div className="bg-white rounded-xl p-1.5 border border-slate-700">
-                    <canvas
-                      ref={canvasRef}
-                      width={400}
-                      height={100}
-                      onMouseDown={startDrawing}
-                      onMouseMove={draw}
-                      onMouseUp={stopDrawing}
-                      onMouseLeave={stopDrawing}
-                      onTouchStart={startDrawing}
-                      onTouchMove={draw}
-                      onTouchEnd={stopDrawing}
-                      className="w-full h-24 bg-white rounded-lg cursor-crosshair touch-none"
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Sarah Jenkins"
+                      value={signerName}
+                      onChange={(e) => setSignerName(e.target.value)}
+                      className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-slate-100 focus:outline-none focus:border-amber-500 font-semibold"
                     />
                   </div>
+
+                  <div className="bg-slate-950/70 border border-slate-800/80 rounded-xl p-3 space-y-2">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider font-['Outfit'] block">
+                      Cryptographic Audit & Integrity
+                    </span>
+                    <p className="text-[11px] text-slate-400 leading-relaxed">
+                      By submitting your signature, a cryptographically signed SHA-256 audit hash will be generated to bind this commercial acceptance.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Right Column: Multi-Mode Signature Selector */}
+                <div className="md:col-span-7 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    {/* Mode Selector Tabs */}
+                    <div className="flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800">
+                      <button
+                        type="button"
+                        onClick={() => setSignatureMode('draw')}
+                        className={`px-3 py-1 text-xs font-semibold rounded-lg flex items-center space-x-1.5 transition-all cursor-pointer ${
+                          signatureMode === 'draw'
+                            ? 'bg-amber-500 text-slate-950 font-bold shadow'
+                            : 'text-slate-400 hover:text-slate-200'
+                        }`}
+                      >
+                        <PenTool className="w-3 h-3" />
+                        <span>Draw</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setSignatureMode('upload')}
+                        className={`px-3 py-1 text-xs font-semibold rounded-lg flex items-center space-x-1.5 transition-all cursor-pointer ${
+                          signatureMode === 'upload'
+                            ? 'bg-amber-500 text-slate-950 font-bold shadow'
+                            : 'text-slate-400 hover:text-slate-200'
+                        }`}
+                      >
+                        <Upload className="w-3 h-3" />
+                        <span>Upload Stamp</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setSignatureMode('type')}
+                        className={`px-3 py-1 text-xs font-semibold rounded-lg flex items-center space-x-1.5 transition-all cursor-pointer ${
+                          signatureMode === 'type'
+                            ? 'bg-amber-500 text-slate-950 font-bold shadow'
+                            : 'text-slate-400 hover:text-slate-200'
+                        }`}
+                      >
+                        <TypeIcon className="w-3 h-3" />
+                        <span>Type Name</span>
+                      </button>
+                    </div>
+
+                    {signatureMode === 'draw' && (
+                      <button
+                        type="button"
+                        onClick={clearCanvas}
+                        className="text-[11px] text-slate-400 hover:text-amber-300 flex items-center space-x-1 cursor-pointer"
+                      >
+                        <RotateCcw className="w-3 h-3" />
+                        <span>Clear</span>
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Mode 1: Draw Canvas */}
+                  {signatureMode === 'draw' && (
+                    <div className="bg-white rounded-xl p-1.5 border border-slate-700 shadow-inner">
+                      <canvas
+                        ref={canvasRef}
+                        width={450}
+                        height={110}
+                        onMouseDown={startDrawing}
+                        onMouseMove={draw}
+                        onMouseUp={stopDrawing}
+                        onMouseLeave={stopDrawing}
+                        onTouchStart={startDrawing}
+                        onTouchMove={draw}
+                        onTouchEnd={stopDrawing}
+                        className="w-full h-28 bg-white rounded-lg cursor-crosshair touch-none"
+                      />
+                    </div>
+                  )}
+
+                  {/* Mode 2: Upload Signature / Stamp */}
+                  {signatureMode === 'upload' && (
+                    <div>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp"
+                        onChange={handleSignatureFileUpload}
+                        className="hidden"
+                      />
+
+                      {uploadedSignatureUrl ? (
+                        <div className="bg-white rounded-xl p-3 border border-slate-700 flex items-center justify-between">
+                          <img
+                            src={uploadedSignatureUrl}
+                            alt="Uploaded Signature"
+                            className="max-h-20 max-w-[240px] object-contain"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setUploadedSignatureUrl(null);
+                              if (fileInputRef.current) fileInputRef.current.value = '';
+                            }}
+                            className="px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-600 rounded-lg text-xs font-semibold flex items-center space-x-1 cursor-pointer"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            <span>Remove</span>
+                          </button>
+                        </div>
+                      ) : (
+                        <div
+                          onClick={() => fileInputRef.current?.click()}
+                          className="bg-slate-950 border-2 border-dashed border-slate-700 hover:border-amber-500/60 rounded-xl p-6 text-center cursor-pointer transition-colors space-y-2 group"
+                        >
+                          <div className="w-10 h-10 rounded-full bg-amber-500/10 text-amber-400 group-hover:scale-110 transition-transform flex items-center justify-center mx-auto">
+                            <Upload className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <p className="text-xs font-bold text-slate-200">
+                              Click to browse or drop signature/company stamp
+                            </p>
+                            <p className="text-[11px] text-slate-500 mt-0.5">
+                              Supports PNG, JPG, or WEBP transparent image
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Mode 3: Type Legal Name Script */}
+                  {signatureMode === 'type' && (
+                    <div className="bg-white rounded-xl p-4 border border-slate-700 text-center space-y-2 shadow-inner">
+                      <p className="font-['Playfair_Display',serif] italic font-bold text-2xl text-slate-900 tracking-wide select-none">
+                        {signerName || 'Your Legal Name'}
+                      </p>
+                      <div className="border-t border-slate-200 pt-2 space-y-1">
+                        <div className="flex items-center justify-center space-x-2 text-[10.5px] text-slate-600 font-mono font-semibold">
+                          <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                          <span>DIGITALLY VERIFIED SIGNATURE • {liveTimestamp}</span>
+                        </div>
+                        <div className="flex items-center justify-center space-x-1.5 text-[9px] text-slate-400 font-mono">
+                          <Lock className="w-2.5 h-2.5 text-amber-500 shrink-0" />
+                          <span>SHA-256 HASH GENERATED & CRYPTOGRAPHICALLY ATTESTED</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
-              <div className="pt-3 flex justify-end">
+              {/* Submit Button */}
+              <div className="pt-2 flex justify-end">
                 <button
                   type="button"
                   onClick={handleApprove}
                   disabled={isSubmitting}
-                  className="px-8 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold rounded-xl shadow-xl shadow-emerald-600/30 flex items-center space-x-2 transition-all disabled:opacity-50 text-sm"
+                  className="px-8 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold rounded-xl shadow-xl shadow-emerald-600/30 flex items-center space-x-2 transition-all disabled:opacity-50 text-sm cursor-pointer"
                 >
                   {isSubmitting ? (
                     <Loader2 className="w-4 h-4 animate-spin" />

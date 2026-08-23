@@ -165,7 +165,7 @@ export const AdminDocumentsTab: React.FC = () => {
                       {/* Client Portal Link */}
                       <td className="px-6 py-4 text-right">
                         <a
-                          href={`/?view=${doc.id}`}
+                          href={`/?view=${doc.share_token || doc.id}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="inline-flex items-center space-x-1 px-3 py-1.5 rounded-lg bg-slate-950 hover:bg-slate-800 text-amber-300 border border-slate-700 text-xs font-semibold transition-all"

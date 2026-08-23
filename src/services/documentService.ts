@@ -1,5 +1,6 @@
-import type { QuotationDocument, SignatoryRecord } from '../types';
+import type { QuotationDocument, SignatoryRecord, PricingItem } from '../types';
 import { getSupabaseClient } from '../lib/supabase';
+import { createShareToken } from '../utils/cryptoAudit';
 import {
   saveDocumentToVault,
   getVaultDocuments,
@@ -13,12 +14,24 @@ export interface CloudSaveResult {
   error?: string;
 }
 
+/** Documents created before share tokens existed get one on first touch. */
+const withShareToken = (doc: QuotationDocument): QuotationDocument =>
+  doc.shareToken ? doc : { ...doc, shareToken: createShareToken() };
+
+/** Finds a locally cached document by share token, falling back to the raw id. */
+const findLocalByToken = (token: string): QuotationDocument | undefined => {
+  const localDocs = getVaultDocuments();
+  return localDocs.find((d) => d.shareToken === token) || localDocs.find((d) => d.id === token);
+};
+
 export const saveDocument = async (
   doc: QuotationDocument,
   userId?: string
 ): Promise<CloudSaveResult> => {
+  const document = withShareToken(doc);
+
   // Always save locally to vault for offline resilience
-  saveDocumentToVault(doc);
+  saveDocumentToVault(document);
 
   const supabase = getSupabaseClient();
   if (!supabase || !userId) {
@@ -27,20 +40,21 @@ export const saveDocument = async (
 
   try {
     const payload = {
-      id: doc.id,
+      id: document.id,
       user_id: userId,
-      type: doc.type,
-      industry: doc.industry,
-      theme: doc.theme,
-      title: doc.packageBannerTitle || doc.client.nameOfEvent || 'Untitled Document',
-      client_name: doc.client.clientName || doc.client.nameOfEvent,
-      client_email: doc.client.email || '',
-      total_investment: doc.totalInvestment || 0,
-      currency_code: doc.currency.code,
-      status: doc.signatory?.clientSignedName ? 'APPROVED' : doc.status || 'DRAFT',
-      views_count: doc.viewCount || 0,
+      share_token: document.shareToken,
+      type: document.type,
+      industry: document.industry,
+      theme: document.theme,
+      title: document.packageBannerTitle || document.client.nameOfEvent || 'Untitled Document',
+      client_name: document.client.clientName || document.client.nameOfEvent,
+      client_email: document.client.email || '',
+      total_investment: document.totalInvestment || 0,
+      currency_code: document.currency.code,
+      status: document.signatory?.clientSignedName ? 'APPROVED' : document.status || 'DRAFT',
+      views_count: document.viewCount || 0,
       is_public: true,
-      document_data: doc,
+      document_data: document,
       updated_at: new Date().toISOString(),
     };
 
@@ -94,30 +108,34 @@ export const fetchUserDocuments = async (userId?: string): Promise<QuotationDocu
   return localDocs;
 };
 
+/**
+ * Loads a document for the public client portal.
+ *
+ * Goes through the get_public_document RPC rather than selecting from the table:
+ * the documents table is owner-only now, and the RPC requires the share token.
+ */
 export const fetchPublicDocument = async (
-  documentId: string
+  shareToken: string
 ): Promise<{ doc: QuotationDocument | null; error?: string }> => {
   const supabase = getSupabaseClient();
 
   if (supabase) {
     try {
-      const { data, error } = await supabase
-        .from('documents')
-        .select('document_data, views_count')
-        .eq('id', documentId)
-        .single();
+      const { data, error } = await supabase.rpc('get_public_document', { p_token: shareToken });
 
-      if (!error && data?.document_data) {
-        return { doc: data.document_data as QuotationDocument };
+      if (!error && data) {
+        return { doc: data as QuotationDocument };
+      }
+      if (error) {
+        console.warn('Public document RPC failed, checking local storage:', error.message);
       }
     } catch (e) {
       console.warn('Supabase public document fetch failed, checking local storage:', e);
     }
   }
 
-  // Check local storage fallback
-  const localDocs = getVaultDocuments();
-  const found = localDocs.find((d) => d.id === documentId);
+  // Check local storage fallback (also covers fully offline / no-cloud usage)
+  const found = findLocalByToken(shareToken);
   if (found) {
     return { doc: found };
   }
@@ -125,13 +143,12 @@ export const fetchPublicDocument = async (
   return { doc: null, error: 'Document not found or link expired.' };
 };
 
-export const recordDocumentView = async (documentId: string): Promise<void> => {
+export const recordDocumentView = async (shareToken: string): Promise<void> => {
   // Update local vault storage immediately
-  const localDocs = getVaultDocuments();
-  const found = localDocs.find((d) => d.id === documentId);
+  const found = findLocalByToken(shareToken);
   if (found) {
     const currentCount = found.viewCount || 0;
-    updateVaultDocumentMetadata(documentId, {
+    updateVaultDocumentMetadata(found.id, {
       viewCount: currentCount + 1,
       lastViewedAt: new Date().toISOString(),
       status: found.status === 'APPROVED' ? 'APPROVED' : 'VIEWED',
@@ -142,37 +159,10 @@ export const recordDocumentView = async (documentId: string): Promise<void> => {
   if (!supabase) return;
 
   try {
-    // 1. Insert view audit log
-    await supabase.from('document_views').insert({
-      document_id: documentId,
-      user_agent: navigator.userAgent,
-    });
-
-    // 2. Increment view counter in Supabase
-    try {
-      const { error } = await supabase.rpc('increment_document_views', { doc_id: documentId });
-      if (error) {
-        throw error;
-      }
-    } catch {
-      // Fallback update if RPC function not created in database
-      const { data } = await supabase.from('documents').select('views_count, document_data').eq('id', documentId).single();
-      const current = data?.views_count || 0;
-      const existingDocData = data?.document_data || {};
-      await supabase
-        .from('documents')
-        .update({
-          views_count: current + 1,
-          last_viewed_at: new Date().toISOString(),
-          status: existingDocData.status === 'APPROVED' ? 'APPROVED' : 'VIEWED',
-          document_data: {
-            ...existingDocData,
-            viewCount: current + 1,
-            lastViewedAt: new Date().toISOString(),
-            status: existingDocData.status === 'APPROVED' ? 'APPROVED' : 'VIEWED',
-          },
-        })
-        .eq('id', documentId);
+    // The RPC writes the audit row and bumps the counter in one server-side step.
+    const { error } = await supabase.rpc('record_public_view', { p_token: shareToken });
+    if (error) {
+      console.warn('Failed to record document view in cloud:', error.message);
     }
   } catch (err) {
     console.error('Failed to record document view in cloud:', err);
@@ -180,29 +170,23 @@ export const recordDocumentView = async (documentId: string): Promise<void> => {
 };
 
 export const approveDocumentPublicly = async (
-  documentId: string,
+  shareToken: string,
   signatory: SignatoryRecord,
-  updatedPricingItems?: any[],
+  updatedPricingItems?: PricingItem[],
   acceptedTotal?: number,
-  clientEmail?: string
+  clientEmail?: string,
+  auditExtra?: {
+    signatureType?: 'drawn' | 'uploaded' | 'typed';
+    signatureHash?: string;
+    signatureAlgo?: 'sha-256' | 'fallback';
+    certificateId?: string;
+  }
 ): Promise<boolean> => {
-  const { doc } = await fetchPublicDocument(documentId);
-  if (!doc) return false;
-
   const now = new Date();
-  const selectedAddons = (updatedPricingItems || doc.pricingItems)
-    .filter((i) => i.isOptional && i.selected)
-    .map((i) => i.description);
-
-  const finalTotal =
-    acceptedTotal ??
-    (updatedPricingItems || doc.pricingItems)
-      .filter((i) => !i.isOptional || i.selected)
-      .reduce((sum, i) => sum + (i.qty && i.rate ? i.qty * i.rate : i.amount || 0), 0);
 
   const auditRecord = {
     signatoryName: signatory.clientSignedName || 'Authorized Signatory',
-    signatoryEmail: clientEmail || doc.client.email || '',
+    signatoryEmail: clientEmail || '',
     signedAt: now.toISOString(),
     formattedDate: now.toLocaleDateString('en-US', {
       year: 'numeric',
@@ -210,43 +194,67 @@ export const approveDocumentPublicly = async (
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
+      second: '2-digit',
     }),
+    signatureType: auditExtra?.signatureType || 'drawn',
     signatureDataUrl: signatory.clientSignatureDataUrl,
-    selectedAddonIds: selectedAddons,
-    acceptedTotalInvestment: finalTotal,
+    signatureHash: auditExtra?.signatureHash,
+    signatureAlgo: auditExtra?.signatureAlgo,
+    certificateId: auditExtra?.certificateId,
     userAgent: navigator.userAgent,
   };
 
-  const approvedDoc: QuotationDocument = {
-    ...doc,
-    status: 'APPROVED',
-    approvedAt: now.toISOString(),
-    acceptanceAudit: auditRecord,
-    pricingItems: updatedPricingItems || doc.pricingItems,
-    signatory,
-  };
-
-  // Save in local storage
-  saveDocumentToVault(approvedDoc);
+  // Which optional add-ons the client chose. The server recomputes the total
+  // from these — the browser's figure is not trusted.
+  const selectedAddonIds = (updatedPricingItems || [])
+    .filter((i) => i.isOptional && i.selected)
+    .map((i) => i.id);
 
   const supabase = getSupabaseClient();
   if (supabase) {
     try {
-      await supabase
-        .from('documents')
-        .update({
-          status: 'APPROVED',
-          signed_at: now.toISOString(),
-          signer_name: signatory.clientSignedName,
-          total_investment: finalTotal,
-          document_data: approvedDoc,
-        })
-        .eq('id', documentId);
-      return true;
+      const { data, error } = await supabase.rpc('sign_document', {
+        p_token: shareToken,
+        p_signatory: signatory,
+        p_audit: auditRecord,
+        p_selected_addon_ids: selectedAddonIds,
+      });
+
+      if (!error && data) {
+        // Mirror the server's authoritative copy into the local vault.
+        saveDocumentToVault(data as QuotationDocument);
+        return true;
+      }
+      if (error) {
+        console.error('Failed to sign document in cloud:', error.message);
+        return false;
+      }
     } catch (e) {
-      console.error('Failed to update cloud approval:', e);
+      console.error('Failed to sign document in cloud:', e);
+      return false;
     }
   }
+
+  // Offline / no-cloud fallback: apply the approval to the local copy only.
+  const local = findLocalByToken(shareToken);
+  if (!local) return false;
+
+  const items = updatedPricingItems || local.pricingItems;
+  const finalTotal =
+    acceptedTotal ??
+    items
+      .filter((i) => !i.isOptional || i.selected)
+      .reduce((sum, i) => sum + (i.qty && i.rate ? i.qty * i.rate : i.amount || 0), 0);
+
+  saveDocumentToVault({
+    ...local,
+    status: 'APPROVED',
+    approvedAt: now.toISOString(),
+    acceptanceAudit: { ...auditRecord, acceptedTotalInvestment: finalTotal },
+    pricingItems: items,
+    totalInvestment: finalTotal,
+    signatory,
+  });
 
   return true;
 };

@@ -488,7 +488,7 @@ function parseCurrentRoute(): {
   const pageParam = urlParams.get('page');
   const rawHash = window.location.hash.replace('#', '').toLowerCase();
 
-  // 1. Direct Public Proposal Link (?view=doc_123 or #view/doc_123)
+  // 1. Direct Public Proposal Link (?view=<shareToken> or #view/<shareToken>)
   if (viewParam) return { type: 'public_proposal', docId: viewParam };
   if (rawHash.startsWith('view/')) return { type: 'public_proposal', docId: rawHash.replace('view/', '') };
 

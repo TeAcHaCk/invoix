@@ -196,12 +196,12 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
             </div>
 
             {/* Project Scope / Phases (If present) */}
-            {doc.includeScopeSection !== false && activeMilestones.length > 0 && (
+            {doc.sectionVisibility?.scope !== false && doc.includeScopeSection !== false && activeMilestones.length > 0 && (
               <div className="mb-4">
                 <div className="flex items-center space-x-2 border-b border-slate-200/90 pb-1.5 mb-2.5">
                   <Layers className="w-3.5 h-3.5 text-amber-600 shrink-0" />
                   <h4 className="text-[11px] font-bold text-slate-900 uppercase tracking-normal font-['Outfit'] whitespace-nowrap">
-                    {preset.scopeSectionTitle || 'Project Phases & SOW Milestones'}
+                    {doc.sectionTitles?.scopeTitle || preset.scopeSectionTitle || 'Project Phases & SOW Milestones'}
                   </h4>
                 </div>
 
@@ -231,16 +231,17 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
             )}
 
             {/* Itemized Investment & Pricing Table */}
-            <div className="mb-4">
-              <div className="flex items-center justify-between border-b border-slate-200/90 pb-1.5 mb-2.5">
-                <div className="flex items-center space-x-2">
-                  <Sparkles className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                  <h4 className="text-[11px] font-bold text-slate-900 uppercase tracking-normal font-['Outfit'] whitespace-nowrap">
-                    Itemized Investment Schedule
-                  </h4>
+            {doc.sectionVisibility?.pricingTable !== false && (
+              <div className="mb-4">
+                <div className="flex items-center justify-between border-b border-slate-200/90 pb-1.5 mb-2.5">
+                  <div className="flex items-center space-x-2">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                    <h4 className="text-[11px] font-bold text-slate-900 uppercase tracking-normal font-['Outfit'] whitespace-nowrap">
+                      {doc.sectionTitles?.pricingTitle || 'Itemized Investment Schedule'}
+                    </h4>
+                  </div>
+                  <span className="text-[10px] text-slate-400 font-mono">Currency: {currency.code} ({currency.symbol})</span>
                 </div>
-                <span className="text-[10px] text-slate-400 font-mono">Currency: {currency.code} ({currency.symbol})</span>
-              </div>
 
               <div className="border border-slate-200 rounded-lg overflow-hidden">
                 <table className="w-full text-left text-xs border-collapse">
@@ -319,6 +320,7 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
                 </div>
               </div>
             </div>
+            )}
 
             {/* Payment Milestones & Deliverables Summary */}
             <div className="grid grid-cols-2 gap-3 mb-2">
@@ -351,22 +353,24 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
               </div>
 
               {/* Deliverables Checklist */}
-              <div className="bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-[11px]">
-                <div className="flex items-center space-x-1.5 pb-1 mb-2 border-b border-slate-200/80">
-                  <CheckCircle2 className="w-3 h-3 text-emerald-600 shrink-0" />
-                  <span className="font-bold text-slate-900 uppercase tracking-normal text-[9px] font-['Outfit'] whitespace-nowrap">
-                    Included Key Deliverables
-                  </span>
+              {doc.sectionVisibility?.deliverables !== false && activeDeliverables.length > 0 && (
+                <div className="bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-[11px]">
+                  <div className="flex items-center space-x-1.5 pb-1 mb-2 border-b border-slate-200/80">
+                    <CheckCircle2 className="w-3 h-3 text-emerald-600 shrink-0" />
+                    <span className="font-bold text-slate-900 uppercase tracking-normal text-[9px] font-['Outfit'] whitespace-nowrap">
+                      {doc.sectionTitles?.deliverablesTitle || 'Included Key Deliverables'}
+                    </span>
+                  </div>
+                  <ul className="space-y-1 text-[10.5px] text-slate-700">
+                    {activeDeliverables.slice(0, 4).map((d) => (
+                      <li key={d.id} className="flex items-start space-x-1.5 leading-tight">
+                        <span className="text-emerald-600 font-bold shrink-0">✓</span>
+                        <span className="line-clamp-1">{d.text}</span>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-                <ul className="space-y-1 text-[10.5px] text-slate-700">
-                  {activeDeliverables.slice(0, 4).map((d) => (
-                    <li key={d.id} className="flex items-start space-x-1.5 leading-tight">
-                      <span className="text-emerald-600 font-bold shrink-0">✓</span>
-                      <span className="line-clamp-1">{d.text}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+              )}
             </div>
           </div>
 
@@ -410,12 +414,12 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
               </div>
 
               {/* Assigned Specialists / Team Section */}
-              {doc.includeCrewSection && activeTeam.length > 0 && (
+              {doc.sectionVisibility?.crew !== false && doc.includeCrewSection && activeTeam.length > 0 && (
                 <div className="mb-5">
                   <div className="flex items-center space-x-2 border-b border-slate-200/90 pb-1.5 mb-2.5">
                     <Award className="w-3.5 h-3.5 text-amber-700 shrink-0" />
                     <h4 className="text-[11px] font-bold text-slate-900 uppercase tracking-normal font-['Outfit'] whitespace-nowrap">
-                      {preset.teamSectionTitle || 'Assigned Experts & Key Personnel'}
+                      {doc.sectionTitles?.crewTitle || preset.teamSectionTitle || 'Assigned Experts & Key Personnel'}
                     </h4>
                   </div>
                   <div className="grid grid-cols-2 gap-2.5">
@@ -430,12 +434,12 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
               )}
 
               {/* Guarantees & Why Work With Us */}
-              {doc.includeWhyChooseUs && activeWhy.length > 0 && (
+              {doc.sectionVisibility?.whyChooseUs !== false && doc.includeWhyChooseUs && activeWhy.length > 0 && (
                 <div className="mb-5">
                   <div className="flex items-center space-x-2 border-b border-slate-200/90 pb-1.5 mb-2.5">
                     <ShieldCheck className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
                     <h4 className="text-[11px] font-bold text-slate-900 uppercase tracking-normal font-['Outfit'] whitespace-nowrap">
-                      Why Partner With Us & Quality Commitments
+                      {doc.sectionTitles?.whyChooseUsTitle || 'Why Partner With Us & Quality Commitments'}
                     </h4>
                   </div>
                   <div className="grid grid-cols-2 gap-2.5">
@@ -453,12 +457,12 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
               )}
 
               {/* Commercial Terms & Conditions */}
-              {doc.termsAndConditions && doc.termsAndConditions.length > 0 && (
+              {doc.sectionVisibility?.terms !== false && doc.termsAndConditions && doc.termsAndConditions.length > 0 && (
                 <div className="mb-5">
                   <div className="flex items-center space-x-2 border-b border-slate-200/90 pb-1.5 mb-2.5">
                     <FileText className="w-3.5 h-3.5 text-slate-700 shrink-0" />
                     <h4 className="text-[11px] font-bold text-slate-900 uppercase tracking-normal font-['Outfit'] whitespace-nowrap">
-                      Terms of Engagement & Acceptance Criteria
+                      {doc.sectionTitles?.termsTitle || 'Terms of Engagement & Acceptance Criteria'}
                     </h4>
                   </div>
                   <ul className="space-y-1.5 text-[10.5px] text-slate-600 pl-4 list-decimal">
@@ -472,7 +476,7 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
               )}
 
               {/* E-Signature & Formal Approval Sign-Off Block */}
-              {doc.signatory?.enabled !== false && (
+              {doc.sectionVisibility?.signatory !== false && doc.signatory?.enabled !== false && (
                 <div className="mt-4 pt-3 border-t-2 border-slate-900 grid grid-cols-2 gap-8">
                   {/* Service Provider Signature */}
                   <div>

@@ -22,6 +22,8 @@ import {
   Printer,
   Crown,
   Zap,
+  Lock,
+  Check,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { isPaidPlan, FREE_PLAN_MAX_DOCUMENTS } from '../utils/planLimits';
@@ -48,6 +50,7 @@ export const HistoryVaultModal: React.FC<HistoryVaultModalProps> = ({
   const [selectedStatusFilter, setSelectedStatusFilter] = useState<'ALL' | 'APPROVED' | 'VIEWED' | 'DRAFT'>('ALL');
   const [selectedIndustryFilter, setSelectedIndustryFilter] = useState<string>('ALL');
   const [inspectingAuditDoc, setInspectingAuditDoc] = useState<QuotationDocument | null>(null);
+  const [copiedHash, setCopiedHash] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -461,6 +464,12 @@ export const HistoryVaultModal: React.FC<HistoryVaultModalProps> = ({
             <div className="space-y-3.5 text-xs">
               <div className="bg-slate-950/80 border border-slate-800 rounded-2xl p-4 space-y-2">
                 <div className="flex justify-between">
+                  <span className="text-slate-400">Certificate ID:</span>
+                  <span className="font-mono font-bold text-amber-300">
+                    {inspectingAuditDoc.acceptanceAudit?.certificateId || `CERT-${inspectingAuditDoc.details.invoiceNo}`}
+                  </span>
+                </div>
+                <div className="flex justify-between">
                   <span className="text-slate-400">Document Ref:</span>
                   <span className="font-mono font-bold text-slate-200">{inspectingAuditDoc.details.invoiceNo}</span>
                 </div>
@@ -468,6 +477,16 @@ export const HistoryVaultModal: React.FC<HistoryVaultModalProps> = ({
                   <span className="text-slate-400">Legal Signatory:</span>
                   <span className="font-bold text-emerald-300">
                     {inspectingAuditDoc.signatory?.clientSignedName || inspectingAuditDoc.acceptanceAudit?.signatoryName || 'Client Signatory'}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Signature Method:</span>
+                  <span className="font-mono font-semibold text-slate-300 capitalize">
+                    {inspectingAuditDoc.acceptanceAudit?.signatureType === 'uploaded'
+                      ? '📁 Uploaded Image Stamp'
+                      : inspectingAuditDoc.acceptanceAudit?.signatureType === 'typed'
+                      ? '🔤 Typed Digital Script'
+                      : '✍️ Drawn Touch Signature'}
                   </span>
                 </div>
                 <div className="flex justify-between">
@@ -487,11 +506,38 @@ export const HistoryVaultModal: React.FC<HistoryVaultModalProps> = ({
                 </div>
               </div>
 
+              {/* Cryptographic SHA-256 Hash Card */}
+              {inspectingAuditDoc.acceptanceAudit?.signatureHash && (
+                <div className="bg-slate-950/90 border border-slate-800 rounded-2xl p-3.5 space-y-1.5">
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className="text-slate-400 font-semibold flex items-center gap-1.5">
+                      <Lock className="w-3 h-3 text-amber-400" />
+                      <span>Tamper-Proof SHA-256 Hash:</span>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(inspectingAuditDoc.acceptanceAudit!.signatureHash!);
+                        setCopiedHash(true);
+                        setTimeout(() => setCopiedHash(false), 2000);
+                      }}
+                      className="text-amber-400 hover:text-amber-300 font-mono text-[10px] font-bold flex items-center gap-1 cursor-pointer"
+                    >
+                      {copiedHash ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                      <span>{copiedHash ? 'Copied' : 'Copy Hash'}</span>
+                    </button>
+                  </div>
+                  <p className="text-[10px] font-mono text-emerald-400 bg-slate-900/90 p-2 rounded-lg break-all border border-slate-800 select-all">
+                    {inspectingAuditDoc.acceptanceAudit.signatureHash}
+                  </p>
+                </div>
+              )}
+
               {/* Signature Image Canvas */}
               <div className="bg-slate-950/80 border border-slate-800 rounded-2xl p-4 space-y-2">
-                <span className="text-[11px] font-semibold text-slate-400 block">Captured Handwritten Signature:</span>
+                <span className="text-[11px] font-semibold text-slate-400 block">Captured Digital Signature / Stamp:</span>
                 {inspectingAuditDoc.signatory?.clientSignatureDataUrl || inspectingAuditDoc.acceptanceAudit?.signatureDataUrl ? (
-                  <div className="p-3 bg-white rounded-xl flex items-center justify-center">
+                  <div className="p-3 bg-white rounded-xl flex items-center justify-center shadow-inner">
                     <img
                       src={inspectingAuditDoc.signatory?.clientSignatureDataUrl || inspectingAuditDoc.acceptanceAudit?.signatureDataUrl}
                       alt="Signature"

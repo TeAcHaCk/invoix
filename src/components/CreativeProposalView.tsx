@@ -187,10 +187,10 @@ export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ docu
             </div>
 
             {/* SCOPE & SCHEDULE MATRIX SECTION */}
-            {doc.includeScopeSection !== false && doc.eventCoverage && doc.eventCoverage.length > 0 && (
+            {doc.sectionVisibility?.scope !== false && doc.includeScopeSection !== false && doc.eventCoverage && doc.eventCoverage.length > 0 && (
               <div className="my-3">
                 <h3 className="font-bold text-[12px] uppercase tracking-[0.08em] text-[#111111] mb-2 font-['Outfit',sans-serif] border-b border-slate-200 pb-1 flex items-center justify-between whitespace-nowrap">
-                  <span>{preset.scopeSectionTitle || 'EVENT SCHEDULE & SERVICES COVERAGE'}</span>
+                  <span>{doc.sectionTitles?.scopeTitle || preset.scopeSectionTitle || 'EVENT SCHEDULE & SERVICES COVERAGE'}</span>
                   <span className="text-[10px] text-amber-700 font-normal lowercase tracking-normal">
                     {doc.eventCoverage.length} phase(s) planned
                   </span>
@@ -225,21 +225,23 @@ export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ docu
             )}
 
             {/* DELIVERABLES INCLUDED SECTION */}
-            <div className="my-3">
-              <h3 className="font-bold text-[12px] uppercase tracking-[0.08em] text-[#111111] mb-2 font-['Outfit',sans-serif] border-b border-slate-200 pb-1 whitespace-nowrap">
-                DELIVERABLES INCLUDED
-              </h3>
-              <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 bg-amber-50/40 border border-amber-200/60 rounded p-3 text-[11px]">
-                {doc.deliverables
-                  .filter((d) => d.included)
-                  .map((del) => (
-                    <div key={del.id} className="flex items-start space-x-1.5">
-                      <span className="text-emerald-700 font-bold text-[12px] leading-none shrink-0">✓</span>
-                      <span className="text-slate-800 font-medium leading-tight">{del.text}</span>
-                    </div>
-                  ))}
+            {doc.sectionVisibility?.deliverables !== false && doc.deliverables && doc.deliverables.length > 0 && (
+              <div className="my-3">
+                <h3 className="font-bold text-[12px] uppercase tracking-[0.08em] text-[#111111] mb-2 font-['Outfit',sans-serif] border-b border-slate-200 pb-1 whitespace-nowrap">
+                  {doc.sectionTitles?.deliverablesTitle || 'DELIVERABLES INCLUDED'}
+                </h3>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 bg-amber-50/40 border border-amber-200/60 rounded p-3 text-[11px]">
+                  {doc.deliverables
+                    .filter((d) => d.included)
+                    .map((del) => (
+                      <div key={del.id} className="flex items-start space-x-1.5">
+                        <span className="text-emerald-700 font-bold text-[12px] leading-none shrink-0">✓</span>
+                        <span className="text-slate-800 font-medium leading-tight">{del.text}</span>
+                      </div>
+                    ))}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* TOTAL INVESTMENT & PAYMENT TERMS SUMMARY */}
             <div className="mt-4 border-2 border-slate-900 rounded-lg overflow-hidden bg-white shadow-sm">
@@ -322,12 +324,12 @@ export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ docu
               </div>
 
               {/* CREW / TEAM ALLOCATION SECTION */}
-              {doc.includeCrewSection !== false && activeCrew.length > 0 && (
+              {doc.sectionVisibility?.crew !== false && doc.includeCrewSection !== false && activeCrew.length > 0 && (
                 <div className="mb-4">
                   <div className="flex items-center space-x-1.5 mb-2 pb-1 border-b border-slate-200">
                     <Users className="w-3.5 h-3.5 text-amber-700" />
                     <h3 className="font-bold text-[12px] uppercase tracking-[0.08em] text-[#111111] font-['Outfit',sans-serif] whitespace-nowrap">
-                      {preset.teamSectionTitle || 'Dedicated Team & Equipment Deployment'}
+                      {doc.sectionTitles?.crewTitle || preset.teamSectionTitle || 'Dedicated Team & Equipment Deployment'}
                     </h3>
                   </div>
 
@@ -351,12 +353,12 @@ export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ docu
               )}
 
               {/* WHY WORK WITH US SECTION */}
-              {doc.includeWhyChooseUs !== false && activeWhyChoose.length > 0 && (
+              {doc.sectionVisibility?.whyChooseUs !== false && doc.includeWhyChooseUs !== false && activeWhyChoose.length > 0 && (
                 <div className="mb-4">
                   <div className="flex items-center space-x-1.5 mb-2 pb-1 border-b border-slate-200">
                     <ShieldCheck className="w-3.5 h-3.5 text-emerald-700" />
                     <h3 className="font-bold text-[12px] uppercase tracking-[0.08em] text-[#111111] font-['Outfit',sans-serif] whitespace-nowrap">
-                      Why Partner With {doc.studio.name}
+                      {doc.sectionTitles?.whyChooseUsTitle || `Why Partner With ${doc.studio.name}`}
                     </h3>
                   </div>
 
@@ -378,16 +380,17 @@ export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ docu
               )}
 
               {/* TERMS & CONDITIONS (2-Column Layout) */}
-              <div className="mb-4">
-                <h3 className="font-bold text-[12px] uppercase tracking-[0.08em] text-[#111111] mb-2 font-['Outfit',sans-serif] border-b border-slate-200 pb-1 whitespace-nowrap">
-                  TERMS & CONDITIONS
-                </h3>
+              {doc.sectionVisibility?.terms !== false && (
+                <div className="mb-4">
+                  <h3 className="font-bold text-[12px] uppercase tracking-[0.08em] text-[#111111] mb-2 font-['Outfit',sans-serif] border-b border-slate-200 pb-1 whitespace-nowrap">
+                    {doc.sectionTitles?.termsTitle || 'TERMS & CONDITIONS'}
+                  </h3>
 
-                <div className="grid grid-cols-2 gap-4 text-[10px] text-slate-700 leading-relaxed">
-                  <ol className="space-y-1 pl-4 list-decimal">
-                    {leftTerms.map((term, tIdx) => (
-                      <li key={tIdx} className="leading-tight">
-                        {term}
+                  <div className="grid grid-cols-2 gap-4 text-[10px] text-slate-700 leading-relaxed">
+                    <ol className="space-y-1 pl-4 list-decimal">
+                      {leftTerms.map((term, tIdx) => (
+                        <li key={tIdx} className="leading-tight">
+                          {term}
                       </li>
                     ))}
                   </ol>
@@ -401,6 +404,7 @@ export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ docu
                   </ol>
                 </div>
               </div>
+              )}
 
               {/* SIGNATURE & CLIENT APPROVAL SECTION */}
               <div className="mt-4 pt-3 border-t-2 border-slate-900 grid grid-cols-2 gap-6">

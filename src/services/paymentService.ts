@@ -9,6 +9,12 @@ export interface PlanPricing {
   interval: 'monthly' | 'annual';
 }
 
+/**
+ * Display-only pricing for the upgrade UI.
+ *
+ * The amount actually charged is decided by the server in api/_lib/plans.ts and
+ * is never taken from the browser. Keep the two in sync when prices change.
+ */
 export const RAZORPAY_PLANS: Record<'INR' | 'USD', Record<'pro' | 'agency', { monthly: number; annual: number; displayMonthly: string; displayAnnual: string }>> = {
   INR: {
     pro: {
@@ -58,6 +64,21 @@ export const loadRazorpayScript = (): Promise<boolean> => {
   });
 };
 
+/** Current user's Supabase access token, used to authenticate the API calls. */
+const getAccessToken = async (): Promise<string | null> => {
+  const supabase = getSupabaseClient();
+  if (!supabase) return null;
+  const { data } = await supabase.auth.getSession();
+  return data.session?.access_token ?? null;
+};
+
+interface CreatedOrder {
+  orderId: string;
+  amount: number;
+  currency: string;
+  keyId: string;
+}
+
 export interface RazorpayCheckoutParams {
   planId: 'pro' | 'agency';
   planName: string;
@@ -66,12 +87,17 @@ export interface RazorpayCheckoutParams {
   userEmail?: string;
   userName?: string;
   userPhone?: string;
+  /** Fires only after the server has cryptographically verified the payment. */
   onSuccess: (paymentId: string) => void;
   onError?: (error: any) => void;
 }
 
 /**
- * Initiates Razorpay Checkout
+ * Runs the full checkout: server-created order → Razorpay modal → server-side
+ * signature verification → plan upgrade.
+ *
+ * The browser never writes the plan itself. If the tab dies after payment, the
+ * Razorpay webhook (api/razorpay/webhook.ts) still completes the upgrade.
  */
 export const initiateRazorpayPayment = async ({
   planId,
@@ -84,27 +110,85 @@ export const initiateRazorpayPayment = async ({
   onSuccess,
   onError,
 }: RazorpayCheckoutParams): Promise<void> => {
-  const isLoaded = await loadRazorpayScript();
-  if (!isLoaded) {
-    alert('Razorpay payment gateway failed to load. Please check your internet connection.');
-    return;
+  const fail = (message: string, cause?: unknown) => {
+    console.error('Checkout:', message, cause ?? '');
+    if (onError) onError(cause ?? new Error(message));
+    alert(message);
+  };
+
+  const token = await getAccessToken();
+  if (!token) {
+    return fail('Please sign in again before upgrading.');
   }
 
-  const keyId = import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_TTFNEUNYO7Pdzm';
-  const planConfig = RAZORPAY_PLANS[currency][planId];
-  const amount = isAnnual ? planConfig.annual : planConfig.monthly;
+  const isLoaded = await loadRazorpayScript();
+  if (!isLoaded) {
+    return fail('Razorpay payment gateway failed to load. Please check your internet connection.');
+  }
+
+  // 1. Ask the server to create the order at its own price.
+  let order: CreatedOrder;
+  try {
+    const res = await fetch('/api/razorpay/order', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ planId, currency, isAnnual }),
+    });
+
+    if (!res.ok) {
+      const detail = await res.json().catch(() => ({ error: 'Could not start checkout.' }));
+      return fail(detail.error || 'Could not start checkout. Please try again.');
+    }
+
+    order = (await res.json()) as CreatedOrder;
+  } catch (err) {
+    return fail('Could not reach the payment service. Please try again.', err);
+  }
+
   const cycleText = isAnnual ? 'Annual Subscription' : 'Monthly Subscription';
 
   const options = {
-    key: keyId,
-    amount: amount,
-    currency: currency,
+    key: order.keyId,
+    order_id: order.orderId,
+    amount: order.amount,
+    currency: order.currency,
     name: 'Invoix Cloud Platform',
     description: `${planName} - ${cycleText}`,
     image: '/invoix-logo.png',
-    handler: async (response: { razorpay_payment_id: string; razorpay_order_id?: string; razorpay_signature?: string }) => {
-      console.log('Razorpay Payment Success:', response);
-      onSuccess(response.razorpay_payment_id);
+    // 2. Razorpay hands back a signature; only the server can validate it.
+    handler: async (response: {
+      razorpay_payment_id: string;
+      razorpay_order_id: string;
+      razorpay_signature: string;
+    }) => {
+      try {
+        const verifyRes = await fetch('/api/razorpay/verify', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(response),
+        });
+
+        if (!verifyRes.ok) {
+          const detail = await verifyRes.json().catch(() => ({}));
+          return fail(
+            detail.error ||
+              'Your payment went through but we could not confirm it yet. It will be applied shortly.'
+          );
+        }
+
+        onSuccess(response.razorpay_payment_id);
+      } catch (err) {
+        fail(
+          'Your payment went through but confirmation failed. Refresh in a moment — the upgrade will apply automatically.',
+          err
+        );
+      }
     },
     prefill: {
       name: userName || '',
@@ -136,48 +220,6 @@ export const initiateRazorpayPayment = async ({
     });
     razorpayInstance.open();
   } catch (err) {
-    console.error('Error opening Razorpay:', err);
-    if (onError) onError(err);
-  }
-};
-
-/**
- * Updates user profile plan in Supabase and saves payment receipt
- */
-export const upgradeUserPlanInDatabase = async (
-  userId: string,
-  newPlan: 'pro' | 'agency',
-  paymentId: string
-): Promise<boolean> => {
-  const supabase = getSupabaseClient();
-  if (!supabase) {
-    console.warn('Supabase not connected. Upgraded locally.');
-    return true;
-  }
-
-  try {
-    const { error: profileError } = await supabase
-      .from('profiles')
-      .update({ plan: newPlan })
-      .eq('id', userId);
-
-    if (profileError) {
-      console.error('Error updating user plan in profiles:', profileError);
-    }
-
-    // Try logging payment transaction
-    await supabase.from('payment_transactions').insert({
-      user_id: userId,
-      payment_id: paymentId,
-      plan: newPlan,
-      gateway: 'razorpay',
-      status: 'completed',
-      created_at: new Date().toISOString(),
-    }).select().maybeSingle();
-
-    return true;
-  } catch (e) {
-    console.error('Database plan update error:', e);
-    return true;
+    fail('Could not open the payment window.', err);
   }
 };

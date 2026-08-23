@@ -88,7 +88,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   const moreDropdown = useDropdown();
 
   const handleCopyPublicLink = () => {
-    const publicUrl = `${window.location.origin}/?view=${doc.id}`;
+    const publicUrl = `${window.location.origin}/?view=${doc.shareToken || doc.id}`;
     navigator.clipboard.writeText(publicUrl);
     setCopiedLink(true);
     setTimeout(() => setCopiedLink(false), 2500);

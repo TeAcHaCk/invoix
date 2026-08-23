@@ -264,52 +264,56 @@ export const FormalInvoiceView: React.FC<FormalInvoiceViewProps> = ({ document: 
         {/* Financial Summary Calculation Card */}
         <div className="flex justify-between items-start mt-4 gap-6">
           {/* Left: Payment Banking & Offline QR Code */}
-          <div className="flex-1 bg-slate-50 border border-slate-200/90 rounded-xl p-3 text-xs">
-            <div className="flex items-start justify-between">
-              <div className="space-y-1 pr-2">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-normal block font-['Outfit'] whitespace-nowrap">
-                  PAYMENT INSTRUCTIONS & BANK DETAILS:
-                </span>
-                {doc.studio.bankName && (
-                  <p className="text-[11px] text-slate-700">
-                    <strong className="text-slate-900">Bank:</strong> {doc.studio.bankName}
-                  </p>
-                )}
-                {doc.studio.accountNumber && (
-                  <p className="text-[11px] text-slate-700">
-                    <strong className="text-slate-900">A/C No:</strong>{' '}
-                    <span className="font-mono">{doc.studio.accountNumber}</span>
-                  </p>
-                )}
-                {doc.studio.ifscCode && (
-                  <p className="text-[11px] text-slate-700">
-                    <strong className="text-slate-900">IFSC/SWIFT:</strong>{' '}
-                    <span className="font-mono">{doc.studio.ifscCode}</span>
-                  </p>
-                )}
-                {doc.studio.accountHolder && (
-                  <p className="text-[11px] text-slate-700">
-                    <strong className="text-slate-900">Beneficiary:</strong> {doc.studio.accountHolder}
-                  </p>
-                )}
-                {doc.studio.upiId && (
-                  <p className="text-[11px] text-emerald-800 font-semibold pt-0.5">
-                    UPI ID: <span className="font-mono">{doc.studio.upiId}</span>
-                  </p>
+          {doc.sectionVisibility?.bankDetails !== false ? (
+            <div className="flex-1 bg-slate-50 border border-slate-200/90 rounded-xl p-3 text-xs">
+              <div className="flex items-start justify-between">
+                <div className="space-y-1 pr-2">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-normal block font-['Outfit'] whitespace-nowrap">
+                    PAYMENT INSTRUCTIONS & BANK DETAILS:
+                  </span>
+                  {doc.studio.bankName && (
+                    <p className="text-[11px] text-slate-700">
+                      <strong className="text-slate-900">Bank:</strong> {doc.studio.bankName}
+                    </p>
+                  )}
+                  {doc.studio.accountNumber && (
+                    <p className="text-[11px] text-slate-700">
+                      <strong className="text-slate-900">A/C No:</strong>{' '}
+                      <span className="font-mono">{doc.studio.accountNumber}</span>
+                    </p>
+                  )}
+                  {doc.studio.ifscCode && (
+                    <p className="text-[11px] text-slate-700">
+                      <strong className="text-slate-900">IFSC/SWIFT:</strong>{' '}
+                      <span className="font-mono">{doc.studio.ifscCode}</span>
+                    </p>
+                  )}
+                  {doc.studio.accountHolder && (
+                    <p className="text-[11px] text-slate-700">
+                      <strong className="text-slate-900">Beneficiary:</strong> {doc.studio.accountHolder}
+                    </p>
+                  )}
+                  {doc.studio.upiId && (
+                    <p className="text-[11px] text-emerald-800 font-semibold pt-0.5">
+                      UPI ID: <span className="font-mono">{doc.studio.upiId}</span>
+                    </p>
+                  )}
+                </div>
+
+                {/* Offline Dynamic QR Code */}
+                {qrCodeDataUrl && (
+                  <div className="shrink-0 flex flex-col items-center bg-white p-2 rounded-lg border border-slate-200 shadow-sm min-w-[90px]">
+                    <img src={qrCodeDataUrl} alt="Payment QR" className="w-20 h-20 object-contain" />
+                    <span className="text-[9px] text-slate-500 font-bold uppercase tracking-normal font-['Outfit'] mt-1 whitespace-nowrap">
+                      Scan to Pay
+                    </span>
+                  </div>
                 )}
               </div>
-
-              {/* Offline Dynamic QR Code */}
-              {qrCodeDataUrl && (
-                <div className="shrink-0 flex flex-col items-center bg-white p-2 rounded-lg border border-slate-200 shadow-sm min-w-[90px]">
-                  <img src={qrCodeDataUrl} alt="Payment QR" className="w-20 h-20 object-contain" />
-                  <span className="text-[9px] text-slate-500 font-bold uppercase tracking-normal font-['Outfit'] mt-1 whitespace-nowrap">
-                    Scan to Pay
-                  </span>
-                </div>
-              )}
             </div>
-          </div>
+          ) : (
+            <div className="flex-1" />
+          )}
 
           {/* Right: Subtotal, Tax & Net Due Totals */}
           <div className="w-80 bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-1.5 text-xs shrink-0">
@@ -358,39 +362,47 @@ export const FormalInvoiceView: React.FC<FormalInvoiceViewProps> = ({ document: 
       <div>
         <div className="border-t border-slate-200 pt-3 grid grid-cols-2 gap-6 text-[10px] text-slate-500">
           <div>
-            <p className="font-bold text-slate-700 uppercase tracking-normal mb-0.5 font-['Outfit'] whitespace-nowrap">
-              Terms & Payment Conditions:
-            </p>
-            {doc.termsAndConditions && doc.termsAndConditions.length > 0 ? (
-              <div className="space-y-0.5">
-                {doc.termsAndConditions.slice(0, 3).map((term, idx) => (
-                  <p key={idx} className="line-clamp-1">
-                    {idx + 1}. {term}
-                  </p>
-                ))}
-              </div>
-            ) : (
+            {doc.sectionVisibility?.terms !== false && (
               <>
-                <p>1. Please quote Invoice Number on all bank transfer remittances.</p>
-                <p>2. Interest @ 1.5% per month will be charged on overdue payments.</p>
-                <p>3. This is a computer-generated commercial invoice.</p>
+                <p className="font-bold text-slate-700 uppercase tracking-normal mb-0.5 font-['Outfit'] whitespace-nowrap">
+                  {doc.sectionTitles?.termsTitle || 'Terms & Payment Conditions:'}
+                </p>
+                {doc.termsAndConditions && doc.termsAndConditions.length > 0 ? (
+                  <div className="space-y-0.5">
+                    {doc.termsAndConditions.slice(0, 3).map((term, idx) => (
+                      <p key={idx} className="line-clamp-1">
+                        {idx + 1}. {term}
+                      </p>
+                    ))}
+                  </div>
+                ) : (
+                  <>
+                    <p>1. Please quote Invoice Number on all bank transfer remittances.</p>
+                    <p>2. Interest @ 1.5% per month will be charged on overdue payments.</p>
+                    <p>3. This is a computer-generated commercial invoice.</p>
+                  </>
+                )}
               </>
             )}
           </div>
 
           <div className="text-right flex flex-col items-end justify-end">
-            <div className="h-10 flex items-end pb-1">
-              {doc.signatory?.signatureDataUrl ? (
-                <img src={doc.signatory.signatureDataUrl} alt="Signature" className="max-h-9 object-contain" />
-              ) : (
-                <span className="font-mono text-slate-400 italic text-[11px]">
-                  {doc.signatory?.signerName || 'Authorized Signatory'}
-                </span>
-              )}
-            </div>
-            <div className="border-t border-slate-400 pt-0.5 w-44 text-center font-bold text-slate-800 text-[10px]">
-              For {doc.studio.name}
-            </div>
+            {doc.sectionVisibility?.signatory !== false && doc.signatory?.enabled !== false && (
+              <>
+                <div className="h-10 flex items-end pb-1">
+                  {doc.signatory?.signatureDataUrl ? (
+                    <img src={doc.signatory.signatureDataUrl} alt="Signature" className="max-h-9 object-contain" />
+                  ) : (
+                    <span className="font-mono text-slate-400 italic text-[11px]">
+                      {doc.signatory?.signerName || 'Authorized Signatory'}
+                    </span>
+                  )}
+                </div>
+                <div className="border-t border-slate-400 pt-0.5 w-44 text-center font-bold text-slate-800 text-[10px]">
+                  For {doc.studio.name}
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>

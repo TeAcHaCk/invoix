@@ -66,7 +66,7 @@ ${doc.deliverables
 *Advance Deposit (${doc.paymentTerms?.advancePercent || 30}%):* ${formatCurrency(advanceAmt, currency)}
 
 🔗 *View & E-Sign Interactive Proposal Online:*
-${window.location.origin}/?view=${doc.id}`;
+${window.location.origin}/?view=${doc.shareToken || doc.id}`;
 
       if (onlineLink) {
         msg += `\n\n📄 *Direct PDF Download Link:*

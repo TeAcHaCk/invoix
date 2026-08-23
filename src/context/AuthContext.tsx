@@ -50,12 +50,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (!error && data) {
         setProfile(data as UserProfile);
       } else if (user) {
-        // Fallback default profile
+        // Fallback profile when the row cannot be read. Deliberately the LOWEST
+        // privilege: a failed fetch must never hand out admin. Real admin status
+        // is granted by service_role and enforced server-side by RLS anyway.
         setProfile({
           id: userId,
           email: user.email || '',
           business_name: user.user_metadata?.business_name || '',
-          role: 'admin', // Default creator as admin in standalone setup
+          role: 'user',
           plan: 'free',
         });
       }

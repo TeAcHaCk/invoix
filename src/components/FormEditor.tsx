@@ -9,6 +9,9 @@ import type {
   CrewMemberItem,
   WhyChooseUsItem,
   SignatoryRecord,
+  CustomTemplatePreset,
+  SectionVisibilityConfig,
+  SectionTitlesConfig,
 } from '../types';
 import { sanitizeContactNumber } from '../utils/formatters';
 import {
@@ -16,6 +19,12 @@ import {
   saveWatermarkConfigToStorage,
   createDocumentFromPreset,
 } from '../constants/defaultData';
+import {
+  getCustomTemplates,
+  saveCustomTemplate,
+  deleteCustomTemplate,
+  createTemplateFromDocument,
+} from '../utils/customTemplateStorage';
 import { SUPPORTED_CURRENCIES } from '../constants/currencies';
 import { IndustryPresetSelector } from './IndustryPresetSelector';
 import { WatermarkControls } from './WatermarkControls';
@@ -47,6 +56,13 @@ import {
   FileText,
   FileSignature,
   Lock,
+  LayoutTemplate,
+  Sliders,
+  X,
+  Check,
+  Save,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 
 interface FormEditorProps {
@@ -63,10 +79,86 @@ export const FormEditor: React.FC<FormEditorProps> = ({
   const { profile } = useAuth();
   const isPro = isPaidPlan(profile);
   const [activeTab, setActiveTab] = useState<string>('industry');
+  const [customTemplates, setCustomTemplates] = useState<CustomTemplatePreset[]>(() => getCustomTemplates());
+  const [isSaveTemplateModalOpen, setIsSaveTemplateModalOpen] = useState(false);
+  const [templateNameInput, setTemplateNameInput] = useState('');
+  const [templateDescInput, setTemplateDescInput] = useState('');
   const logoFileInputRef = React.useRef<HTMLInputElement>(null);
 
   const update = (partial: Partial<QuotationDocument>) => {
     onChange({ ...doc, ...partial });
+  };
+
+  const handleApplyCustomTemplate = (tmpl: CustomTemplatePreset) => {
+    update({
+      customTemplateId: tmpl.id,
+      industry: tmpl.industry,
+      theme: tmpl.theme,
+      accentColor: tmpl.accentColor,
+      fontFamily: tmpl.fontFamily,
+      sectionVisibility: tmpl.sectionVisibility,
+      sectionTitles: tmpl.sectionTitles,
+      includeScopeSection: tmpl.sectionVisibility?.scope ?? true,
+      includeCrewSection: tmpl.sectionVisibility?.crew ?? true,
+      includeWhyChooseUs: tmpl.sectionVisibility?.whyChooseUs ?? true,
+    });
+  };
+
+  const handleDeleteCustomTemplate = (id: string) => {
+    deleteCustomTemplate(id);
+    setCustomTemplates(getCustomTemplates());
+    if (doc.customTemplateId === id) {
+      update({ customTemplateId: undefined });
+    }
+  };
+
+  const handleSaveCurrentAsTemplate = () => {
+    if (!templateNameInput.trim()) {
+      alert('Please enter a name for your custom template.');
+      return;
+    }
+    const newTmpl = createTemplateFromDocument(doc, templateNameInput.trim(), templateDescInput.trim());
+    saveCustomTemplate(newTmpl);
+    setCustomTemplates(getCustomTemplates());
+    update({ customTemplateId: newTmpl.id });
+    setIsSaveTemplateModalOpen(false);
+    setTemplateNameInput('');
+    setTemplateDescInput('');
+  };
+
+  const currentVisibility: SectionVisibilityConfig = {
+    banner: doc.sectionVisibility?.banner ?? true,
+    scope: doc.sectionVisibility?.scope ?? doc.includeScopeSection ?? true,
+    deliverables: doc.sectionVisibility?.deliverables ?? true,
+    crew: doc.sectionVisibility?.crew ?? doc.includeCrewSection ?? true,
+    whyChooseUs: doc.sectionVisibility?.whyChooseUs ?? doc.includeWhyChooseUs ?? true,
+    pricingTable: doc.sectionVisibility?.pricingTable ?? true,
+    paymentMilestones: doc.sectionVisibility?.paymentMilestones ?? true,
+    bankDetails: doc.sectionVisibility?.bankDetails ?? true,
+    terms: doc.sectionVisibility?.terms ?? true,
+    signatory: doc.sectionVisibility?.signatory ?? true,
+  };
+
+  const toggleSectionVisibility = (key: keyof SectionVisibilityConfig) => {
+    const updated = {
+      ...currentVisibility,
+      [key]: !currentVisibility[key],
+    };
+    update({
+      sectionVisibility: updated,
+      includeScopeSection: updated.scope,
+      includeCrewSection: updated.crew,
+      includeWhyChooseUs: updated.whyChooseUs,
+    });
+  };
+
+  const handleSectionTitleChange = (key: keyof SectionTitlesConfig, val: string) => {
+    update({
+      sectionTitles: {
+        ...doc.sectionTitles,
+        [key]: val,
+      },
+    });
   };
 
   const handleSelectIndustryPreset = (industry: IndustryCategory) => {
@@ -461,7 +553,228 @@ export const FormEditor: React.FC<FormEditorProps> = ({
             <IndustryPresetSelector
               currentIndustry={doc.industry}
               onSelectIndustry={handleSelectIndustryPreset}
+              customTemplates={customTemplates}
+              activeCustomTemplateId={doc.customTemplateId}
+              onSelectCustomTemplate={handleApplyCustomTemplate}
+              onDeleteCustomTemplate={handleDeleteCustomTemplate}
+              onOpenCreateTemplate={() => setIsSaveTemplateModalOpen(true)}
             />
+
+            {/* Modular Section Organizer & Custom Titles */}
+            <div className="bg-slate-950/70 border border-slate-800/80 rounded-2xl p-4 space-y-3.5">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-slate-200 uppercase tracking-wider block font-['Outfit'] flex items-center space-x-1.5">
+                  <Sliders className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Modular Section Organizer & Titles</span>
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setIsSaveTemplateModalOpen(true)}
+                  className="px-2.5 py-1 bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/40 rounded-lg text-xs font-bold flex items-center space-x-1.5 transition-colors cursor-pointer"
+                >
+                  <Save className="w-3 h-3" />
+                  <span>Save as Template</span>
+                </button>
+              </div>
+
+              <p className="text-[11px] text-slate-400">
+                Toggle visibility and rename section titles to match your tailored business workflow.
+              </p>
+
+              <div className="space-y-2">
+                {/* 1. Scope & Milestones */}
+                <div className="p-2.5 bg-slate-900/60 border border-slate-800/80 rounded-xl space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <Layers className="w-3.5 h-3.5 text-amber-400" />
+                      <span className="text-xs font-semibold text-slate-200">Scope of Work & Milestones</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => toggleSectionVisibility('scope')}
+                      className={`p-1 rounded-lg transition-colors cursor-pointer ${
+                        currentVisibility.scope ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-500 bg-slate-800'
+                      }`}
+                      title={currentVisibility.scope ? 'Hide section' : 'Show section'}
+                    >
+                      {currentVisibility.scope ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                    </button>
+                  </div>
+                  {currentVisibility.scope && (
+                    <input
+                      type="text"
+                      placeholder="Custom Scope Title (e.g. Project Phases & SOW)"
+                      value={doc.sectionTitles?.scopeTitle || ''}
+                      onChange={(e) => handleSectionTitleChange('scopeTitle', e.target.value)}
+                      className="w-full bg-slate-950/80 border border-slate-700/60 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-amber-500"
+                    />
+                  )}
+                </div>
+
+                {/* 2. Deliverables Checklist */}
+                <div className="p-2.5 bg-slate-900/60 border border-slate-800/80 rounded-xl space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                      <span className="text-xs font-semibold text-slate-200">Deliverables & Specifications</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => toggleSectionVisibility('deliverables')}
+                      className={`p-1 rounded-lg transition-colors cursor-pointer ${
+                        currentVisibility.deliverables ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-500 bg-slate-800'
+                      }`}
+                      title={currentVisibility.deliverables ? 'Hide section' : 'Show section'}
+                    >
+                      {currentVisibility.deliverables ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                    </button>
+                  </div>
+                  {currentVisibility.deliverables && (
+                    <input
+                      type="text"
+                      placeholder="Custom Deliverables Title (e.g. Included Final Assets)"
+                      value={doc.sectionTitles?.deliverablesTitle || ''}
+                      onChange={(e) => handleSectionTitleChange('deliverablesTitle', e.target.value)}
+                      className="w-full bg-slate-950/80 border border-slate-700/60 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-amber-500"
+                    />
+                  )}
+                </div>
+
+                {/* 3. Assigned Specialists / Team */}
+                <div className="p-2.5 bg-slate-900/60 border border-slate-800/80 rounded-xl space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <Award className="w-3.5 h-3.5 text-purple-400" />
+                      <span className="text-xs font-semibold text-slate-200">Assigned Specialists & Crew</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => toggleSectionVisibility('crew')}
+                      className={`p-1 rounded-lg transition-colors cursor-pointer ${
+                        currentVisibility.crew ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-500 bg-slate-800'
+                      }`}
+                      title={currentVisibility.crew ? 'Hide section' : 'Show section'}
+                    >
+                      {currentVisibility.crew ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                    </button>
+                  </div>
+                  {currentVisibility.crew && (
+                    <input
+                      type="text"
+                      placeholder="Custom Team Title (e.g. Lead Engineers & Key Personnel)"
+                      value={doc.sectionTitles?.crewTitle || ''}
+                      onChange={(e) => handleSectionTitleChange('crewTitle', e.target.value)}
+                      className="w-full bg-slate-950/80 border border-slate-700/60 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-amber-500"
+                    />
+                  )}
+                </div>
+
+                {/* 4. Why Partner With Us */}
+                <div className="p-2.5 bg-slate-900/60 border border-slate-800/80 rounded-xl space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <ShieldCheck className="w-3.5 h-3.5 text-blue-400" />
+                      <span className="text-xs font-semibold text-slate-200">Why Choose Us & Guarantees</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => toggleSectionVisibility('whyChooseUs')}
+                      className={`p-1 rounded-lg transition-colors cursor-pointer ${
+                        currentVisibility.whyChooseUs ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-500 bg-slate-800'
+                      }`}
+                      title={currentVisibility.whyChooseUs ? 'Hide section' : 'Show section'}
+                    >
+                      {currentVisibility.whyChooseUs ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                    </button>
+                  </div>
+                  {currentVisibility.whyChooseUs && (
+                    <input
+                      type="text"
+                      placeholder="Custom Commitments Title (e.g. Our Safety & Quality Standards)"
+                      value={doc.sectionTitles?.whyChooseUsTitle || ''}
+                      onChange={(e) => handleSectionTitleChange('whyChooseUsTitle', e.target.value)}
+                      className="w-full bg-slate-950/80 border border-slate-700/60 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-amber-500"
+                    />
+                  )}
+                </div>
+
+                {/* 5. Pricing Schedule */}
+                <div className="p-2.5 bg-slate-900/60 border border-slate-800/80 rounded-xl space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <DollarSign className="w-3.5 h-3.5 text-emerald-400" />
+                      <span className="text-xs font-semibold text-slate-200">Itemized Commercial Investment</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => toggleSectionVisibility('pricingTable')}
+                      className={`p-1 rounded-lg transition-colors cursor-pointer ${
+                        currentVisibility.pricingTable ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-500 bg-slate-800'
+                      }`}
+                      title={currentVisibility.pricingTable ? 'Hide section' : 'Show section'}
+                    >
+                      {currentVisibility.pricingTable ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                    </button>
+                  </div>
+                  {currentVisibility.pricingTable && (
+                    <input
+                      type="text"
+                      placeholder="Custom Pricing Title (e.g. Commercial Fee Structure)"
+                      value={doc.sectionTitles?.pricingTitle || ''}
+                      onChange={(e) => handleSectionTitleChange('pricingTitle', e.target.value)}
+                      className="w-full bg-slate-950/80 border border-slate-700/60 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-amber-500"
+                    />
+                  )}
+                </div>
+
+                {/* 6. Terms & SLA */}
+                <div className="p-2.5 bg-slate-900/60 border border-slate-800/80 rounded-xl space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <FileText className="w-3.5 h-3.5 text-amber-400" />
+                      <span className="text-xs font-semibold text-slate-200">Commercial Terms & Conditions</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => toggleSectionVisibility('terms')}
+                      className={`p-1 rounded-lg transition-colors cursor-pointer ${
+                        currentVisibility.terms ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-500 bg-slate-800'
+                      }`}
+                      title={currentVisibility.terms ? 'Hide section' : 'Show section'}
+                    >
+                      {currentVisibility.terms ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                    </button>
+                  </div>
+                  {currentVisibility.terms && (
+                    <input
+                      type="text"
+                      placeholder="Custom Terms Title (e.g. SLA Clauses & Acceptance Agreement)"
+                      value={doc.sectionTitles?.termsTitle || ''}
+                      onChange={(e) => handleSectionTitleChange('termsTitle', e.target.value)}
+                      className="w-full bg-slate-950/80 border border-slate-700/60 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-amber-500"
+                    />
+                  )}
+                </div>
+
+                {/* 7. Signatory Block */}
+                <div className="p-2.5 bg-slate-900/60 border border-slate-800/80 rounded-xl flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <FileSignature className="w-3.5 h-3.5 text-indigo-400" />
+                    <span className="text-xs font-semibold text-slate-200">Authorized Signatory & Approval Block</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => toggleSectionVisibility('signatory')}
+                    className={`p-1 rounded-lg transition-colors cursor-pointer ${
+                      currentVisibility.signatory ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-500 bg-slate-800'
+                    }`}
+                    title={currentVisibility.signatory ? 'Hide section' : 'Show section'}
+                  >
+                    {currentVisibility.signatory ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
+              </div>
+            </div>
 
             {/* Brand Accent Color Engine */}
             <div className="bg-slate-950/70 border border-slate-800/80 rounded-2xl p-4 space-y-3">
@@ -1856,6 +2169,101 @@ export const FormEditor: React.FC<FormEditorProps> = ({
           <AdBanner format="rectangle" />
         </div>
       </div>
+
+      {/* Save as Custom Template Modal */}
+      {isSaveTemplateModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 space-y-4 shadow-2xl animate-scaleIn">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center space-x-2">
+                <LayoutTemplate className="w-5 h-5 text-purple-400" />
+                <h3 className="text-sm font-bold text-slate-100 font-['Outfit']">
+                  Save as Custom Template Preset
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsSaveTemplateModalOpen(false)}
+                className="p-1 text-slate-400 hover:text-slate-200 rounded-lg hover:bg-slate-800 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-400">
+              Save your current colors, typography, visible sections, custom titles, and sample content into your private template library for instant reuse.
+            </p>
+
+            <div className="space-y-3">
+              <div>
+                <label className="text-[11px] font-semibold text-slate-300 block mb-1">
+                  Template Name *
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. My Studio Retainer 2026"
+                  value={templateNameInput}
+                  onChange={(e) => setTemplateNameInput(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-purple-500 input-premium"
+                  autoFocus
+                />
+              </div>
+
+              <div>
+                <label className="text-[11px] font-semibold text-slate-300 block mb-1">
+                  Description (Optional)
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Minimalist layout with milestones and custom SLA"
+                  value={templateDescInput}
+                  onChange={(e) => setTemplateDescInput(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-purple-500 input-premium"
+                />
+              </div>
+
+              <div className="p-3 bg-slate-950/60 border border-slate-800 rounded-xl space-y-1.5 text-[11px] text-slate-400">
+                <div className="flex justify-between">
+                  <span>Accent Color:</span>
+                  <div className="flex items-center space-x-1.5">
+                    <span
+                      className="w-3 h-3 rounded-full"
+                      style={{ backgroundColor: doc.accentColor || '#f59e0b' }}
+                    />
+                    <span className="font-mono text-slate-200">{doc.accentColor || '#f59e0b'}</span>
+                  </div>
+                </div>
+                <div className="flex justify-between">
+                  <span>Font Family:</span>
+                  <span className="text-slate-200">{doc.fontFamily || 'Plus Jakarta Sans'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Industry Workflow:</span>
+                  <span className="text-slate-200 capitalize">{doc.industry.replace('_', ' ')}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end space-x-2 pt-2 border-t border-slate-800">
+              <button
+                type="button"
+                onClick={() => setIsSaveTemplateModalOpen(false)}
+                className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveCurrentAsTemplate}
+                className="px-5 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-purple-600/30 flex items-center space-x-1.5 transition-all cursor-pointer"
+              >
+                <Check className="w-3.5 h-3.5 stroke-[3]" />
+                <span>Save to My Templates</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

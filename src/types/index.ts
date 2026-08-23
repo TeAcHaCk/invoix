@@ -169,21 +169,71 @@ export interface AcceptanceAuditRecord {
   signatoryEmail?: string;
   signedAt: string; // ISO date string
   formattedDate?: string;
+  signatureType?: 'drawn' | 'uploaded' | 'typed';
   signatureDataUrl?: string;
+  signatureHash?: string; // SHA-256 cryptographic hash of signature & contract state
+  signatureAlgo?: 'sha-256' | 'fallback'; // Which digest produced signatureHash
+  certificateId?: string; // e.g. "CERT-QUO-2026-782-9F4A"
   selectedAddonIds?: string[];
   acceptedTotalInvestment: number;
   ipAddress?: string;
   userAgent?: string;
 }
 
+export interface SectionVisibilityConfig {
+  banner?: boolean;
+  scope?: boolean;
+  deliverables?: boolean;
+  crew?: boolean;
+  whyChooseUs?: boolean;
+  pricingTable?: boolean;
+  paymentMilestones?: boolean;
+  bankDetails?: boolean;
+  terms?: boolean;
+  signatory?: boolean;
+}
+
+export interface SectionTitlesConfig {
+  scopeTitle?: string;
+  deliverablesTitle?: string;
+  crewTitle?: string;
+  whyChooseUsTitle?: string;
+  pricingTitle?: string;
+  termsTitle?: string;
+}
+
+export interface CustomTemplatePreset {
+  id: string;
+  name: string;
+  description?: string;
+  industry: IndustryCategory;
+  theme: ProposalTheme;
+  accentColor: string;
+  fontFamily: string;
+  sectionVisibility: SectionVisibilityConfig;
+  sectionTitles?: SectionTitlesConfig;
+  createdAt: string;
+  updatedAt: string;
+  isCustom: true;
+  sampleDocument?: Partial<QuotationDocument>;
+}
+
 export interface QuotationDocument {
   id: string;
+  /**
+   * Unguessable token used in public client links (?view=<shareToken>).
+   * The document id is a timestamp and would be trivially enumerable.
+   */
+  shareToken?: string;
   type: BillType;
   industry: IndustryCategory;
   theme: ProposalTheme;
   currency: CurrencyConfig;
   accentColor?: string; // Custom brand hex color (e.g. #f59e0b)
   fontFamily?: string;  // e.g. 'Outfit', 'Plus Jakarta Sans', 'Inter', 'Playfair Display'
+  customTemplateId?: string;
+  sectionVisibility?: SectionVisibilityConfig;
+  sectionTitles?: SectionTitlesConfig;
   status?: 'DRAFT' | 'SENT' | 'VIEWED' | 'APPROVED' | 'PAID';
   viewCount?: number;
   lastViewedAt?: string;

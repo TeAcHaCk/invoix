@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { X, Check, Crown, Zap, ShieldCheck, ArrowRight, Loader2 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useAuth } from '../context/AuthContext';
-import { initiateRazorpayPayment, upgradeUserPlanInDatabase } from '../services/paymentService';
+import { initiateRazorpayPayment } from '../services/paymentService';
 
 interface UpgradePlanModalProps {
   isOpen: boolean;
@@ -50,10 +50,16 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps> = ({
       isAnnual,
       userEmail: user.email || profile?.email || '',
       userName: profile?.full_name || profile?.business_name || '',
-      onSuccess: async (paymentId: string) => {
+      onSuccess: async () => {
         setIsProcessing(false);
-        await upgradeUserPlanInDatabase(user.id, planId, paymentId);
-        await refreshProfile();
+        // The server already applied the upgrade after verifying the signature.
+        // Re-read the profile, retrying briefly in case the write is still landing.
+        for (let attempt = 0; attempt < 3; attempt++) {
+          await refreshProfile();
+          if (attempt < 2) {
+            await new Promise((resolve) => setTimeout(resolve, 600));
+          }
+        }
         triggerConfetti();
         alert(`🎉 Payment Successful! Your account has been upgraded to ${planName}.`);
         onClose();

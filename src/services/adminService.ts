@@ -238,12 +238,20 @@ export const updateUserPlanOrRole = async (
   if (!supabase) return true;
 
   try {
-    const { error } = await supabase
-      .from('profiles')
-      .update({ ...updates, updated_at: new Date().toISOString() })
-      .eq('id', userId);
+    // plan / role / is_suspended are not writable from the browser by design.
+    // admin_set_user_plan re-checks is_admin() server-side before applying.
+    const { error } = await supabase.rpc('admin_set_user_plan', {
+      p_user_id: userId,
+      p_plan: updates.plan ?? null,
+      p_role: updates.role ?? null,
+      p_is_suspended: updates.is_suspended ?? null,
+    });
 
-    return !error;
+    if (error) {
+      console.error('Failed to update user in admin panel:', error.message);
+      return false;
+    }
+    return true;
   } catch (err) {
     console.error('Failed to update user in admin panel:', err);
     return false;
@@ -258,6 +266,7 @@ export const fetchPlatformDocuments = async (): Promise<any[]> => {
   if (!supabase) {
     return localDocs.map((d) => ({
       id: d.id,
+      share_token: d.shareToken,
       title: d.packageBannerTitle || d.client.nameOfEvent || 'Proposal',
       client_name: d.client.clientName || 'Client',
       type: d.type,
@@ -273,7 +282,7 @@ export const fetchPlatformDocuments = async (): Promise<any[]> => {
   try {
     const { data, error } = await supabase
       .from('documents')
-      .select('id, title, client_name, type, industry, total_investment, currency_code, status, views_count, created_at')
+      .select('id, share_token, title, client_name, type, industry, total_investment, currency_code, status, views_count, created_at')
       .order('created_at', { ascending: false })
       .limit(50);
 

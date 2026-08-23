@@ -9,6 +9,7 @@ import type {
 } from '../types';
 import { INDUSTRY_PRESETS } from './industryPresets';
 import { SUPPORTED_CURRENCIES } from './currencies';
+import { createShareToken } from '../utils/cryptoAudit';
 
 export const getTodayFormattedDate = (): string => {
   const d = new Date();
@@ -132,6 +133,7 @@ export const createDocumentFromPreset = (
 
   return {
     id: 'doc_' + Date.now(),
+    shareToken: createShareToken(),
     type: billType,
     industry: preset.id,
     theme: industry === 'photography_events' || industry === 'construction' ? 'creative' : 'modern',
