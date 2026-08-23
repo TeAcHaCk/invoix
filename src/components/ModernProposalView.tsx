@@ -311,10 +311,17 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
 
                   {taxAmount > 0 && (
                     <div className="flex justify-between items-baseline gap-3 text-slate-600 text-[11px]">
-                      <span className="whitespace-nowrap overflow-hidden text-ellipsis">
+                      {/*
+                        No overflow-hidden / text-ellipsis here. On a flex item
+                        those set min-width to 0, letting the label shrink below
+                        its own content and truncate to "VAT (10…". The sibling
+                        rows keep min-width:auto and render in full, which is why
+                        the longer "Total Investment:" fits and this did not.
+                      */}
+                      <span className="whitespace-nowrap">
                         {doc.taxConfig?.label || doc.taxType?.toUpperCase() || 'Tax'} ({doc.taxConfig?.percent || doc.taxPercent}%):
                       </span>
-                      <span className="font-mono font-medium whitespace-nowrap shrink-0">{formatCurrency(taxAmount, currency)}</span>
+                      <span className="font-mono font-medium whitespace-nowrap">{formatCurrency(taxAmount, currency)}</span>
                     </div>
                   )}
 

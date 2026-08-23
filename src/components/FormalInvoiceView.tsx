@@ -336,10 +336,14 @@ export const FormalInvoiceView: React.FC<FormalInvoiceViewProps> = ({ document: 
 
             {taxAmount > 0 && (
               <div className="flex justify-between items-baseline gap-3 text-slate-600 text-[11px]">
-                <span className="whitespace-nowrap overflow-hidden text-ellipsis">
+                {/*
+                  No overflow-hidden / text-ellipsis here — on a flex item those
+                  set min-width to 0 and the label truncates to "VAT (10…".
+                */}
+                <span className="whitespace-nowrap">
                   {doc.taxConfig?.label || doc.taxType?.toUpperCase() || 'Tax'} ({doc.taxConfig?.percent || doc.taxPercent}%):
                 </span>
-                <span className="font-mono font-medium whitespace-nowrap shrink-0">{formatCurrency(taxAmount, currency)}</span>
+                <span className="font-mono font-medium whitespace-nowrap">{formatCurrency(taxAmount, currency)}</span>
               </div>
             )}
 
