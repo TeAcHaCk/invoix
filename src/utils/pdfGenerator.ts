@@ -1,55 +1,40 @@
-import html2canvas from 'html2canvas';
+import { toJpeg } from 'html-to-image';
 import jsPDF from 'jspdf';
 
 /**
- * Ultra-crisp, high-fidelity multi-page A4 PDF exporter for Desktop & Mobile browsers
+ * High-fidelity, ultra-crisp multi-page A4 PDF exporter.
+ * Uses native browser SVG/canvas engine (supports Tailwind v4 OKLCH colors, Google fonts & CSS variables).
  */
 export async function exportDocumentToPdf(
   elementId: string,
   fileName: string = 'Quotation-Invoix.pdf'
 ): Promise<boolean> {
-  const sourceEl = document.getElementById(elementId);
-  if (!sourceEl) {
+  const container =
+    document.getElementById(elementId) ||
+    document.querySelector('.print-page') ||
+    document.getElementById('quotation-preview-container');
+
+  if (!container) {
     console.error(`PDF Export Error: Element #${elementId} not found in DOM`);
     return false;
   }
 
-  // 1. Wait for Google Fonts & icon sets to fully load
-  if (document.fonts) {
-    try {
-      await document.fonts.ready;
-    } catch {
-      // Proceed if fonts ready check fails
-    }
-  }
-
-  // 2. Clone source element into a temporary offscreen node attached to body
-  // This guarantees html2canvas finds all nodes without iframe mismatch or zoom scaling distortion
-  const tempHost = document.createElement('div');
-  tempHost.style.position = 'fixed';
-  tempHost.style.left = '0';
-  tempHost.style.top = '0';
-  tempHost.style.width = '794px';
-  tempHost.style.zIndex = '-99999';
-  tempHost.style.opacity = '0.01'; // Near zero but non-zero so canvas renderer renders all pixels
-  tempHost.style.pointerEvents = 'none';
-  tempHost.style.backgroundColor = '#ffffff';
-
-  const clonedEl = sourceEl.cloneNode(true) as HTMLElement;
-  clonedEl.style.transform = 'none';
-  clonedEl.style.width = '794px';
-  clonedEl.style.margin = '0';
-  clonedEl.style.padding = '0';
-
-  tempHost.appendChild(clonedEl);
-  document.body.appendChild(tempHost);
-
   try {
-    const subPages = tempHost.querySelectorAll<HTMLElement>('.print-page');
-    const pageElements: HTMLElement[] =
-      subPages.length > 0 ? Array.from(subPages) : [clonedEl];
+    // 1. Wait for custom web fonts (Outfit, Plus Jakarta Sans, Cinzel, Cormorant, etc.)
+    if (document.fonts) {
+      try {
+        await document.fonts.ready;
+      } catch {
+        // Proceed if font loading promise errors
+      }
+    }
 
-    // A4 Dimensions: 210mm x 297mm
+    // 2. Discover all printed pages (.print-page) inside container
+    const subPages = container.querySelectorAll<HTMLElement>('.print-page');
+    const pageElements: HTMLElement[] =
+      subPages.length > 0 ? Array.from(subPages) : [container as HTMLElement];
+
+    // Standard A4 Dimensions: 210mm x 297mm
     const pdf = new jsPDF({
       orientation: 'portrait',
       unit: 'mm',
@@ -61,30 +46,35 @@ export async function exportDocumentToPdf(
     const pdfHeight = pdf.internal.pageSize.getHeight(); // 297 mm
 
     for (let i = 0; i < pageElements.length; i++) {
-      const page = pageElements[i];
-      page.style.width = '794px';
-      page.style.transform = 'none';
-
+      const pageEl = pageElements[i];
       if (i > 0) {
         pdf.addPage('a4', 'portrait');
       }
 
-      // Render high-DPI canvas (scale 2 for crisp 300 DPI print quality)
-      const canvas = await html2canvas(page, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        logging: false,
+      // Convert page node to high-res JPEG using native browser renderer (100% OKLCH color support)
+      const imgData = await toJpeg(pageEl, {
+        quality: 0.96,
+        pixelRatio: 2, // 300+ DPI razor-sharp print quality
         backgroundColor: '#ffffff',
-        width: 794,
-        windowWidth: 794,
+        cacheBust: true,
+        style: {
+          transform: 'none',
+          margin: '0',
+          maxWidth: 'none',
+          width: '794px',
+        },
+        filter: (node) => {
+          if (node instanceof HTMLElement && node.classList.contains('no-print')) {
+            return false;
+          }
+          return true;
+        },
       });
 
-      const imgData = canvas.toDataURL('image/jpeg', 0.98);
       pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
     }
 
-    // 3. Trigger reliable file download for Desktop and Mobile browsers
+    // 3. Reliable Mobile & Desktop Save Trigger
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
     if (isMobile) {
@@ -102,7 +92,7 @@ export async function exportDocumentToPdf(
           document.body.removeChild(link);
         }
         URL.revokeObjectURL(blobUrl);
-      }, 2000);
+      }, 2500);
     } else {
       pdf.save(fileName);
     }
@@ -111,10 +101,6 @@ export async function exportDocumentToPdf(
   } catch (error) {
     console.error('Error generating PDF:', error);
     return false;
-  } finally {
-    if (document.body.contains(tempHost)) {
-      document.body.removeChild(tempHost);
-    }
   }
 }
 
@@ -122,36 +108,23 @@ export async function generatePdfBlob(
   elementId: string,
   fileName: string = 'Quotation.pdf'
 ): Promise<File | null> {
-  const sourceEl = document.getElementById(elementId);
-  if (!sourceEl) return null;
+  const container =
+    document.getElementById(elementId) ||
+    document.querySelector('.print-page') ||
+    document.getElementById('quotation-preview-container');
 
-  if (document.fonts) {
-    try {
-      await document.fonts.ready;
-    } catch {
-      // Continue
-    }
-  }
-
-  const tempHost = document.createElement('div');
-  tempHost.style.position = 'fixed';
-  tempHost.style.left = '0';
-  tempHost.style.top = '0';
-  tempHost.style.width = '794px';
-  tempHost.style.zIndex = '-99999';
-  tempHost.style.opacity = '0.01';
-  tempHost.style.pointerEvents = 'none';
-
-  const clonedEl = sourceEl.cloneNode(true) as HTMLElement;
-  clonedEl.style.transform = 'none';
-  clonedEl.style.width = '794px';
-
-  tempHost.appendChild(clonedEl);
-  document.body.appendChild(tempHost);
+  if (!container) return null;
 
   try {
-    const subPages = tempHost.querySelectorAll<HTMLElement>('.print-page');
-    const pageElements = subPages.length > 0 ? Array.from(subPages) : [clonedEl];
+    if (document.fonts) {
+      try {
+        await document.fonts.ready;
+      } catch {}
+    }
+
+    const subPages = container.querySelectorAll<HTMLElement>('.print-page');
+    const pageElements: HTMLElement[] =
+      subPages.length > 0 ? Array.from(subPages) : [container as HTMLElement];
 
     const pdf = new jsPDF({
       orientation: 'portrait',
@@ -164,21 +137,24 @@ export async function generatePdfBlob(
     const pdfHeight = pdf.internal.pageSize.getHeight();
 
     for (let i = 0; i < pageElements.length; i++) {
-      const page = pageElements[i];
+      const pageEl = pageElements[i];
       if (i > 0) {
         pdf.addPage('a4', 'portrait');
       }
 
-      const canvas = await html2canvas(page, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        logging: false,
+      const imgData = await toJpeg(pageEl, {
+        quality: 0.96,
+        pixelRatio: 2,
         backgroundColor: '#ffffff',
-        width: 794,
+        cacheBust: true,
+        style: {
+          transform: 'none',
+          margin: '0',
+          maxWidth: 'none',
+          width: '794px',
+        },
       });
 
-      const imgData = canvas.toDataURL('image/jpeg', 0.98);
       pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
     }
 
@@ -187,10 +163,6 @@ export async function generatePdfBlob(
   } catch (err) {
     console.error('Error generating PDF blob:', err);
     return null;
-  } finally {
-    if (document.body.contains(tempHost)) {
-      document.body.removeChild(tempHost);
-    }
   }
 }
 
