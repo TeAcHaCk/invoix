@@ -17,7 +17,7 @@ import { SUPPORTED_CURRENCIES } from '../constants/currencies';
 import { IndustryPresetSelector } from './IndustryPresetSelector';
 import { WatermarkControls } from './WatermarkControls';
 import { AdBanner } from './AdBanner';
-import { trimTransparentImage } from '../utils/imageTrim';
+import { processLogoFile } from '../utils/imageTrim';
 import {
   User,
   Layers,
@@ -76,24 +76,25 @@ export const FormEditor: React.FC<FormEditorProps> = ({
     }
   };
 
-  // Logo Upload with transparent whitespace cropping
-  const handleTopLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Logo Upload with automatic optimization & quota protection
+  const handleTopLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = async (event) => {
-        if (event.target?.result) {
-          const rawUrl = event.target.result as string;
-          const trimmedUrl = await trimTransparentImage(rawUrl);
-          const updatedStudio = {
-            ...doc.studio,
-            logoUrl: trimmedUrl,
-          };
-          saveStudioProfileToStorage(updatedStudio);
-          update({ studio: updatedStudio });
-        }
-      };
-      reader.readAsDataURL(file);
+      const res = await processLogoFile(file);
+      if (res.success && res.dataUrl) {
+        const updatedStudio = {
+          ...doc.studio,
+          logoUrl: res.dataUrl,
+        };
+        saveStudioProfileToStorage(updatedStudio);
+        update({ studio: updatedStudio });
+      } else if (res.error) {
+        alert(res.error);
+      }
+      // Reset input value so user can re-upload same file if desired
+      if (logoFileInputRef.current) {
+        logoFileInputRef.current.value = '';
+      }
     }
   };
 
@@ -544,7 +545,7 @@ export const FormEditor: React.FC<FormEditorProps> = ({
                   <input
                     type="file"
                     ref={logoFileInputRef}
-                    accept="image/*"
+                    accept="image/png,image/svg+xml,image/jpeg,image/webp,.png,.svg,.jpg,.jpeg,.webp"
                     onChange={handleTopLogoUpload}
                     className="hidden"
                   />

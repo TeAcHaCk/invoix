@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import type { StudioProfile } from '../types';
 import { Building2, X, Upload, Check, CreditCard } from 'lucide-react';
-import { trimTransparentImage } from '../utils/imageTrim';
+import { processLogoFile } from '../utils/imageTrim';
 
 interface StudioSettingsModalProps {
   isOpen: boolean;
@@ -25,21 +25,21 @@ export const StudioSettingsModal: React.FC<StudioSettingsModalProps> = ({
 
   if (!isOpen) return null;
 
-  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = async (event) => {
-        if (event.target?.result) {
-          const rawUrl = event.target.result as string;
-          const trimmed = await trimTransparentImage(rawUrl);
-          setFormData((prev) => ({
-            ...prev,
-            logoUrl: trimmed,
-          }));
-        }
-      };
-      reader.readAsDataURL(file);
+      const res = await processLogoFile(file);
+      if (res.success && res.dataUrl) {
+        setFormData((prev) => ({
+          ...prev,
+          logoUrl: res.dataUrl!,
+        }));
+      } else if (res.error) {
+        alert(res.error);
+      }
+      if (logoInputRef.current) {
+        logoInputRef.current.value = '';
+      }
     }
   };
 
@@ -98,7 +98,7 @@ export const StudioSettingsModal: React.FC<StudioSettingsModalProps> = ({
               <input
                 type="file"
                 ref={logoInputRef}
-                accept="image/*"
+                accept="image/png,image/svg+xml,image/jpeg,image/webp,.png,.svg,.jpg,.jpeg,.webp"
                 onChange={handleLogoUpload}
                 className="hidden"
               />

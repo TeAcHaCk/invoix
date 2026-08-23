@@ -90,7 +90,11 @@ function StudioWorkspace({ initialIndustry, onNavigateToAdmin, onNavigateToHome 
 
   // Autosave current draft to localStorage & Cloud
   useEffect(() => {
-    localStorage.setItem('fbf_current_document_v4', JSON.stringify(document));
+    try {
+      localStorage.setItem('fbf_current_document_v4', JSON.stringify(document));
+    } catch (e) {
+      console.warn('LocalStorage quota limit warning:', e);
+    }
     if (user) {
       const timer = setTimeout(() => {
         saveDocument(document, user.id);
