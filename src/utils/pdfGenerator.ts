@@ -128,6 +128,54 @@ function getImageDimensions(dataUrl: string): Promise<{ width: number; height: n
   });
 }
 
+/**
+ * Places one captured page into the PDF at full A4 width.
+ *
+ * The previous version fitted by whichever axis overflowed, so any page taller
+ * than A4 (every `.print-page` uses min-height, so content freely overflows) got
+ * scaled down to ~86% and centre-floated with white gutters down both sides.
+ * That was the long-running "alignment is not proper" bug.
+ *
+ * Content now always spans the full page width; anything taller than one A4
+ * flows onto additional pages rather than being squashed to fit.
+ */
+async function drawPageIntoPdf(
+  pdf: jsPDF,
+  imgData: string,
+  pdfW: number,
+  pdfH: number,
+  /** Stable alias so jsPDF embeds the bitmap once even when it spans sheets. */
+  alias: string
+): Promise<void> {
+  const dims = await getImageDimensions(imgData);
+  const imgAspect = dims.width / dims.height;
+
+  const drawW = pdfW;
+  const drawH = pdfW / imgAspect;
+
+  // Half a millimetre of slack so rounding never triggers a blank trailing page.
+  const TOLERANCE_MM = 0.5;
+
+  if (drawH <= pdfH + TOLERANCE_MM) {
+    pdf.addImage(imgData, 'PNG', 0, 0, drawW, drawH, alias, 'FAST');
+    return;
+  }
+
+  // Taller than A4: re-draw the same image shifted up by one page each time.
+  // jsPDF clips to the page box, so each pass reveals the next slice.
+  let offsetY = 0;
+  let remaining = drawH;
+
+  while (remaining > TOLERANCE_MM) {
+    pdf.addImage(imgData, 'PNG', 0, offsetY, drawW, drawH, alias, 'FAST');
+    remaining -= pdfH;
+    offsetY -= pdfH;
+    if (remaining > TOLERANCE_MM) {
+      pdf.addPage('a4', 'portrait');
+    }
+  }
+}
+
 export async function exportDocumentToPdf(
   elementId: string,
   fileName: string = 'Quotation-Invoix.pdf'
@@ -167,25 +215,7 @@ export async function exportDocumentToPdf(
       if (i > 0) pdf.addPage('a4', 'portrait');
 
       const imgData = await capturePageAsPng(pageElements[i]);
-
-      // Compute proper fit to A4 without stretching
-      const dims = await getImageDimensions(imgData);
-      const imgAspect = dims.width / dims.height;
-      const a4Aspect = pdfW / pdfH;
-
-      let drawW = pdfW;
-      let drawH = pdfH;
-      let drawX = 0;
-      let drawY = 0;
-
-      if (imgAspect > a4Aspect) {
-        drawH = pdfW / imgAspect;
-      } else {
-        drawW = pdfH * imgAspect;
-        drawX = (pdfW - drawW) / 2;
-      }
-
-      pdf.addImage(imgData, 'PNG', drawX, drawY, drawW, drawH, undefined, 'FAST');
+      await drawPageIntoPdf(pdf, imgData, pdfW, pdfH, `page_${i}`);
     }
 
     // Mobile-safe download
@@ -249,23 +279,7 @@ export async function generatePdfBlob(
       if (i > 0) pdf.addPage('a4', 'portrait');
 
       const imgData = await capturePageAsPng(pageElements[i]);
-      const dims = await getImageDimensions(imgData);
-      const imgAspect = dims.width / dims.height;
-      const a4Aspect = pdfW / pdfH;
-
-      let drawW = pdfW;
-      let drawH = pdfH;
-      let drawX = 0;
-      let drawY = 0;
-
-      if (imgAspect > a4Aspect) {
-        drawH = pdfW / imgAspect;
-      } else {
-        drawW = pdfH * imgAspect;
-        drawX = (pdfW - drawW) / 2;
-      }
-
-      pdf.addImage(imgData, 'PNG', drawX, drawY, drawW, drawH, undefined, 'FAST');
+      await drawPageIntoPdf(pdf, imgData, pdfW, pdfH, `page_${i}`);
     }
 
     const blob = pdf.output('blob');

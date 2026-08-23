@@ -211,6 +211,7 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ onSelectPlan }) 
                     { text: 'Digital canvas e-signatures & acceptance' },
                     { text: 'Custom studio branding & logo' },
                     { text: 'Remove platform watermark' },
+                    { text: 'White-label client pages (no Invoix branding)' },
                   ].map((item, i) => (
                     <li key={i} className={`flex items-center space-x-2.5 ${item.bold ? 'font-bold text-slate-100' : ''}`}>
                       <Check className="w-4 h-4 text-amber-400 shrink-0" />

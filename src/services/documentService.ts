@@ -26,9 +26,16 @@ const findLocalByToken = (token: string): QuotationDocument | undefined => {
 
 export const saveDocument = async (
   doc: QuotationDocument,
-  userId?: string
+  userId?: string,
+  isPaid: boolean = false
 ): Promise<CloudSaveResult> => {
-  const document = withShareToken(doc);
+  // The client opening a share link is anonymous and cannot look up the owner's
+  // plan, so whether to show the Invoix footer CTA is decided here, at save
+  // time, and travels with the document.
+  const document: QuotationDocument = {
+    ...withShareToken(doc),
+    showInvoixBranding: !isPaid,
+  };
 
   // Always save locally to vault for offline resilience
   saveDocumentToVault(document);

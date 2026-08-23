@@ -29,6 +29,7 @@ import {
   ShieldCheck,
   Trash2,
   Lock,
+  ArrowRight,
 } from 'lucide-react';
 
 interface PublicProposalPageProps {
@@ -1083,9 +1084,30 @@ export const PublicProposalPage: React.FC<PublicProposalPageProps> = ({ document
         <p>
           {document.studio.name} • {document.studio.phoneNumbers} • {document.studio.email}
         </p>
-        <p className="text-[11px] text-slate-600 mt-1">
-          Powered by Universal Proposal & Invoicing Platform
-        </p>
+
+        {/*
+          The single best piece of real estate Invoix owns: the person reading
+          this is a business owner who just received a professional proposal.
+          Shown only on free-tier documents — Pro accounts get white-label
+          client pages, which is a concrete reason to upgrade.
+        */}
+        {document.showInvoixBranding !== false && (
+          <div className="mt-4 pt-4 border-t border-slate-800/70 flex flex-col items-center space-y-2">
+            <p className="text-[11px] text-slate-500">
+              This proposal was created with{' '}
+              <span className="font-bold text-amber-400/90">Invoix</span>
+            </p>
+            <a
+              href="https://www.invoix.app/?utm_source=proposal_footer&utm_medium=share_link&utm_campaign=viral_loop"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center space-x-1.5 px-3.5 py-1.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-300 text-[11px] font-bold transition-colors"
+            >
+              <span>Create your own proposal — free</span>
+              <ArrowRight className="w-3 h-3 stroke-[2.5]" />
+            </a>
+          </div>
+        )}
       </footer>
     </div>
   );

@@ -147,11 +147,13 @@ function StudioWorkspace({ initialIndustry, onNavigateToAdmin, onNavigateToHome 
     }
     if (user) {
       const timer = setTimeout(() => {
-        saveDocument(document, user.id);
+        saveDocument(document, user.id, isPaidPlan(profile));
       }, 1200);
       return () => clearTimeout(timer);
     }
-  }, [document, user]);
+    // profile is a dependency so an upgrade re-stamps showInvoixBranding on the
+    // next save, clearing the footer CTA from the user's client links.
+  }, [document, user, profile]);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -194,7 +196,7 @@ function StudioWorkspace({ initialIndustry, onNavigateToAdmin, onNavigateToHome 
       return;
     }
 
-    const res = await saveDocument(document, user?.id);
+    const res = await saveDocument(document, user?.id, isPaidPlan(profile));
     if (res.success) {
       confetti({ particleCount: 50, spread: 50, origin: { y: 0.8 } });
       showToast(res.isCloud ? 'Synced to Supabase Cloud!' : 'Saved to Local Vault!');

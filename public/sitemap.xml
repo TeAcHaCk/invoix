@@ -1,21 +1,26 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Query-param URLs, not hash URLs. Search engines strip #fragments, so
+  /#privacy would be indexed as the homepage. App.tsx resolves ?page=privacy
+  and ?page=terms directly, so these are real, crawlable, distinct pages.
+-->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://www.invoix.app/</loc>
-    <lastmod>2026-08-23</lastmod>
+    <lastmod>2026-08-24</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
     <loc>https://www.invoix.app/?page=privacy</loc>
-    <lastmod>2026-08-23</lastmod>
+    <lastmod>2026-08-24</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
+    <priority>0.5</priority>
   </url>
   <url>
     <loc>https://www.invoix.app/?page=terms</loc>
-    <lastmod>2026-08-23</lastmod>
+    <lastmod>2026-08-24</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
+    <priority>0.5</priority>
   </url>
 </urlset>

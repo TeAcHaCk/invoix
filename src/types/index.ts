@@ -225,6 +225,12 @@ export interface QuotationDocument {
    * The document id is a timestamp and would be trivially enumerable.
    */
   shareToken?: string;
+  /**
+   * Whether the public client page shows the Invoix footer CTA.
+   * Stamped at save time from the owner's plan, because the client viewing the
+   * share link is anonymous and cannot read the owner's profile.
+   */
+  showInvoixBranding?: boolean;
   type: BillType;
   industry: IndustryCategory;
   theme: ProposalTheme;

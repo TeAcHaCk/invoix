@@ -210,6 +210,7 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps> = ({
                     'Unlimited Proposal & Invoice Generation',
                     'High-Fidelity PDF Exports (300 DPI vector)',
                     'Remove Invoix Watermark',
+                    'White-Label Client Pages (no Invoix branding)',
                     'Custom Studio Branding & Logo Sizing',
                     'Interactive Live Client Links with Addons',
                     'Dynamic Payment QR Codes (UPI & Cards)',

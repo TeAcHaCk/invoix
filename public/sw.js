@@ -1,11 +1,12 @@
 // Invoix Production Service Worker
-const CACHE_NAME = 'invoix-cache-v1';
+// Bumped to v2: v1 precached a 3.7 MB logo twice (invoix-logo.png and an
+// identical logo.png). The version change evicts that cache on existing installs.
+const CACHE_NAME = 'invoix-cache-v2';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
   '/manifest.json',
   '/invoix-logo.png',
-  '/logo.png',
   '/favicon.svg'
 ];
 
