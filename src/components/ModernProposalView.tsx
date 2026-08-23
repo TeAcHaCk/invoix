@@ -291,31 +291,36 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
 
               {/* Financial Totals Block */}
               <div className="flex justify-end mt-2">
-                <div className="w-72 bg-slate-50 border border-slate-200 rounded-lg p-2.5 space-y-1 text-xs">
-                  <div className="flex justify-between text-slate-600 text-[11px]">
-                    <span>Subtotal:</span>
-                    <span className="font-mono font-medium">{formatCurrency(subtotal, currency)}</span>
+                {/*
+                  Every row is nowrap with an explicit gap. Without it a tax
+                  label like "VAT (10%):" or "Sales Tax (8.25%):" wraps at the
+                  space and the second line collides with the Total rule below.
+                */}
+                <div className="w-80 bg-slate-50 border border-slate-200 rounded-lg p-2.5 space-y-1 text-xs">
+                  <div className="flex justify-between items-baseline gap-3 text-slate-600 text-[11px]">
+                    <span className="whitespace-nowrap">Subtotal:</span>
+                    <span className="font-mono font-medium whitespace-nowrap">{formatCurrency(subtotal, currency)}</span>
                   </div>
 
                   {discountAmount > 0 && (
-                    <div className="flex justify-between text-emerald-700 text-[11px]">
-                      <span>Discount:</span>
-                      <span className="font-mono font-medium">-{formatCurrency(discountAmount, currency)}</span>
+                    <div className="flex justify-between items-baseline gap-3 text-emerald-700 text-[11px]">
+                      <span className="whitespace-nowrap">Discount:</span>
+                      <span className="font-mono font-medium whitespace-nowrap">-{formatCurrency(discountAmount, currency)}</span>
                     </div>
                   )}
 
                   {taxAmount > 0 && (
-                    <div className="flex justify-between text-slate-600 text-[11px]">
-                      <span>
+                    <div className="flex justify-between items-baseline gap-3 text-slate-600 text-[11px]">
+                      <span className="whitespace-nowrap overflow-hidden text-ellipsis">
                         {doc.taxConfig?.label || doc.taxType?.toUpperCase() || 'Tax'} ({doc.taxConfig?.percent || doc.taxPercent}%):
                       </span>
-                      <span className="font-mono font-medium">{formatCurrency(taxAmount, currency)}</span>
+                      <span className="font-mono font-medium whitespace-nowrap shrink-0">{formatCurrency(taxAmount, currency)}</span>
                     </div>
                   )}
 
-                  <div className="border-t-2 border-slate-900 pt-1 flex justify-between font-bold text-sm text-slate-950">
-                    <span className="font-['Outfit']">Total Investment:</span>
-                    <span className="font-mono text-amber-950 font-extrabold">{formatCurrency(grandTotal, currency)}</span>
+                  <div className="border-t-2 border-slate-900 pt-1 flex justify-between items-baseline gap-3 font-bold text-sm text-slate-950">
+                    <span className="font-['Outfit'] whitespace-nowrap">Total Investment:</span>
+                    <span className="font-mono text-amber-950 font-extrabold whitespace-nowrap">{formatCurrency(grandTotal, currency)}</span>
                   </div>
                 </div>
               </div>

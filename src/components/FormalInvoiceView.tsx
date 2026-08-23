@@ -317,35 +317,40 @@ export const FormalInvoiceView: React.FC<FormalInvoiceViewProps> = ({ document: 
 
           {/* Right: Subtotal, Tax & Net Due Totals */}
           <div className="w-80 bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-1.5 text-xs shrink-0">
-            <div className="flex justify-between text-slate-600 text-[11px]">
-              <span>Subtotal:</span>
-              <span className="font-mono font-medium">{formatCurrency(subtotal, currency)}</span>
+            {/*
+              Nowrap on every row: a tax label like "VAT (10%):" or
+              "Sales Tax (8.25%):" otherwise wraps at the space and the second
+              line collides with the Total rule below.
+            */}
+            <div className="flex justify-between items-baseline gap-3 text-slate-600 text-[11px]">
+              <span className="whitespace-nowrap">Subtotal:</span>
+              <span className="font-mono font-medium whitespace-nowrap">{formatCurrency(subtotal, currency)}</span>
             </div>
 
             {discountAmount > 0 && (
-              <div className="flex justify-between text-emerald-700 text-[11px]">
-                <span>Discount:</span>
-                <span className="font-mono font-medium">-{formatCurrency(discountAmount, currency)}</span>
+              <div className="flex justify-between items-baseline gap-3 text-emerald-700 text-[11px]">
+                <span className="whitespace-nowrap">Discount:</span>
+                <span className="font-mono font-medium whitespace-nowrap">-{formatCurrency(discountAmount, currency)}</span>
               </div>
             )}
 
             {taxAmount > 0 && (
-              <div className="flex justify-between text-slate-600 text-[11px]">
-                <span>
+              <div className="flex justify-between items-baseline gap-3 text-slate-600 text-[11px]">
+                <span className="whitespace-nowrap overflow-hidden text-ellipsis">
                   {doc.taxConfig?.label || doc.taxType?.toUpperCase() || 'Tax'} ({doc.taxConfig?.percent || doc.taxPercent}%):
                 </span>
-                <span className="font-mono font-medium">{formatCurrency(taxAmount, currency)}</span>
+                <span className="font-mono font-medium whitespace-nowrap shrink-0">{formatCurrency(taxAmount, currency)}</span>
               </div>
             )}
 
-            <div className="border-t border-slate-300 pt-1.5 flex justify-between font-bold text-sm text-slate-950">
+            <div className="border-t border-slate-300 pt-1.5 flex justify-between items-baseline gap-3 font-bold text-sm text-slate-950">
               <span className="font-['Outfit'] whitespace-nowrap">Total Amount:</span>
               <span className="font-mono text-amber-950 font-extrabold whitespace-nowrap">{formatCurrency(grandTotal, currency)}</span>
             </div>
 
             {amountReceived > 0 && (
-              <div className="flex justify-between text-emerald-800 text-[11px] pt-0.5">
-                <span>Amount Paid:</span>
+              <div className="flex justify-between items-baseline gap-3 text-emerald-800 text-[11px] pt-0.5">
+                <span className="whitespace-nowrap">Amount Paid:</span>
                 <span className="font-mono font-bold whitespace-nowrap">{formatCurrency(amountReceived, currency)}</span>
               </div>
             )}

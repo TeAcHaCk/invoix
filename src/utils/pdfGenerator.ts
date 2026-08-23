@@ -1,4 +1,4 @@
-import { toPng } from 'html-to-image';
+import { toPng, getFontEmbedCSS } from 'html-to-image';
 import jsPDF from 'jspdf';
 
 /**
@@ -82,7 +82,28 @@ function unscaleAncestors(el: HTMLElement): () => void {
   };
 }
 
-async function capturePageAsPng(pageEl: HTMLElement): Promise<string> {
+/**
+ * Resolves the page's webfonts to embeddable CSS (data URIs).
+ *
+ * html-to-image rasterises through an SVG <foreignObject>, which cannot reach
+ * the document's stylesheets — so `document.fonts.ready` is not enough. Without
+ * embedded fonts the capture silently falls back to a wider system font, text
+ * grows, and tight rows (the totals block especially) wrap in the PDF while
+ * looking fine on screen.
+ *
+ * Computed once per export and reused across pages; it is the slow part.
+ * Returns undefined on failure so capture still proceeds.
+ */
+async function resolveFontEmbedCss(el: HTMLElement): Promise<string | undefined> {
+  try {
+    return await getFontEmbedCSS(el);
+  } catch (err) {
+    console.warn('Could not embed webfonts for PDF capture, using fallbacks:', err);
+    return undefined;
+  }
+}
+
+async function capturePageAsPng(pageEl: HTMLElement, fontEmbedCSS?: string): Promise<string> {
   // 1. Remove parent scaling transforms
   const restoreTransforms = unscaleAncestors(pageEl);
 
@@ -95,6 +116,7 @@ async function capturePageAsPng(pageEl: HTMLElement): Promise<string> {
       pixelRatio: PIXEL_RATIO,
       backgroundColor: '#ffffff',
       cacheBust: true,
+      fontEmbedCSS,
       width: A4_WIDTH_PX,
       height: pageEl.scrollHeight || A4_HEIGHT_PX,
       style: {
@@ -201,6 +223,9 @@ export async function exportDocumentToPdf(
     const pageElements: HTMLElement[] =
       subPages.length > 0 ? Array.from(subPages) : [container as HTMLElement];
 
+    // Resolve fonts once, not per page — this is the expensive step.
+    const fontEmbedCSS = await resolveFontEmbedCss(container as HTMLElement);
+
     const pdf = new jsPDF({
       orientation: 'portrait',
       unit: 'mm',
@@ -214,7 +239,7 @@ export async function exportDocumentToPdf(
     for (let i = 0; i < pageElements.length; i++) {
       if (i > 0) pdf.addPage('a4', 'portrait');
 
-      const imgData = await capturePageAsPng(pageElements[i]);
+      const imgData = await capturePageAsPng(pageElements[i], fontEmbedCSS);
       await drawPageIntoPdf(pdf, imgData, pdfW, pdfH, `page_${i}`);
     }
 
@@ -265,6 +290,9 @@ export async function generatePdfBlob(
     const pageElements: HTMLElement[] =
       subPages.length > 0 ? Array.from(subPages) : [container as HTMLElement];
 
+    // Resolve fonts once, not per page — this is the expensive step.
+    const fontEmbedCSS = await resolveFontEmbedCss(container as HTMLElement);
+
     const pdf = new jsPDF({
       orientation: 'portrait',
       unit: 'mm',
@@ -278,7 +306,7 @@ export async function generatePdfBlob(
     for (let i = 0; i < pageElements.length; i++) {
       if (i > 0) pdf.addPage('a4', 'portrait');
 
-      const imgData = await capturePageAsPng(pageElements[i]);
+      const imgData = await capturePageAsPng(pageElements[i], fontEmbedCSS);
       await drawPageIntoPdf(pdf, imgData, pdfW, pdfH, `page_${i}`);
     }
 
