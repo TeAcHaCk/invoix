@@ -78,39 +78,87 @@ export const StudioSettingsModal: React.FC<StudioSettingsModalProps> = ({
         {/* Content Body */}
         <div className="p-5 space-y-4 overflow-y-auto text-xs flex-1">
           {/* Logo Section */}
-          <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-4 flex items-center justify-between gap-4">
-            <div>
-              <label className="block text-slate-300 font-semibold mb-1">Company / Brand Logo</label>
-              <p className="text-[11px] text-slate-400">
-                Transparent PNG recommended. Auto-trimmed to remove padding whitespace.
-              </p>
+          <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-4 space-y-3">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <label className="block text-slate-300 font-semibold mb-1">Company / Brand Logo</label>
+                <p className="text-[11px] text-slate-400">
+                  PNG, SVG, JPG or WEBP. Auto-trimmed and optimized for retina crispness.
+                </p>
+              </div>
+              <div className="flex items-center space-x-3">
+                {formData.logoUrl && (
+                  <div className="bg-white p-2 rounded-lg border border-slate-700">
+                    <img
+                      src={formData.logoUrl}
+                      alt="Logo"
+                      className="max-h-10 max-w-[120px] object-contain"
+                    />
+                  </div>
+                )}
+                <input
+                  type="file"
+                  ref={logoInputRef}
+                  accept="image/png,image/svg+xml,image/jpeg,image/webp,.png,.svg,.jpg,.jpeg,.webp"
+                  onChange={handleLogoUpload}
+                  className="hidden"
+                />
+                <button
+                  type="button"
+                  onClick={() => logoInputRef.current?.click()}
+                  className="px-3 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg flex items-center space-x-1.5 transition-all cursor-pointer"
+                >
+                  <Upload className="w-4 h-4" />
+                  <span>{formData.logoUrl ? 'Change' : 'Upload'}</span>
+                </button>
+                {formData.logoUrl && (
+                  <button
+                    type="button"
+                    onClick={() => setFormData((prev) => ({ ...prev, logoUrl: '' }))}
+                    className="px-2 py-1 text-slate-400 hover:text-red-400 text-xs cursor-pointer"
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
             </div>
-            <div className="flex items-center space-x-3">
-              {formData.logoUrl && (
-                <div className="bg-white p-2 rounded-lg border border-slate-700">
-                  <img
-                    src={formData.logoUrl}
-                    alt="Logo"
-                    className="max-h-12 max-w-[140px] object-contain"
-                  />
+
+            {formData.logoUrl && (
+              <div className="pt-3 border-t border-slate-800 space-y-2">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-[11px]">
+                      <span className="text-slate-400">Width</span>
+                      <span className="font-mono text-amber-300 font-bold">{formData.logoWidth || 260}px</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="80"
+                      max="400"
+                      step="10"
+                      value={formData.logoWidth || 260}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, logoWidth: Number(e.target.value) }))}
+                      className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-500"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-[11px]">
+                      <span className="text-slate-400">Max Height</span>
+                      <span className="font-mono text-amber-300 font-bold">{formData.logoHeight || 90}px</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="30"
+                      max="160"
+                      step="5"
+                      value={formData.logoHeight || 90}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, logoHeight: Number(e.target.value) }))}
+                      className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-500"
+                    />
+                  </div>
                 </div>
-              )}
-              <input
-                type="file"
-                ref={logoInputRef}
-                accept="image/png,image/svg+xml,image/jpeg,image/webp,.png,.svg,.jpg,.jpeg,.webp"
-                onChange={handleLogoUpload}
-                className="hidden"
-              />
-              <button
-                type="button"
-                onClick={() => logoInputRef.current?.click()}
-                className="px-3 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg flex items-center space-x-1.5 transition-all"
-              >
-                <Upload className="w-4 h-4" />
-                <span>Upload Logo</span>
-              </button>
-            </div>
+              </div>
+            )}
           </div>
 
           {/* Business Details */}

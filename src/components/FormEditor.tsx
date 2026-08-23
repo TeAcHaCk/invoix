@@ -526,18 +526,34 @@ export const FormEditor: React.FC<FormEditorProps> = ({
         {/* ========================================================= */}
         {activeTab === 'business' && (
           <div className="space-y-4 animate-fadeIn">
-            {/* Logo Upload */}
-            <div className="bg-slate-950/70 border border-slate-800/80 rounded-2xl p-4 space-y-3">
-              <label className="text-xs font-bold text-slate-200 uppercase tracking-wider block font-['Outfit']">
-                Company Brand Logo
-              </label>
+            {/* Logo Upload & Size Controls */}
+            <div className="bg-slate-950/70 border border-slate-800/80 rounded-2xl p-4 space-y-4">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-slate-200 uppercase tracking-wider block font-['Outfit']">
+                  Company Brand Logo
+                </label>
+                {doc.studio.logoUrl && (
+                  <span className="text-[11px] text-amber-400 font-mono font-semibold">
+                    {doc.studio.logoWidth || 260}px × {doc.studio.logoHeight || 90}px
+                  </span>
+                )}
+              </div>
+
               <div className="flex items-center space-x-3">
                 {doc.studio.logoUrl ? (
-                  <div className="p-2 bg-white rounded-xl border border-slate-700 shadow-sm">
-                    <img src={doc.studio.logoUrl} alt="Logo" className="h-10 max-w-[140px] object-contain" />
+                  <div className="p-2 bg-white rounded-xl border border-slate-700 shadow-sm flex items-center justify-center min-w-[90px] max-w-[160px]">
+                    <img 
+                      src={doc.studio.logoUrl} 
+                      alt="Logo" 
+                      style={{
+                        maxHeight: '44px',
+                        maxWidth: '130px',
+                        objectFit: 'contain'
+                      }}
+                    />
                   </div>
                 ) : (
-                  <div className="w-20 h-10 bg-slate-900 border border-slate-800 rounded-xl flex items-center justify-center text-slate-500 text-[10px]">
+                  <div className="w-20 h-11 bg-slate-900 border border-slate-800 rounded-xl flex items-center justify-center text-slate-500 text-[10px]">
                     No Logo
                   </div>
                 )}
@@ -554,7 +570,7 @@ export const FormEditor: React.FC<FormEditorProps> = ({
                     onClick={() => logoFileInputRef.current?.click()}
                     className="px-3.5 py-2 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 rounded-xl text-xs font-semibold transition-all cursor-pointer"
                   >
-                    Upload Logo (PNG/SVG)
+                    {doc.studio.logoUrl ? 'Change Logo' : 'Upload Logo (PNG/SVG)'}
                   </button>
                   {doc.studio.logoUrl && (
                     <button
@@ -567,6 +583,84 @@ export const FormEditor: React.FC<FormEditorProps> = ({
                   )}
                 </div>
               </div>
+
+              {/* Logo Width & Height Adjustment Controls */}
+              {doc.studio.logoUrl && (
+                <div className="pt-3 border-t border-slate-800/80 space-y-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {/* Width Slider */}
+                    <div className="space-y-1 bg-slate-900/60 border border-slate-800/60 rounded-xl p-2.5">
+                      <div className="flex justify-between text-[11px]">
+                        <span className="text-slate-400 font-medium">Logo Width</span>
+                        <span className="font-mono text-amber-300 font-bold">{doc.studio.logoWidth || 260}px</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="80"
+                        max="400"
+                        step="10"
+                        value={doc.studio.logoWidth || 260}
+                        onChange={(e) => {
+                          const val = Number(e.target.value);
+                          const updated = { ...doc.studio, logoWidth: val };
+                          saveStudioProfileToStorage(updated);
+                          update({ studio: updated });
+                        }}
+                        className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-500"
+                      />
+                    </div>
+
+                    {/* Height Slider */}
+                    <div className="space-y-1 bg-slate-900/60 border border-slate-800/60 rounded-xl p-2.5">
+                      <div className="flex justify-between text-[11px]">
+                        <span className="text-slate-400 font-medium">Max Height</span>
+                        <span className="font-mono text-amber-300 font-bold">{doc.studio.logoHeight || 90}px</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="30"
+                        max="160"
+                        step="5"
+                        value={doc.studio.logoHeight || 90}
+                        onChange={(e) => {
+                          const val = Number(e.target.value);
+                          const updated = { ...doc.studio, logoHeight: val };
+                          saveStudioProfileToStorage(updated);
+                          update({ studio: updated });
+                        }}
+                        className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-500"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Size Quick Presets */}
+                  <div className="flex items-center space-x-1.5">
+                    <span className="text-[10px] text-slate-500 uppercase font-semibold">Size Presets:</span>
+                    {[
+                      { label: 'Compact', w: 160, h: 60 },
+                      { label: 'Standard', w: 260, h: 90 },
+                      { label: 'Large', w: 340, h: 125 },
+                    ].map((p) => (
+                      <button
+                        key={p.label}
+                        type="button"
+                        onClick={() => {
+                          const updated = { ...doc.studio, logoWidth: p.w, logoHeight: p.h };
+                          saveStudioProfileToStorage(updated);
+                          update({ studio: updated });
+                        }}
+                        className={`px-2 py-0.5 rounded-lg text-[10px] font-semibold border transition-colors cursor-pointer ${
+                          (doc.studio.logoWidth || 260) === p.w && (doc.studio.logoHeight || 90) === p.h
+                            ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                            : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-slate-200'
+                        }`}
+                      >
+                        {p.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Company Info Fields */}

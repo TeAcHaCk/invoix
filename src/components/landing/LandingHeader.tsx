@@ -1,7 +1,6 @@
 import React from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { useInstallApp } from '../InstallAppPrompt';
-import { ArrowRight, User, Crown, Download } from 'lucide-react';
+import { ArrowRight, User, Crown } from 'lucide-react';
 
 interface LandingHeaderProps {
   onLaunchStudio: () => void;
@@ -15,7 +14,6 @@ export const LandingHeader: React.FC<LandingHeaderProps> = ({
   onOpenAdmin,
 }) => {
   const { user, profile, isAdmin } = useAuth();
-  const { canInstall, triggerInstall } = useInstallApp();
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-slate-950/80 backdrop-blur-lg border-b border-slate-800/80 px-4 sm:px-8 py-3.5 select-none font-['Plus_Jakarta_Sans',sans-serif]">
@@ -83,18 +81,6 @@ export const LandingHeader: React.FC<LandingHeaderProps> = ({
               className="text-xs font-semibold text-slate-300 hover:text-white px-3 py-1.5"
             >
               Sign In
-            </button>
-          )}
-
-          {canInstall && (
-            <button
-              type="button"
-              onClick={triggerInstall}
-              className="flex items-center space-x-1.5 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-amber-300 text-xs font-semibold rounded-xl border border-amber-500/30 shadow-sm transition-all cursor-pointer"
-              title="Install Invoix on this device"
-            >
-              <Download className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Install App</span>
             </button>
           )}
 

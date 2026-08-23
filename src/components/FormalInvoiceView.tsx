@@ -103,8 +103,8 @@ export const FormalInvoiceView: React.FC<FormalInvoiceViewProps> = ({ document: 
                 src={doc.studio.logoUrl}
                 alt={doc.studio.name}
                 style={{
-                  width: `${Math.min(logoWidth, 340)}px`,
-                  maxHeight: `${Math.min(logoHeight, 130)}px`,
+                  width: `${logoWidth}px`,
+                  maxHeight: `${logoHeight}px`,
                   objectFit: 'contain',
                 }}
                 className="mb-2 block"

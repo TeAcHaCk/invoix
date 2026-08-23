@@ -71,6 +71,51 @@ function StudioWorkspace({ initialIndustry, onNavigateToAdmin, onNavigateToHome 
   const [mobileActiveView, setMobileActiveView] = useState<'editor' | 'preview'>('editor');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
+  // Adjustable / Resizable Side Panel State
+  const [sidebarWidth, setSidebarWidth] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem('invoix_sidebar_width');
+      if (saved) {
+        const val = Number(saved);
+        if (val >= 340 && val <= 900) return val;
+      }
+    } catch {
+      /* ignore */
+    }
+    return 500;
+  });
+  const [isResizing, setIsResizing] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (!isResizing) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const newWidth = Math.max(340, Math.min(window.innerWidth * 0.7, e.clientX));
+      setSidebarWidth(newWidth);
+    };
+
+    const handleMouseUp = () => {
+      setIsResizing(false);
+      try {
+        localStorage.setItem('invoix_sidebar_width', String(sidebarWidth));
+      } catch {
+        /* ignore */
+      }
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    window.document.body.style.cursor = 'col-resize';
+    window.document.body.style.userSelect = 'none';
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+      window.document.body.style.cursor = '';
+      window.document.body.style.userSelect = '';
+    };
+  }, [isResizing, sidebarWidth]);
+
   // Responsive mobile canvas auto-fit
   useEffect(() => {
     const handleResize = () => {
@@ -270,9 +315,10 @@ function StudioWorkspace({ initialIndustry, onNavigateToAdmin, onNavigateToHome 
 
       {/* Main Workspace Split View */}
       <div className="flex-1 flex flex-col lg:flex-row overflow-hidden relative">
-        {/* Left Side: Form Editor */}
+        {/* Left Side: Form Editor (Moveable / Resizable Width) */}
         <div
-          className={`w-full lg:w-[480px] xl:w-[540px] border-r border-slate-800/80 bg-slate-950 flex flex-col overflow-y-auto ${
+          style={{ width: typeof window !== 'undefined' && window.innerWidth >= 1024 ? `${sidebarWidth}px` : undefined }}
+          className={`w-full shrink-0 border-r border-slate-800/80 bg-slate-950 flex flex-col overflow-y-auto ${
             mobileActiveView === 'preview' ? 'hidden lg:flex' : 'flex'
           }`}
         >
@@ -280,6 +326,28 @@ function StudioWorkspace({ initialIndustry, onNavigateToAdmin, onNavigateToHome 
             document={document}
             onChange={setDocument}
           />
+        </div>
+
+        {/* Draggable Resizer Handle Bar (Desktop only) */}
+        <div
+          onMouseDown={(e) => {
+            e.preventDefault();
+            setIsResizing(true);
+          }}
+          onDoubleClick={() => {
+            setSidebarWidth(500);
+            try {
+              localStorage.setItem('invoix_sidebar_width', '500');
+            } catch {
+              /* ignore */
+            }
+          }}
+          title="Drag to resize panel / Double-click to reset"
+          className={`hidden lg:flex items-center justify-center w-2 -ml-1 z-30 cursor-col-resize hover:bg-amber-500/50 active:bg-amber-500 transition-colors select-none group relative ${
+            isResizing ? 'bg-amber-500 shadow-md shadow-amber-500/50' : 'bg-transparent'
+          }`}
+        >
+          <div className="w-1 h-8 rounded-full bg-slate-700/80 group-hover:bg-amber-400 group-hover:scale-y-125 transition-all" />
         </div>
 
         {/* Right Side: Live Document Preview Canvas */}

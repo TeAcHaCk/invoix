@@ -11,7 +11,8 @@ export const InstallAppPrompt: React.FC = () => {
   const [isIOS, setIsIOS] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
   const [showIOSModal, setShowIOSModal] = useState(false);
-  const [isDismissed, setIsDismissed] = useState(false);
+  const [isLeaving, setIsLeaving] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
 
   useEffect(() => {
     // Check if already running in standalone PWA mode
@@ -19,6 +20,10 @@ export const InstallAppPrompt: React.FC = () => {
       window.matchMedia('(display-mode: standalone)').matches ||
       (window.navigator as any).standalone === true;
     setIsStandalone(isStandaloneMode);
+    if (isStandaloneMode) {
+      setIsVisible(false);
+      return;
+    }
 
     // Detect iOS
     const userAgent = window.navigator.userAgent.toLowerCase();
@@ -33,14 +38,23 @@ export const InstallAppPrompt: React.FC = () => {
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
+    // Auto-dismiss with smooth disappearing animation after 6 seconds
+    const autoDismissTimer = setTimeout(() => {
+      triggerDismiss();
+    }, 6000);
+
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      clearTimeout(autoDismissTimer);
     };
   }, []);
 
-  if (isStandalone || isDismissed) {
-    return null;
-  }
+  const triggerDismiss = () => {
+    setIsLeaving(true);
+    setTimeout(() => {
+      setIsVisible(false);
+    }, 650);
+  };
 
   const handleInstallClick = async () => {
     if (deferredPrompt) {
@@ -49,20 +63,30 @@ export const InstallAppPrompt: React.FC = () => {
       if (choice.outcome === 'accepted') {
         setDeferredPrompt(null);
       }
+      triggerDismiss();
     } else if (isIOS) {
       setShowIOSModal(true);
+    } else {
+      alert('To install Invoix, tap the Install icon in your browser address bar or menu.');
+      triggerDismiss();
     }
   };
 
-  // Only show the floating bar if install is possible or on iOS
-  if (!deferredPrompt && !isIOS) {
+  if (!isVisible || isStandalone) {
     return null;
   }
 
   return (
     <>
-      {/* Floating Bottom App Install Bar */}
-      <aside aria-label="Install Invoix App" className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:max-w-sm z-40 bg-slate-900/95 backdrop-blur-xl border border-amber-500/40 p-3.5 rounded-2xl shadow-2xl shadow-black/80 flex items-center justify-between space-x-3 animate-in fade-in slide-in-from-bottom duration-300">
+      {/* Floating Bottom App Install Bar with Smooth In/Out Transition */}
+      <aside
+        aria-label="Install Invoix App"
+        className={`fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:max-w-sm z-40 bg-slate-900/95 backdrop-blur-xl border border-amber-500/40 p-3.5 rounded-2xl shadow-2xl shadow-black/80 flex items-center justify-between space-x-3 transform transition-all duration-500 ${
+          isLeaving
+            ? 'opacity-0 translate-y-8 scale-95 pointer-events-none'
+            : 'opacity-100 translate-y-0 scale-100'
+        }`}
+      >
         <div className="flex items-center space-x-3 min-w-0">
           <div className="w-10 h-10 rounded-xl bg-slate-950 p-1 border border-slate-800 shrink-0 flex items-center justify-center">
             <img src="/invoix-logo.png" alt="Invoix" className="w-full h-full object-contain" />
@@ -89,7 +113,7 @@ export const InstallAppPrompt: React.FC = () => {
           </button>
           <button
             type="button"
-            onClick={() => setIsDismissed(true)}
+            onClick={triggerDismiss}
             className="p-1.5 text-slate-500 hover:text-slate-300 rounded-lg transition-colors cursor-pointer"
             title="Dismiss"
           >
@@ -158,30 +182,3 @@ export const InstallAppPrompt: React.FC = () => {
     </>
   );
 };
-
-export function useInstallApp() {
-  const [canInstall, setCanInstall] = useState(false);
-  const [prompt, setPrompt] = useState<BeforeInstallPromptEvent | null>(null);
-
-  useEffect(() => {
-    const handler = (e: Event) => {
-      e.preventDefault();
-      setPrompt(e as BeforeInstallPromptEvent);
-      setCanInstall(true);
-    };
-    window.addEventListener('beforeinstallprompt', handler);
-    return () => window.removeEventListener('beforeinstallprompt', handler);
-  }, []);
-
-  const triggerInstall = async () => {
-    if (prompt) {
-      prompt.prompt();
-      const choice = await prompt.userChoice;
-      if (choice.outcome === 'accepted') {
-        setCanInstall(false);
-      }
-    }
-  };
-
-  return { canInstall, triggerInstall };
-}

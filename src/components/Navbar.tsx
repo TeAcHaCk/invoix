@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect } from 'react';
 import type { QuotationDocument } from '../types';
 import { INDUSTRY_PRESETS } from '../constants/industryPresets';
 import { useAuth } from '../context/AuthContext';
-import { useInstallApp } from './InstallAppPrompt';
 import {
   Download,
   Printer,
@@ -77,7 +76,6 @@ export const Navbar: React.FC<NavbarProps> = ({
   onToggleWatermark,
 }) => {
   const { user, profile, isAdmin, isCloudConnected } = useAuth();
-  const { canInstall, triggerInstall } = useInstallApp();
   const [copiedLink, setCopiedLink] = useState(false);
   const preset = INDUSTRY_PRESETS[doc.industry] || INDUSTRY_PRESETS.creative_agency;
   const shareDropdown = useDropdown();
@@ -284,17 +282,6 @@ export const Navbar: React.FC<NavbarProps> = ({
                   <span>Business Settings</span>
                 </button>
 
-                {canInstall && (
-                  <button
-                    type="button"
-                    onClick={() => { triggerInstall(); moreDropdown.setIsOpen(false); }}
-                    className="md:hidden w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs text-amber-300 hover:bg-slate-800/60 transition-colors cursor-pointer"
-                  >
-                    <Download className="w-4 h-4 text-amber-400" />
-                    <span>Install Invoix App</span>
-                  </button>
-                )}
-
                 {isAdmin && onOpenAdmin && (
                   <button
                     type="button"
@@ -317,22 +304,6 @@ export const Navbar: React.FC<NavbarProps> = ({
               </div>
             )}
           </div>
-
-          {/* Divider */}
-          <div className="w-px h-5 bg-slate-800 hidden sm:block" />
-
-          {/* === INSTALL PWA APP BUTTON (Desktop) === */}
-          {canInstall && (
-            <button
-              type="button"
-              onClick={triggerInstall}
-              className="hidden md:flex p-2 bg-slate-900 hover:bg-slate-800 text-amber-300 border border-amber-500/30 rounded-xl transition-colors items-center space-x-1.5 cursor-pointer"
-              title="Install Invoix Desktop/Mobile App"
-            >
-              <Download className="w-4 h-4 text-amber-400" />
-              <span className="text-[10px] font-bold uppercase hidden lg:inline font-['Outfit']">Install App</span>
-            </button>
-          )}
 
           {/* === ACCOUNT CLUSTER === */}
           {isAdmin && onOpenAdmin && (
