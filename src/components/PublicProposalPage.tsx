@@ -20,6 +20,9 @@ import {
   Loader2,
   AlertCircle,
   Eye,
+  Share2,
+  CreditCard,
+  Copy,
 } from 'lucide-react';
 
 interface PublicProposalPageProps {
@@ -35,6 +38,7 @@ export const PublicProposalPage: React.FC<PublicProposalPageProps> = ({ document
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDrawing, setIsDrawing] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [copiedLabel, setCopiedLabel] = useState<string | null>(null);
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
@@ -228,6 +232,34 @@ export const PublicProposalPage: React.FC<PublicProposalPageProps> = ({ document
     }
   };
 
+  const handleNotifyWhatsApp = () => {
+    if (!document) return;
+    const studioName = document.studio.name || 'Studio';
+    const docNo = document.details.invoiceNo;
+    const projectTitle = document.packageBannerTitle || document.client.nameOfEvent || 'Project';
+    const totalStr = formatCurrency(grandTotal, currency);
+    const clientName = signerName || document.signatory?.clientSignedName || 'Client';
+
+    const message = `*PROPOSAL ACCEPTED & DIGITALLY SIGNED* ✍️\n\n` +
+      `Hi *${studioName}*,\n\n` +
+      `I have reviewed, digitally signed, and accepted Proposal Ref: *${docNo}* (${projectTitle}) for *${totalStr}*.\n\n` +
+      `👤 *Signed By:* ${clientName}\n` +
+      `📅 *Date:* ${new Date().toLocaleDateString('en-GB')}\n\n` +
+      `Looking forward to commencing the project!`;
+
+    const phone = (document.studio.phoneNumbers || '').replace(/[^0-9]/g, '');
+    const url = phone
+      ? `https://wa.me/${phone}?text=${encodeURIComponent(message)}`
+      : `https://wa.me/?text=${encodeURIComponent(message)}`;
+    window.open(url, '_blank');
+  };
+
+  const handleCopy = (text: string, label: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedLabel(label);
+    setTimeout(() => setCopiedLabel(null), 2500);
+  };
+
   const handleDownloadPdf = async () => {
     setIsExporting(true);
     const clientSlug = (document.client.clientName || document.client.nameOfEvent || 'Proposal').replace(
@@ -238,6 +270,12 @@ export const PublicProposalPage: React.FC<PublicProposalPageProps> = ({ document
     await exportDocumentToPdf('quotation-invoice-canvas', fileName);
     setIsExporting(false);
   };
+
+  const hasBankDetails =
+    document.studio.bankName ||
+    document.studio.accountNumber ||
+    document.studio.ifscCode ||
+    document.studio.upiId;
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-['Plus_Jakarta_Sans',sans-serif] flex flex-col">
@@ -260,7 +298,7 @@ export const PublicProposalPage: React.FC<PublicProposalPageProps> = ({ document
               type="button"
               onClick={handleDownloadPdf}
               disabled={isExporting}
-              className="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl border border-slate-700 flex items-center space-x-1.5 transition-all disabled:opacity-50"
+              className="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl border border-slate-700 flex items-center space-x-1.5 transition-all disabled:opacity-50 cursor-pointer"
             >
               <Download className="w-3.5 h-3.5" />
               <span>{isExporting ? 'Generating...' : 'Download PDF'}</span>
@@ -472,21 +510,143 @@ export const PublicProposalPage: React.FC<PublicProposalPageProps> = ({ document
           </div>
 
           {isApproved ? (
-            <div className="bg-slate-950 border border-emerald-500/30 rounded-xl p-5 space-y-3">
-              <div className="flex items-center space-x-2 text-emerald-400 font-bold text-sm">
-                <CheckCircle2 className="w-5 h-5" />
-                <span>Proposal Approved by {document.signatory?.clientSignedName}</span>
+            <div className="space-y-6 animate-fadeIn">
+              {/* Success Banner */}
+              <div className="bg-gradient-to-br from-emerald-950/60 to-slate-950 border border-emerald-500/40 rounded-2xl p-6 space-y-4">
+                <div className="flex items-start justify-between">
+                  <div className="space-y-1">
+                    <div className="flex items-center space-x-2 text-emerald-400 font-bold text-base font-['Outfit']">
+                      <CheckCircle2 className="w-5 h-5" />
+                      <span>Proposal Accepted & Digitally Signed!</span>
+                    </div>
+                    <p className="text-xs text-slate-300">
+                      Signed by <strong>{document.signatory?.clientSignedName}</strong> on{' '}
+                      <strong>{document.signatory?.clientSignedDate}</strong>
+                    </p>
+                  </div>
+
+                  <span className="text-[11px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-3 py-1 rounded-full font-mono font-bold">
+                    Ref: {document.details.invoiceNo}
+                  </span>
+                </div>
+
+                {document.signatory?.clientSignatureDataUrl && (
+                  <div className="bg-white p-2.5 rounded-xl border border-slate-700 inline-block">
+                    <img
+                      src={document.signatory.clientSignatureDataUrl}
+                      alt="Digital Signature"
+                      className="max-h-12 object-contain"
+                    />
+                  </div>
+                )}
+
+                {/* Next Steps Buttons */}
+                <div className="pt-3 border-t border-emerald-500/20 flex flex-wrap gap-3">
+                  <button
+                    type="button"
+                    onClick={handleNotifyWhatsApp}
+                    className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-emerald-600/20 flex items-center space-x-2 transition-all cursor-pointer"
+                  >
+                    <Share2 className="w-4 h-4" />
+                    <span>Notify {document.studio.name} on WhatsApp</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleDownloadPdf}
+                    disabled={isExporting}
+                    className="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl border border-slate-700 flex items-center space-x-2 transition-all cursor-pointer disabled:opacity-50"
+                  >
+                    <Download className="w-4 h-4" />
+                    <span>{isExporting ? 'Preparing PDF...' : 'Download Executed Agreement (PDF)'}</span>
+                  </button>
+                </div>
               </div>
-              <p className="text-xs text-slate-300">
-                Signed on: <strong>{document.signatory?.clientSignedDate}</strong>
-              </p>
-              {document.signatory?.clientSignatureDataUrl && (
-                <div className="bg-white p-2 rounded-lg border border-slate-700 inline-block">
-                  <img
-                    src={document.signatory.clientSignatureDataUrl}
-                    alt="Digital Signature"
-                    className="max-h-14 object-contain"
-                  />
+
+              {/* Offline Deposit / Bank Wire Guidance Card */}
+              {hasBankDetails && (
+                <div className="bg-slate-950/80 border border-slate-800 rounded-2xl p-6 space-y-4">
+                  <div className="flex items-center space-x-2">
+                    <CreditCard className="w-4 h-4 text-amber-400" />
+                    <h4 className="text-xs font-bold text-slate-200 uppercase tracking-wider font-['Outfit']">
+                      Booking Deposit & Wire Transfer Details
+                    </h4>
+                  </div>
+
+                  <p className="text-xs text-slate-400">
+                    Please transfer the <strong>{document.paymentTerms?.advancePercent || 30}% Booking Deposit</strong> of{' '}
+                    <strong className="text-emerald-400 font-mono font-bold">
+                      {formatCurrency(advanceAmount, currency)}
+                    </strong>{' '}
+                    using the direct bank or UPI details below:
+                  </p>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                    {document.studio.bankName && (
+                      <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-3.5 space-y-1">
+                        <span className="text-[10px] text-slate-400 uppercase font-semibold">Bank Name</span>
+                        <p className="text-xs font-bold text-slate-100">{document.studio.bankName}</p>
+                      </div>
+                    )}
+
+                    {document.studio.accountHolder && (
+                      <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-3.5 space-y-1">
+                        <span className="text-[10px] text-slate-400 uppercase font-semibold">Beneficiary Name</span>
+                        <p className="text-xs font-bold text-slate-100">{document.studio.accountHolder}</p>
+                      </div>
+                    )}
+
+                    {document.studio.accountNumber && (
+                      <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-3.5 flex items-center justify-between">
+                        <div>
+                          <span className="text-[10px] text-slate-400 uppercase font-semibold block">Account # / IBAN</span>
+                          <p className="text-xs font-mono font-bold text-amber-300">{document.studio.accountNumber}</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleCopy(document.studio.accountNumber!, 'acc')}
+                          className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-[10.5px] rounded-lg text-slate-300 flex items-center space-x-1 cursor-pointer"
+                        >
+                          {copiedLabel === 'acc' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                          <span>{copiedLabel === 'acc' ? 'Copied' : 'Copy'}</span>
+                        </button>
+                      </div>
+                    )}
+
+                    {document.studio.ifscCode && (
+                      <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-3.5 flex items-center justify-between">
+                        <div>
+                          <span className="text-[10px] text-slate-400 uppercase font-semibold block">IFSC / SWIFT Code</span>
+                          <p className="text-xs font-mono font-bold text-slate-200">{document.studio.ifscCode}</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleCopy(document.studio.ifscCode!, 'ifsc')}
+                          className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-[10.5px] rounded-lg text-slate-300 flex items-center space-x-1 cursor-pointer"
+                        >
+                          {copiedLabel === 'ifsc' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                          <span>{copiedLabel === 'ifsc' ? 'Copied' : 'Copy'}</span>
+                        </button>
+                      </div>
+                    )}
+
+                    {document.studio.upiId && (
+                      <div className="sm:col-span-2 bg-slate-900/90 border border-slate-800 rounded-xl p-3.5 flex items-center justify-between">
+                        <div>
+                          <span className="text-[10px] text-slate-400 uppercase font-semibold block">Instant UPI ID</span>
+                          <p className="text-xs font-mono font-bold text-emerald-400">{document.studio.upiId}</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleCopy(document.studio.upiId!, 'upi')}
+                          className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-[10.5px] rounded-lg text-slate-300 flex items-center space-x-1 cursor-pointer"
+                        >
+                          {copiedLabel === 'upi' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                          <span>{copiedLabel === 'upi' ? 'Copied' : 'Copy UPI'}</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
