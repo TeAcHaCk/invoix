@@ -1,10 +1,117 @@
-import { toJpeg } from 'html-to-image';
+import { toPng } from 'html-to-image';
 import jsPDF from 'jspdf';
 
 /**
- * High-fidelity, ultra-crisp multi-page A4 PDF exporter.
- * Uses native browser SVG/canvas engine (supports Tailwind v4 OKLCH colors, Google fonts & CSS variables).
+ * High-fidelity multi-page A4 PDF exporter.
+ *
+ * Strategy: Clone each .print-page into a hidden, full-width (794px) offscreen
+ * container so the capture is completely independent of the viewport zoom/scale.
+ * Uses PNG (lossless) at 3× pixel-ratio for razor-sharp 300 DPI print quality.
+ * Computes the actual aspect ratio of each page so nothing gets stretched.
  */
+
+const A4_WIDTH_PX = 794;   // 210mm at 96 DPI
+const A4_HEIGHT_PX = 1123;  // 297mm at 96 DPI
+const PIXEL_RATIO = 3;      // 3× = ~288 DPI print quality
+
+/** Copy all stylesheets into the offscreen host so Tailwind / fonts apply. */
+function injectStyles(host: HTMLElement): void {
+  const doc = host.ownerDocument!;
+  for (const sheet of Array.from(document.styleSheets)) {
+    try {
+      if (sheet.href) {
+        const link = doc.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = sheet.href;
+        host.prepend(link);
+      } else if (sheet.cssRules) {
+        const style = doc.createElement('style');
+        style.textContent = Array.from(sheet.cssRules)
+          .map((r) => r.cssText)
+          .join('\n');
+        host.prepend(style);
+      }
+    } catch {
+      // Cross-origin stylesheets – skip
+    }
+  }
+}
+
+/**
+ * Clone a page element into a hidden offscreen container at full A4 width.
+ * Returns the container (caller must remove it after capture).
+ */
+function clonePageOffscreen(pageEl: HTMLElement): HTMLElement {
+  const host = document.createElement('div');
+  host.setAttribute('aria-hidden', 'true');
+  Object.assign(host.style, {
+    position: 'fixed',
+    left: '-9999px',
+    top: '0',
+    width: `${A4_WIDTH_PX}px`,
+    minHeight: `${A4_HEIGHT_PX}px`,
+    overflow: 'hidden',
+    zIndex: '-1',
+    backgroundColor: '#ffffff',
+    // Prevent any inherited transforms / scaling
+    transform: 'none',
+    transformOrigin: 'top left',
+  });
+
+  // Deep clone the page node
+  const clone = pageEl.cloneNode(true) as HTMLElement;
+  Object.assign(clone.style, {
+    width: `${A4_WIDTH_PX}px`,
+    minHeight: `${A4_HEIGHT_PX}px`,
+    margin: '0',
+    transform: 'none',
+    maxWidth: 'none',
+    boxSizing: 'border-box',
+  });
+
+  host.appendChild(clone);
+  injectStyles(host);
+  document.body.appendChild(host);
+
+  return host;
+}
+
+/** Capture a single page element as a high-quality PNG data URL. */
+async function capturePageAsPng(pageEl: HTMLElement): Promise<string> {
+  const host = clonePageOffscreen(pageEl);
+
+  // Let the browser layout & paint the cloned tree (fonts, images, etc.)
+  await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+  await new Promise((r) => setTimeout(r, 120));
+
+  const target = host.firstElementChild as HTMLElement;
+
+  try {
+    const dataUrl = await toPng(target, {
+      pixelRatio: PIXEL_RATIO,
+      backgroundColor: '#ffffff',
+      cacheBust: true,
+      width: A4_WIDTH_PX,
+      height: target.scrollHeight || A4_HEIGHT_PX,
+      style: {
+        transform: 'none',
+        margin: '0',
+        maxWidth: 'none',
+        width: `${A4_WIDTH_PX}px`,
+      },
+      filter: (node) => {
+        if (node instanceof HTMLElement && node.classList.contains('no-print')) {
+          return false;
+        }
+        return true;
+      },
+    });
+    return dataUrl;
+  } finally {
+    document.body.removeChild(host);
+  }
+}
+
 export async function exportDocumentToPdf(
   elementId: string,
   fileName: string = 'Quotation-Invoix.pdf'
@@ -20,21 +127,16 @@ export async function exportDocumentToPdf(
   }
 
   try {
-    // 1. Wait for custom web fonts (Outfit, Plus Jakarta Sans, Cinzel, Cormorant, etc.)
+    // Wait for web fonts
     if (document.fonts) {
-      try {
-        await document.fonts.ready;
-      } catch {
-        // Proceed if font loading promise errors
-      }
+      try { await document.fonts.ready; } catch { /* proceed */ }
     }
 
-    // 2. Discover all printed pages (.print-page) inside container
+    // Discover all print pages
     const subPages = container.querySelectorAll<HTMLElement>('.print-page');
     const pageElements: HTMLElement[] =
       subPages.length > 0 ? Array.from(subPages) : [container as HTMLElement];
 
-    // Standard A4 Dimensions: 210mm x 297mm
     const pdf = new jsPDF({
       orientation: 'portrait',
       unit: 'mm',
@@ -42,57 +144,53 @@ export async function exportDocumentToPdf(
       compress: true,
     });
 
-    const pdfWidth = pdf.internal.pageSize.getWidth();   // 210 mm
-    const pdfHeight = pdf.internal.pageSize.getHeight(); // 297 mm
+    const pdfW = pdf.internal.pageSize.getWidth();   // 210 mm
+    const pdfH = pdf.internal.pageSize.getHeight();   // 297 mm
 
     for (let i = 0; i < pageElements.length; i++) {
-      const pageEl = pageElements[i];
-      if (i > 0) {
-        pdf.addPage('a4', 'portrait');
+      if (i > 0) pdf.addPage('a4', 'portrait');
+
+      const imgData = await capturePageAsPng(pageElements[i]);
+
+      // Decode actual image dimensions to preserve aspect ratio
+      const dims = await getImageDimensions(imgData);
+      const imgAspect = dims.width / dims.height;
+      const a4Aspect = pdfW / pdfH;
+
+      let drawW = pdfW;
+      let drawH = pdfH;
+      let drawX = 0;
+      let drawY = 0;
+
+      if (imgAspect > a4Aspect) {
+        // Image is wider than A4 – fit width, center vertically
+        drawH = pdfW / imgAspect;
+        drawY = 0; // top-align
+      } else {
+        // Image is taller than A4 – fit height, center horizontally
+        drawW = pdfH * imgAspect;
+        drawX = (pdfW - drawW) / 2;
       }
 
-      // Convert page node to high-res JPEG using native browser renderer (100% OKLCH color support)
-      const imgData = await toJpeg(pageEl, {
-        quality: 0.96,
-        pixelRatio: 2, // 300+ DPI razor-sharp print quality
-        backgroundColor: '#ffffff',
-        cacheBust: true,
-        style: {
-          transform: 'none',
-          margin: '0',
-          maxWidth: 'none',
-          width: '794px',
-        },
-        filter: (node) => {
-          if (node instanceof HTMLElement && node.classList.contains('no-print')) {
-            return false;
-          }
-          return true;
-        },
-      });
-
-      pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
+      pdf.addImage(imgData, 'PNG', drawX, drawY, drawW, drawH, undefined, 'FAST');
     }
 
-    // 3. Reliable Mobile & Desktop Save Trigger
+    // Save – mobile-safe blob download
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
     if (isMobile) {
-      const pdfBlob = pdf.output('blob');
-      const blobUrl = URL.createObjectURL(pdfBlob);
-      const link = document.createElement('a');
-      link.href = blobUrl;
-      link.download = fileName;
-      link.target = '_blank';
-      document.body.appendChild(link);
-      link.click();
-
+      const blob = pdf.output('blob');
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      a.rel = 'noopener';
+      document.body.appendChild(a);
+      a.click();
       setTimeout(() => {
-        if (document.body.contains(link)) {
-          document.body.removeChild(link);
-        }
-        URL.revokeObjectURL(blobUrl);
-      }, 2500);
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 3000);
     } else {
       pdf.save(fileName);
     }
@@ -117,9 +215,7 @@ export async function generatePdfBlob(
 
   try {
     if (document.fonts) {
-      try {
-        await document.fonts.ready;
-      } catch {}
+      try { await document.fonts.ready; } catch {}
     }
 
     const subPages = container.querySelectorAll<HTMLElement>('.print-page');
@@ -133,29 +229,30 @@ export async function generatePdfBlob(
       compress: true,
     });
 
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = pdf.internal.pageSize.getHeight();
+    const pdfW = pdf.internal.pageSize.getWidth();
+    const pdfH = pdf.internal.pageSize.getHeight();
 
     for (let i = 0; i < pageElements.length; i++) {
-      const pageEl = pageElements[i];
-      if (i > 0) {
-        pdf.addPage('a4', 'portrait');
+      if (i > 0) pdf.addPage('a4', 'portrait');
+
+      const imgData = await capturePageAsPng(pageElements[i]);
+      const dims = await getImageDimensions(imgData);
+      const imgAspect = dims.width / dims.height;
+      const a4Aspect = pdfW / pdfH;
+
+      let drawW = pdfW;
+      let drawH = pdfH;
+      let drawX = 0;
+      let drawY = 0;
+
+      if (imgAspect > a4Aspect) {
+        drawH = pdfW / imgAspect;
+      } else {
+        drawW = pdfH * imgAspect;
+        drawX = (pdfW - drawW) / 2;
       }
 
-      const imgData = await toJpeg(pageEl, {
-        quality: 0.96,
-        pixelRatio: 2,
-        backgroundColor: '#ffffff',
-        cacheBust: true,
-        style: {
-          transform: 'none',
-          margin: '0',
-          maxWidth: 'none',
-          width: '794px',
-        },
-      });
-
-      pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
+      pdf.addImage(imgData, 'PNG', drawX, drawY, drawW, drawH, undefined, 'FAST');
     }
 
     const blob = pdf.output('blob');
@@ -164,6 +261,16 @@ export async function generatePdfBlob(
     console.error('Error generating PDF blob:', err);
     return null;
   }
+}
+
+/** Utility: get pixel dimensions of a data-URL image. */
+function getImageDimensions(dataUrl: string): Promise<{ width: number; height: number }> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
+    img.onerror = () => resolve({ width: A4_WIDTH_PX * PIXEL_RATIO, height: A4_HEIGHT_PX * PIXEL_RATIO });
+    img.src = dataUrl;
+  });
 }
 
 export function printDocument(): void {
