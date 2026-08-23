@@ -97,8 +97,7 @@ export const FormalInvoiceView: React.FC<FormalInvoiceViewProps> = ({ document: 
       {/* Top Header */}
       <div>
         <div className="flex items-start justify-between border-b-2 border-slate-900 pb-4">
-          {/* Studio Brand */}
-          <div className="max-w-[420px] space-y-1">
+          <div className="flex-1 pr-6 min-w-0">
             {doc.studio.logoUrl ? (
               <img
                 src={doc.studio.logoUrl}
@@ -108,14 +107,14 @@ export const FormalInvoiceView: React.FC<FormalInvoiceViewProps> = ({ document: 
                   maxHeight: `${Math.min(logoHeight, 130)}px`,
                   objectFit: 'contain',
                 }}
-                className="mb-1"
+                className="mb-2 block"
               />
             ) : (
-              <h1 className="text-2xl font-bold tracking-tight text-slate-950 font-['Outfit']">
+              <h1 className="text-2xl font-bold tracking-tight text-slate-950 font-['Outfit'] leading-snug mb-1.5 block">
                 {doc.studio.name}
               </h1>
             )}
-            <p className="text-[11px] tracking-[0.18em] text-slate-600 uppercase font-semibold">
+            <p className="text-[10.5px] tracking-normal text-slate-600 uppercase font-semibold leading-normal mb-1 block">
               {doc.studio.tagline}
             </p>
             <div className="text-[11px] text-slate-500 space-y-0.5 pt-0.5">

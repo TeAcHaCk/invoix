@@ -94,7 +94,7 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
           <div>
             {/* Header / Brand Block */}
             <div className="flex items-start justify-between border-b-2 border-slate-900 pb-5">
-              <div className="max-w-[420px]">
+              <div className="flex-1 pr-6 min-w-0">
                 {doc.studio.logoUrl ? (
                   <img
                     src={doc.studio.logoUrl}
@@ -104,14 +104,14 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
                       maxHeight: `${Math.min(logoHeight, 100)}px`,
                       objectFit: 'contain',
                     }}
-                    className="mb-1.5"
+                    className="mb-2 block"
                   />
                 ) : (
-                  <h1 className="text-2xl font-extrabold text-slate-950 tracking-tight">
+                  <h1 className="text-2xl font-black text-slate-950 tracking-tight leading-snug mb-1.5 block">
                     {doc.studio.name}
                   </h1>
                 )}
-                <p className="text-[10.5px] font-semibold text-slate-600 tracking-normal uppercase">
+                <p className="text-[10.5px] font-semibold text-slate-600 tracking-normal uppercase leading-normal mb-1 block">
                   {doc.studio.tagline}
                 </p>
                 <div className="text-[10px] text-slate-500 mt-1 space-y-0.5">
@@ -397,14 +397,14 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
               {/* Header Mini */}
               <div className="flex items-center justify-between border-b border-slate-200 pb-3 mb-4">
                 <div className="flex items-center space-x-2">
-                  <h2 className="font-bold text-sm tracking-normal uppercase font-['Outfit'] text-slate-950 whitespace-nowrap">
+                  <h2 className="font-bold text-sm tracking-normal uppercase font-['Outfit'] text-slate-950 whitespace-nowrap leading-none">
                     {doc.studio.name}
                   </h2>
-                  <span className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono">
+                  <span className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono leading-none">
                     Ref: {doc.details.invoiceNo}
                   </span>
                 </div>
-                <span className="text-[10px] text-slate-400 uppercase tracking-normal font-['Outfit'] whitespace-nowrap">
+                <span className="text-[10px] text-slate-400 uppercase tracking-normal font-['Outfit'] whitespace-nowrap leading-none">
                   Proposal Addendum & Sign-off
                 </span>
               </div>

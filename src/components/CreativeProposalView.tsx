@@ -112,10 +112,10 @@ export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ docu
                 </div>
               ) : (
                 <>
-                  <h1 className="text-3xl font-bold tracking-[0.05em] text-[#111111] font-['Outfit',sans-serif]">
+                  <h1 className="text-2xl font-bold tracking-[0.05em] text-[#111111] font-['Outfit',sans-serif] leading-snug mb-1.5 block">
                     {doc.studio.name}
                   </h1>
-                  <p className="text-[10px] tracking-[0.15em] text-[#8C692D] uppercase font-semibold mt-0.5 whitespace-nowrap">
+                  <p className="text-[10px] tracking-[0.15em] text-[#8C692D] uppercase font-semibold leading-normal mb-1 block whitespace-nowrap">
                     {doc.studio.tagline}
                   </p>
                 </>
