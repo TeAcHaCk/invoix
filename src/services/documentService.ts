@@ -9,9 +9,12 @@ import {
 } from '../utils/vaultStorage';
 
 export interface CloudSaveResult {
+  /** False only when the document reached NEITHER the cloud nor local storage. */
   success: boolean;
   isCloud: boolean;
   error?: string;
+  /** Local storage is full. Data is still safe if isCloud is true. */
+  quotaExceeded?: boolean;
 }
 
 /** Documents created before share tokens existed get one on first touch. */
@@ -37,12 +40,20 @@ export const saveDocument = async (
     showInvoixBranding: !isPaid,
   };
 
-  // Always save locally to vault for offline resilience
-  saveDocumentToVault(document);
+  // Always save locally to vault for offline resilience. The result matters:
+  // a full localStorage used to be swallowed and reported as success, so the
+  // user got a success toast and confetti while the work was discarded.
+  const local = saveDocumentToVault(document);
 
   const supabase = getSupabaseClient();
   if (!supabase || !userId) {
-    return { success: true, isCloud: false };
+    // No cloud fallback, so the local result is the only outcome there is.
+    return {
+      success: local.success,
+      isCloud: false,
+      error: local.error,
+      quotaExceeded: local.quotaExceeded,
+    };
   }
 
   // "Approved" is derived from the signature, never carried forward on its own.
@@ -79,14 +90,26 @@ export const saveDocument = async (
     const { error } = await supabase.from('documents').upsert(payload);
 
     if (error) {
-      console.warn('Supabase document upsert failed, saved locally:', error.message);
-      return { success: true, isCloud: false, error: error.message };
+      console.warn('Supabase document upsert failed:', error.message);
+      // Cloud failed. Only the local copy stands between the user and data loss.
+      return {
+        success: local.success,
+        isCloud: false,
+        error: local.success ? undefined : local.error || error.message,
+        quotaExceeded: local.quotaExceeded,
+      };
     }
 
-    return { success: true, isCloud: true };
+    // Cloud write succeeded, so the document is safe even if localStorage is full.
+    return { success: true, isCloud: true, quotaExceeded: local.quotaExceeded };
   } catch (err: any) {
     console.error('Error saving document to cloud:', err);
-    return { success: true, isCloud: false, error: err?.message };
+    return {
+      success: local.success,
+      isCloud: false,
+      error: local.success ? undefined : local.error || err?.message,
+      quotaExceeded: local.quotaExceeded,
+    };
   }
 };
 
@@ -307,7 +330,17 @@ export const approveDocumentPublicly = async (
     totalInvestment: finalTotal,
     signatory,
   };
-  saveDocumentToVault(approved);
+  // Offline signing has no cloud copy to fall back on, so a failed vault write
+  // means the signature is gone. Never report that as a successful approval.
+  const stored = saveDocumentToVault(approved);
+  if (!stored.success) {
+    return {
+      success: false,
+      error:
+        stored.error ||
+        'Your signature could not be saved on this device. Please try again with an internet connection.',
+    };
+  }
 
   return { success: true, doc: approved };
 };

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { QuotationDocument, StudioProfile, IndustryCategory } from './types';
 import {
   getDefaultDocument,
@@ -22,6 +22,7 @@ import { PrivacyPolicyPage } from './components/landing/PrivacyPolicyPage';
 import { TermsOfServicePage } from './components/landing/TermsOfServicePage';
 import { InstallAppPrompt } from './components/InstallAppPrompt';
 import { UpgradePlanModal } from './components/UpgradePlanModal';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { saveDocument } from './services/documentService';
 import { exportDocumentToPdf, printDocument } from './utils/pdfGenerator';
 import { getVaultDocuments } from './utils/vaultStorage';
@@ -34,6 +35,8 @@ import {
   Eye,
   Edit3,
   CheckCircle2,
+  AlertTriangle,
+  X,
 } from 'lucide-react';
 
 interface StudioWorkspaceProps {
@@ -75,6 +78,10 @@ function StudioWorkspace({ initialIndustry, onNavigateToAdmin, onNavigateToHome 
   const [upgradePlan, setUpgradePlan] = useState<'pro' | 'agency'>('pro');
   const [mobileActiveView, setMobileActiveView] = useState<'editor' | 'preview'>('editor');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  // Persistent (not auto-dismissing) banner for save failures. A toast is the
+  // wrong shape for "your work was not stored" — it vanishes before it is read.
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const draftWarnedRef = useRef(false);
 
   // Adjustable / Resizable Side Panel State
   const [sidebarWidth, setSidebarWidth] = useState<number>(() => {
@@ -143,7 +150,17 @@ function StudioWorkspace({ initialIndustry, onNavigateToAdmin, onNavigateToHome 
     try {
       localStorage.setItem('fbf_current_document_v4', JSON.stringify(document));
     } catch (e) {
+      // Draft autosave failed (almost always a full quota). Warn once rather
+      // than on every keystroke, but do not stay silent — without this the
+      // draft is lost on refresh with no indication anything went wrong.
       console.warn('LocalStorage quota limit warning:', e);
+      if (!draftWarnedRef.current) {
+        draftWarnedRef.current = true;
+        setSaveError(
+          'Your browser storage is full, so this draft is not being auto-saved. ' +
+            'Delete older documents from the vault, or sign in to sync to the cloud.'
+        );
+      }
     }
     if (user) {
       const timer = setTimeout(() => {
@@ -197,11 +214,25 @@ function StudioWorkspace({ initialIndustry, onNavigateToAdmin, onNavigateToHome 
     }
 
     const res = await saveDocument(document, user?.id, isPaidPlan(profile));
-    if (res.success) {
-      confetti({ particleCount: 50, spread: 50, origin: { y: 0.8 } });
-      showToast(res.isCloud ? 'Synced to Supabase Cloud!' : 'Saved to Local Vault!');
-    } else {
-      showToast('Failed to save document.');
+
+    if (!res.success) {
+      // The document reached neither the cloud nor local storage. Never
+      // celebrate this: the user's work is genuinely gone.
+      setSaveError(res.error || 'This document could not be saved. Please try again.');
+      showToast('Could not save — your work is not stored.');
+      return;
+    }
+
+    confetti({ particleCount: 50, spread: 50, origin: { y: 0.8 } });
+    showToast(res.isCloud ? 'Synced to Supabase Cloud!' : 'Saved to Local Vault!');
+
+    // Saved to the cloud, but the offline copy failed. Worth telling them,
+    // because the vault and offline access will be out of date.
+    if (res.quotaExceeded) {
+      setSaveError(
+        'Saved to the cloud, but your browser storage is full so the offline copy was skipped. ' +
+          'Delete older documents from the vault to restore offline access.'
+      );
     }
   };
 
@@ -281,6 +312,25 @@ function StudioWorkspace({ initialIndustry, onNavigateToAdmin, onNavigateToHome 
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-['Plus_Jakarta_Sans',sans-serif]">
+      {/* Save Failure Banner — stays until dismissed */}
+      {saveError && (
+        <div
+          role="alert"
+          className="sticky top-0 z-50 bg-rose-950 border-b border-rose-500/50 px-4 py-2.5 flex items-start gap-3"
+        >
+          <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+          <p className="flex-1 text-xs text-rose-100 leading-relaxed">{saveError}</p>
+          <button
+            type="button"
+            onClick={() => setSaveError(null)}
+            aria-label="Dismiss"
+            className="p-1 text-rose-300 hover:text-rose-100 hover:bg-rose-900/60 rounded-lg transition-colors cursor-pointer shrink-0"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+
       {/* Toast Notification */}
       {toastMessage && (
         <div className="fixed bottom-6 right-6 z-50 bg-slate-900 border border-amber-500/50 text-amber-200 px-4 py-2.5 rounded-2xl shadow-2xl flex items-center space-x-2 text-xs font-semibold animate-bounce">
@@ -589,7 +639,32 @@ export function App() {
   return (
     <AuthProvider>
       {currentView.type === 'public_proposal' && currentView.docId ? (
-        <PublicProposalPage documentId={currentView.docId} />
+        // The audience here is the USER'S CLIENT, not the user. A crash on this
+        // route must not show them a stack trace or a blank page — they cannot
+        // act on either, and it reflects on the person who sent the proposal.
+        <ErrorBoundary
+          label="public-proposal"
+          fallback={
+            <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-6 font-['Plus_Jakarta_Sans',sans-serif]">
+              <div className="max-w-sm w-full text-center space-y-3">
+                <h1 className="text-lg font-bold font-['Outfit']">This proposal could not be displayed</h1>
+                <p className="text-sm text-slate-400 leading-relaxed">
+                  Something went wrong while loading this document. Please refresh the page, or
+                  contact the sender if it keeps happening.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => window.location.reload()}
+                  className="mt-2 px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold rounded-xl transition-colors cursor-pointer"
+                >
+                  Refresh
+                </button>
+              </div>
+            </div>
+          }
+        >
+          <PublicProposalPage documentId={currentView.docId} />
+        </ErrorBoundary>
       ) : currentView.type === 'admin' ? (
         <AdminLayout onBackToStudio={navigateToStudio} />
       ) : currentView.type === 'privacy' ? (
