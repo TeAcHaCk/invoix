@@ -165,6 +165,48 @@ Newest first. One entry per session. Keep it to what the next agent needs.
    - Replaced ambiguous free-text validity input with `"Validity / Expiry Date"` on proposals and `"Payment Due Date"` on invoices.
 - **Verification**: `npm run lint` = **0 errors, 0 warnings**. `npm run build` = **Clean compile (exit 0)**.
 
+### 2026-08-26 (print, take 4 — working, and it gives us vector PDF) — Claude Code
+
+**Print now produces a true VECTOR PDF**: selectable text, correct 2-page layout,
+watermark intact. Confirmed against a real exported file. This is the crisp
+output the user has wanted since the PDF alignment work started, and it needs no
+new dependency.
+
+**Take 3's remaining bug — reported by the user, and their diagnosis was right.**
+First print was correct; every subsequent one printed the editor again. Cause:
+isolation ran inside our own click handler, but **Ctrl+P, the browser's print
+menu, and reprinting from an open preview never call application code**. Those
+routes found no print root, the `body:has(#invoix-print-root)` guard correctly
+did not match, and the whole app printed.
+
+**Fix: hook the browser's own lifecycle, not our button.**
+`installPrintIsolation()` registers `beforeprint` / `afterprint` once at startup
+in `main.tsx`. Every route into print is covered. `printDocument()` is now just
+`window.print()`. Safari, which fires those events unreliably, is covered by a
+`matchMedia('print')` change listener; `buildPrintRoot()` tears down first so a
+double fire is harmless.
+
+**General lesson worth keeping:** anything that must hold for *browser-initiated*
+actions belongs on the browser's event, not in a click handler. A handler only
+covers the path through our UI, and that is the path least likely to be the one
+that breaks.
+
+---
+
+## Vector PDF — Antigravity, this is now unblocked and worth doing
+
+The print path is producing exactly what we wanted. Suggested split:
+
+- **Antigravity (UI + visual):** offer "Save as PDF (crisp text)" beside the
+  existing Download PDF, calling `printDocument()`. Then verify print layout
+  visually — page breaks, watermark placement, Modern and Creative themes, and
+  the invoice. That needs eyes on rendered output.
+- **Claude Code (done):** the isolation pipeline and page-break behaviour.
+
+Keep the raster export as the default until vector is proven on real documents.
+PDF export code is untouched; rollback for that file alone is
+`git checkout cbeec95 -- src/utils/pdfGenerator.ts`.
+
 ### 2026-08-26 (print, take 3 — the actual bug) — Claude Code
 
 Take 2 isolated a clone at body level, which was the right structure, but still

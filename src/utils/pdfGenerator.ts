@@ -321,78 +321,83 @@ export async function generatePdfBlob(
 const PRINT_ROOT_ID = 'invoix-print-root';
 
 /**
- * Prints the document by lifting a COPY of it to the top of <body>.
+ * Builds an isolated copy of the document at the top of <body>.
  *
- * A plain window.print() printed the editor sidebar, then printed blank once the
- * CSS hid it. The reason is the ancestor chain the preview lives in:
+ * The preview lives inside an .overflow-y-auto.relative pane (which clips it and
+ * is also its containing block) beneath two inline scale() transforms. No
+ * @media print rule can free an element from a chain like that, so the only
+ * robust approach is to lift a copy out of it.
  *
- *   .overflow-y-auto.relative   <- clips, and is the containing block
- *     .print-zoom-wrapper       <- inline transform: scale()
- *       #quotation-preview-container
- *         .canvas-viewport      <- another inline transform: scale()
- *           #quotation-invoice-canvas
- *
- * No @media print rule can reliably free an element from a clipping, positioned
- * and transformed chain like that - which is why the page came out empty. Moving
- * it out of the chain is the only robust fix.
- *
- * A CLONE is used rather than the live node: relocating React-managed DOM risks
- * a reconciliation error if a render lands mid-print. The clone is an inert
- * snapshot, restored by simply deleting it.
- *
- * Deliberately does NOT touch PDF export, which works and is not in the way.
+ * A CLONE, not the live node: relocating React-managed DOM risks a
+ * reconciliation error if a render lands mid-print.
  */
-export function printDocument(elementId: string = 'quotation-invoice-canvas'): void {
+function buildPrintRoot(): void {
+  teardownPrintRoot();
+
   const source =
-    document.getElementById(elementId) ||
+    document.getElementById('quotation-invoice-canvas') ||
     document.getElementById('quotation-preview-container') ||
     document.querySelector<HTMLElement>('.print-page');
 
-  if (!source) {
-    // Nothing to isolate - fall back to the browser's own behaviour.
-    window.print();
-    return;
-  }
-
-  // Clear any root left behind by an interrupted previous run.
-  document.getElementById(PRINT_ROOT_ID)?.remove();
+  // Nothing to isolate. The body:has(#invoix-print-root) guard in index.css
+  // means print simply falls back to normal browser behaviour.
+  if (!source) return;
 
   const printRoot = document.createElement('div');
   printRoot.id = PRINT_ROOT_ID;
 
   const clone = source.cloneNode(true) as HTMLElement;
-  // The clone must not inherit the zoom transform or the id it was cloned from.
   clone.removeAttribute('id');
   clone.style.transform = 'none';
   clone.style.width = 'auto';
   printRoot.appendChild(clone);
 
   document.body.appendChild(printRoot);
+}
 
-  let cleaned = false;
-  const cleanup = () => {
-    if (cleaned) return;
-    cleaned = true;
-    printRoot.remove();
-    window.removeEventListener('afterprint', cleanup);
+function teardownPrintRoot(): void {
+  document.getElementById(PRINT_ROOT_ID)?.remove();
+}
+
+/**
+ * Wires document isolation into the browser's own print lifecycle. Call once at
+ * startup.
+ *
+ * Doing this on `beforeprint` rather than inside a click handler is what makes
+ * it reliable: Ctrl+P, the browser menu, and reprinting from an open preview all
+ * bypass application code entirely. Isolating only inside our own button worked
+ * the first time and then printed the whole editor on every other route into
+ * print.
+ *
+ * Returns a disposer.
+ */
+export function installPrintIsolation(): () => void {
+  window.addEventListener('beforeprint', buildPrintRoot);
+  window.addEventListener('afterprint', teardownPrintRoot);
+
+  // Safari does not fire beforeprint/afterprint reliably, but does toggle this
+  // media query. buildPrintRoot tears down first, so a double-fire is harmless.
+  const mql = typeof window.matchMedia === 'function' ? window.matchMedia('print') : null;
+  const onMediaChange = (e: MediaQueryListEvent) => {
+    if (e.matches) buildPrintRoot();
+    else teardownPrintRoot();
   };
+  mql?.addEventListener?.('change', onMediaChange);
 
-  /*
-    Cleanup is driven ONLY by afterprint, plus a long safety net.
+  return () => {
+    window.removeEventListener('beforeprint', buildPrintRoot);
+    window.removeEventListener('afterprint', teardownPrintRoot);
+    mql?.removeEventListener?.('change', onMediaChange);
+    teardownPrintRoot();
+  };
+}
 
-    It must not run straight after window.print(): in current Chrome the print
-    preview is rendered ASYNCHRONOUSLY and window.print() returns immediately.
-    A cleanup scheduled on the next tick therefore removed the clone before the
-    browser snapshotted the page, leaving nothing for `body > *:not(print-root)`
-    to reveal - which printed a correctly sized but completely blank A4 sheet.
-
-    The clone is display:none on screen (see index.css) and only becomes visible
-    inside @media print, so leaving it in the DOM until afterprint is invisible
-    to the user.
-  */
-  window.addEventListener('afterprint', cleanup);
-  // Safari and some mobile browsers fire afterprint unreliably.
-  window.setTimeout(cleanup, 120000);
-
+/**
+ * Opens the browser print dialog.
+ *
+ * Isolation is handled by the `beforeprint` listener installed above, so this
+ * behaves identically to the user pressing Ctrl+P.
+ */
+export function printDocument(): void {
   window.print();
 }
