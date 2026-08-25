@@ -138,6 +138,74 @@ Newest first. One entry per session. Keep it to what the next agent needs.
 - **Fixed all 25 lint warnings** across `Navbar.tsx`, `HistoryVaultModal.tsx`, `AdminDocumentsTab.tsx`, `AdminUsersTab.tsx`, `ClientInteractiveModal.tsx`, `FormalInvoiceView.tsx`, `InstallAppPrompt.tsx`, `WhatsAppShareModal.tsx`, and `AuthContext.tsx`.
 - Verified: `npm run lint` = **0 errors, 0 warnings**. `npm run build` = **Clean compile (exit 0)**.
 
+### 2026-08-26 — Claude Code · product audit + work split
+
+User asked for a polish/consistency audit from editor screenshots. Findings are
+verified against the code, not eyeballed. Two of my initial readings were wrong
+and are corrected below — do not re-derive them.
+
+**CONFIRMED — silent content loss in printed documents (worst finding).**
+The views cap content with `slice()` and `line-clamp-1`, with no indication to
+the user. Visible in the user's own screenshots: five deliverables ticked, four
+printed, and the fourth cut mid-sentence.
+
+| View | Limit | Effect |
+| --- | --- | --- |
+| `ModernProposalView:377` | `deliverables.slice(0, 4)` | 5th+ deliverable vanishes |
+| `ModernProposalView:380` | `line-clamp-1` | text cut mid-sentence |
+| `ModernProposalView:209` | `milestones.slice(0, 4)` | 5th+ phase vanishes |
+| `ModernProposalView:221` | `services.slice(0, 3)` | 4th+ task per phase vanishes |
+| `FormalInvoiceView:379` | `terms.slice(0, 3)` | 4th+ clause vanishes (user has 5) |
+
+`CreativeProposalView` is clean.
+
+**CONFIRMED — 3 of 10 section toggles have no UI.** `SectionVisibilityConfig`
+defines `banner`, `paymentMilestones` and `bankDetails`, and the views honour
+them, but the Section Organizer (`FormEditor.tsx:649-822`) exposes only 7. A
+user cannot hide the bank block on an invoice even though the code supports it.
+
+**CONFIRMED — validity field is inconsistent three ways.** `FormEditor:1324` is
+`type="text"` labelled "Quotation Validity"; `ModernProposalView:154` prints it
+after "Valid Until:" (implying a date); `types/index.ts` comments it as
+"Quotation Expiry Date". The same input becomes "Payment Due Date" for invoices,
+where free text is worse.
+
+**CONFIRMED — optional upsells are invisible in the PDF.**
+`ModernProposalView:29` filters them out entirely. The upsell engine is a
+headline Pro feature, so a client who only opens the PDF never sees the offer.
+
+**I WAS WRONG about two things** — recording so neither of us repeats them:
+- `fontFamily` and `accentColor` ARE applied (`ModernProposalView:75-79,135`).
+- `signerName` / `signerTitle` ARE rendered (`:508,:513`); the name is replaced
+  by the signature image when one is uploaded, which is reasonable.
+
+---
+
+## Work split
+
+**Claude Code (done, committed):** `src/utils/documentAudit.ts` —
+`auditDocument(doc)` returns typed `AuditIssue[]` covering truncation, hidden
+upsells, placeholder tax IDs, invoices with no payment method, inert tax config,
+and missing basics. Pure logic, renders nothing.
+
+`RENDER_LIMITS` is exported from that module. **The views should import it
+instead of hardcoding the numbers a second time** — two independent copies of
+the same constant is exactly how the share-token bug happened.
+
+**Antigravity (UI — yours):**
+1. **Fix the truncation.** The real fix is flowing overflow onto page 2, not
+   raising the slice count — needs visual iteration and screenshots, which is
+   why it is yours. If a hard cap must stay, import `RENDER_LIMITS`.
+2. **Render the audit.** A "Document Health" panel or a badge on the Share/PDF
+   buttons driven by `auditDocument()`. `AuditIssue.tab` names the tab to jump
+   to; `countBlocking()` gives the badge count.
+3. **Add the 3 missing section toggles** (`banner`, `paymentMilestones`,
+   `bankDetails`).
+4. **Decide how optional upsells appear in the PDF** — a greyed "available
+   add-on" row is probably right, but it is a design call.
+5. **Make the validity field honest** — a date picker, or a label that matches
+   what it holds. Coordinate with me if the data type should change.
+
 ### 2026-08-25 (evening) — Claude Code · correcting my own diagnosis
 
 **Antigravity found the real cause and it was not mine.** I attributed the
