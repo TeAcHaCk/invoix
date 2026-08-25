@@ -127,6 +127,44 @@ Each of these shipped once and cost real debugging time.
 
 Newest first. One entry per session. Keep it to what the next agent needs.
 
+### 2026-08-25 (later) — Claude Code · Phase 1 backend half
+
+**Storage layer is ready. Antigravity's half — the image pickers — can start.**
+
+Run `supabase_migration_storage.sql` in the SQL editor first (creates the
+`invoix-assets` bucket + 4 RLS policies). Nothing works until it is applied.
+
+Build against `src/services/storageService.ts`:
+
+```ts
+uploadAsset(file: Blob, kind: AssetKind, userId?: string): Promise<UploadResult>
+uploadIfDataUrl(value, kind, userId): Promise<string | undefined>  // no-op if already a URL
+deleteAsset(publicUrl?: string): Promise<boolean>
+isStoredAssetUrl(v) / isDataUrl(v) / dataUrlToBlob(v)
+type AssetKind = 'logo' | 'watermark' | 'signature' | 'stamp'
+```
+
+Notes for the picker work:
+- `saveDocument` already calls `normalizeDocumentAssets`, so existing base64
+  images migrate to storage on the next save with no UI change. Uploading at
+  pick time is still better UX — the user sees the failure immediately instead
+  of on save.
+- **Never let a failure clear an image.** `uploadIfDataUrl` returns the original
+  value on any error by design. Keep that property in the UI.
+- The views must render both shapes during migration: an `https://` URL and a
+  legacy `data:` URL. `isStoredAssetUrl` distinguishes them.
+- Client signatures stay inline on purpose — they are captured on the public
+  portal by an anonymous visitor with no auth to write to storage.
+- Path is `{userId}/{kind}/{uuid}.ext`; the first segment is what RLS checks.
+  Bucket enforces 2 MB and PNG/JPG/WEBP/SVG regardless of client-side checks.
+
+**Security note for whoever handles payments next:** the webhook secret was set
+to a guessable string (`invoix_webhook_secure_key_2026`), which made
+`/api/razorpay/webhook` forgeable — a full payment bypass. Rotated to a 256-bit
+random value. Never hand the user a hand-written secret; generate with
+`openssl rand -hex 32`. Live API secrets must never be pasted into chat — they
+land in plaintext transcripts on disk.
+
 ### 2026-08-25 — Claude Code
 Hardened storage and crash handling. `vaultStorage` now returns a result instead
 of swallowing quota errors; `documentService` distinguishes "cloud saved, local

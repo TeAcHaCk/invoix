@@ -1,6 +1,7 @@
 import type { QuotationDocument, SignatoryRecord, PricingItem } from '../types';
 import { getSupabaseClient } from '../lib/supabase';
 import { createShareToken } from '../utils/cryptoAudit';
+import { uploadIfDataUrl } from './storageService';
 import {
   saveDocumentToVault,
   getVaultDocuments,
@@ -27,16 +28,62 @@ const findLocalByToken = (token: string): QuotationDocument | undefined => {
   return localDocs.find((d) => d.shareToken === token) || localDocs.find((d) => d.id === token);
 };
 
+/**
+ * Replaces inline base64 images on a document with uploaded URLs.
+ *
+ * The studio logo and watermark are the same few images repeated across EVERY
+ * document, and base64 adds ~33% on top — that is what fills the ~5 MB
+ * localStorage cap after 20-30 documents and what makes each autosave re-send
+ * the blobs to Supabase.
+ *
+ * Deliberately non-destructive: uploadIfDataUrl hands back the original value on
+ * any failure, so a network problem degrades to today's behaviour rather than
+ * losing the image. Already-uploaded URLs are returned untouched, so this is a
+ * no-op after the first successful save.
+ *
+ * The CLIENT's signature is not uploaded here: it is captured on the public
+ * portal by an anonymous visitor who has no auth to write to storage. It stays
+ * inline and is persisted server-side by the sign_document RPC.
+ */
+const normalizeDocumentAssets = async (
+  doc: QuotationDocument,
+  userId?: string
+): Promise<QuotationDocument> => {
+  if (!userId) return doc;
+
+  const [logoUrl, watermarkUrl, signatureUrl, customImageUrl] = await Promise.all([
+    uploadIfDataUrl(doc.studio?.logoUrl, 'logo', userId),
+    uploadIfDataUrl(doc.studio?.watermarkUrl, 'watermark', userId),
+    uploadIfDataUrl(doc.studio?.signatureUrl, 'signature', userId),
+    uploadIfDataUrl(doc.watermark?.customImageUrl, 'watermark', userId),
+  ]);
+
+  return {
+    ...doc,
+    studio: {
+      ...doc.studio,
+      logoUrl: logoUrl ?? doc.studio?.logoUrl,
+      watermarkUrl: watermarkUrl ?? doc.studio?.watermarkUrl,
+      signatureUrl,
+    },
+    watermark: { ...doc.watermark, customImageUrl },
+  };
+};
+
 export const saveDocument = async (
   doc: QuotationDocument,
   userId?: string,
   isPaid: boolean = false
 ): Promise<CloudSaveResult> => {
+  // Lift images out to storage BEFORE writing anywhere, so the local vault copy
+  // shrinks too — localStorage is the constraint this is meant to relieve.
+  const withAssets = await normalizeDocumentAssets(doc, userId);
+
   // The client opening a share link is anonymous and cannot look up the owner's
   // plan, so whether to show the Invoix footer CTA is decided here, at save
   // time, and travels with the document.
   const document: QuotationDocument = {
-    ...withShareToken(doc),
+    ...withShareToken(withAssets),
     showInvoixBranding: !isPaid,
   };
 
