@@ -138,6 +138,43 @@ Newest first. One entry per session. Keep it to what the next agent needs.
 - **Fixed all 25 lint warnings** across `Navbar.tsx`, `HistoryVaultModal.tsx`, `AdminDocumentsTab.tsx`, `AdminUsersTab.tsx`, `ClientInteractiveModal.tsx`, `FormalInvoiceView.tsx`, `InstallAppPrompt.tsx`, `WhatsAppShareModal.tsx`, and `AuthContext.tsx`.
 - Verified: `npm run lint` = **0 errors, 0 warnings**. `npm run build` = **Clean compile (exit 0)**.
 
+### 2026-08-25 (later still) — Claude Code · share link 404 fix
+
+**Symptom reported:** `?view=<token>` showed "Proposal Link Not Found" for
+anonymous visitors but worked for the logged-in owner.
+
+**It was not an auth or RLS problem.** Verified by calling the RPC anonymously
+against production: HTTP 200 with a `null` body — so the migration is applied and
+the `anon` EXECUTE grant is fine, there was simply no matching row. The owner
+only saw the document because `fetchPublicDocument` falls back to *their own
+localStorage*. That fallback made a dead link look healthy to the one person able
+to notice.
+
+**Root cause:** two independent share-token generators — `createShareToken()` in
+the browser and the database's backfill/default — with nothing reconciling them.
+`saveDocument` upserted the client's token over the row's, so a link copied
+before a re-save (or after a failed upsert) pointed at a token the row no longer
+had. Permanently dead, silently.
+
+**Fixed:**
+- `supabase_migration_share_token_authority.sql` — **run this.** A
+  `freeze_share_token` trigger makes an existing token immutable, so every link
+  ever issued keeps resolving. The database is now the sole authority.
+- `saveDocument` reads `share_token` back after upsert and reconciles the local
+  copy, so the clipboard link can never drift from the row.
+- `fetchPublicDocument` returns `source: 'cloud' | 'local'`, and
+  `PublicProposalPage` shows a "this link is not shareable yet" banner when a
+  document resolved locally — the only moment the owner can catch it before
+  sending.
+
+**Antigravity's `OR id = p_token` fallback is kept** — it correctly handles links
+built from the document id when `shareToken` was absent, which is a real and
+different variant of the same failure.
+
+**Note for both of us:** an offline/local fallback that silently substitutes for
+a server read will hide server-side breakage from exactly the person who could
+report it. Prefer reporting the source over quietly succeeding.
+
 ### 2026-08-25 (later) — Claude Code · Phase 1 backend half
 
 **Storage layer is ready. Antigravity's half — the image pickers — can start.**

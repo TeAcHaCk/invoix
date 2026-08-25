@@ -44,6 +44,9 @@ export const PublicProposalPage: React.FC<PublicProposalPageProps> = ({ document
   const [isApproved, setIsApproved] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [signError, setSignError] = useState<string | null>(null);
+  // True when the document resolved only from this browser's storage — meaning
+  // the link is dead for everyone else.
+  const [isLocalOnly, setIsLocalOnly] = useState(false);
   const [isDrawing, setIsDrawing] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [copiedLabel, setCopiedLabel] = useState<string | null>(null);
@@ -82,12 +85,13 @@ export const PublicProposalPage: React.FC<PublicProposalPageProps> = ({ document
       setIsLoading(true);
       setError(null);
 
-      const { doc, error: fetchErr } = await fetchPublicDocument(documentId);
+      const { doc, error: fetchErr, source } = await fetchPublicDocument(documentId);
 
       if (fetchErr || !doc) {
         setError(fetchErr || 'Document could not be found.');
       } else {
         setDocument(doc);
+        setIsLocalOnly(source === 'local');
         setSignerName(doc.client.clientName || '');
         setIsApproved(Boolean(doc.signatory?.clientSignedName));
         // Record client view audit in background
@@ -501,6 +505,26 @@ export const PublicProposalPage: React.FC<PublicProposalPageProps> = ({ document
           </div>
         </div>
       </header>
+
+      {/* Not-synced warning. Only the owner can ever see this: it renders when the
+          document came from this browser's own storage rather than the server,
+          which is exactly the case where the link 404s for the recipient. */}
+      {isLocalOnly && (
+        <div
+          role="alert"
+          className="bg-amber-950/60 border-b border-amber-500/40 px-4 py-3 flex items-start gap-3"
+        >
+          <AlertCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+          <div className="flex-1 text-xs leading-relaxed">
+            <p className="font-bold text-amber-200">This link is not shareable yet</p>
+            <p className="text-amber-100/80 mt-0.5">
+              This proposal loaded from your own browser, not from the cloud — anyone else
+              opening this link will see &ldquo;Proposal Link Not Found&rdquo;. Sign in and save
+              the document again to sync it, then re-copy the link.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Main Content Layout */}
       <main className="flex-1 max-w-6xl w-full mx-auto p-4 sm:p-8 space-y-8">

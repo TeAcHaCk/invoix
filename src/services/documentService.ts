@@ -134,7 +134,19 @@ export const saveDocument = async (
       updated_at: new Date().toISOString(),
     };
 
-    const { error } = await supabase.from('documents').upsert(payload);
+    // Read the row back: the database owns share_token (freeze_share_token keeps
+    // an existing one), so the value it returns is the only one that resolves
+    // for a client. Reconciling it locally stops the link in the user's clipboard
+    // from drifting away from the row it points at.
+    const { data: saved, error } = await supabase
+      .from('documents')
+      .upsert(payload)
+      .select('share_token')
+      .maybeSingle();
+
+    if (!error && saved?.share_token && saved.share_token !== document.shareToken) {
+      saveDocumentToVault({ ...document, shareToken: saved.share_token });
+    }
 
     if (error) {
       console.warn('Supabase document upsert failed:', error.message);
@@ -204,7 +216,7 @@ export const fetchUserDocuments = async (userId?: string): Promise<QuotationDocu
  */
 export const fetchPublicDocument = async (
   shareToken: string
-): Promise<{ doc: QuotationDocument | null; error?: string }> => {
+): Promise<{ doc: QuotationDocument | null; error?: string; source?: 'cloud' | 'local' }> => {
   const supabase = getSupabaseClient();
 
   if (supabase) {
@@ -212,7 +224,7 @@ export const fetchPublicDocument = async (
       const { data, error } = await supabase.rpc('get_public_document', { p_token: shareToken });
 
       if (!error && data) {
-        return { doc: data as QuotationDocument };
+        return { doc: data as QuotationDocument, source: 'cloud' };
       }
       if (error) {
         console.warn('Public document RPC failed, checking local storage:', error.message);
@@ -222,10 +234,13 @@ export const fetchPublicDocument = async (
     }
   }
 
-  // Check local storage fallback (also covers fully offline / no-cloud usage)
+  // Local fallback. This keeps offline and no-cloud use working, but it is also
+  // why a broken link looks fine to the document's owner and 404s for everyone
+  // else — only their browser holds this copy. Callers get source: 'local' so
+  // they can say so rather than presenting it as a working shared link.
   const found = findLocalByToken(shareToken);
   if (found) {
-    return { doc: found };
+    return { doc: found, source: 'local' };
   }
 
   return { doc: null, error: 'Document not found or link expired.' };
