@@ -165,6 +165,49 @@ Newest first. One entry per session. Keep it to what the next agent needs.
    - Replaced ambiguous free-text validity input with `"Validity / Expiry Date"` on proposals and `"Payment Due Date"` on invoices.
 - **Verification**: `npm run lint` = **0 errors, 0 warnings**. `npm run build` = **Clean compile (exit 0)**.
 
+### 2026-08-26 (later) — Claude Code · print was printing the editor
+
+**Symptom:** Print produced the dark editor sidebar (Tax Engine, Payment Status
+panels) followed by a blank sheet, and reported "1 sheet of paper" for a
+two-page document.
+
+**Cause — an element blocklist that could never keep up.** The old
+`@media print` rule hid a fixed list: `.no-print, header, nav, aside, button,
+input, textarea`. The editor sidebar is built from `<div>`s and `<select>`s,
+neither of which was on it. That is exactly what printed: panels and dropdowns
+visible, `<input>` fields blank, because inputs *were* on the list.
+
+Three faults compounded it:
+- `max-height: 297mm` on the canvas **clipped** the document to one sheet, so
+  page two never printed. Hence "1 sheet of paper".
+- `page-break-after: avoid` actively fought pagination.
+- The zoom `transform` on an ancestor was never reset, producing the blank box.
+
+**Fixed in `src/index.css`** — replaced the blocklist with an allowlist:
+hide `body *`, reveal `#quotation-invoice-canvas` and its subtree. That element
+exists on **both** the studio and public-proposal routes, so one rule covers
+both. Each `.print-page` is now exactly one A4 sheet with
+`page-break-after: always`, and `:last-child` resets it so there is no trailing
+blank page.
+
+**Two traps worth knowing if you touch this:**
+1. A transformed ancestor becomes the containing block for an
+   absolutely-positioned descendant, so the print target stays scaled unless
+   every ancestor transform is cleared. Added a stable `.print-zoom-wrapper`
+   class in `App.tsx` for this — do not rely on the Tailwind classes there, they
+   are not a contract.
+2. **Do NOT use a blanket `* { transform: none }`.** `WatermarkLayer` uses
+   transform for its own `rotate()` and `scale()`; clearing the subtree prints
+   the watermark flat and unrotated. The reset list is deliberately the ancestor
+   chain only.
+
+**Needs a human to verify** — neither agent can screenshot an OS print dialog,
+so this is the one change here that has no automated check behind it.
+
+**Bonus:** a correct print stylesheet is the prerequisite for the vector-PDF
+option in Track C (selectable text, ~100 KB files). That path is now unblocked
+if we want it.
+
 ### 2026-08-26 — Claude Code · product audit + work split
 
 User asked for a polish/consistency audit from editor screenshots. Findings are

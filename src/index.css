@@ -236,53 +236,113 @@
    PRINT OPTIMIZATION — A4 Precision
    ═══════════════════════════════════════════ */
 @media print {
+  /* A4 with no browser chrome. margin:0 means the document controls its own padding. */
+  @page {
+    size: A4 portrait;
+    margin: 0;
+  }
+
   html, body {
     background: #ffffff !important;
     color: #111111 !important;
     margin: 0 !important;
     padding: 0 !important;
     width: 100% !important;
-    height: 100% !important;
+    height: auto !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
 
-  /* Completely hide all UI bars, editor panels, and navigation */
-  .no-print,
-  header,
-  nav,
-  aside,
-  button,
-  input,
-  textarea {
-    display: none !important;
+  /*
+    Hide EVERYTHING, then reveal only the document.
+
+    The previous rule listed elements to hide (header, nav, aside, button,
+    input, textarea). The editor sidebar is built from <div>s and <select>s,
+    neither of which was listed, so the whole form printed - labels and
+    dropdowns visible, inputs blank. An allowlist is the only approach that
+    stays correct as the UI grows.
+  */
+  body * {
+    visibility: hidden !important;
   }
 
-  main {
-    display: block !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    max-width: 100% !important;
-    width: 100% !important;
-    background: transparent !important;
+  #quotation-invoice-canvas,
+  #quotation-invoice-canvas * {
+    visibility: visible !important;
   }
 
+  /*
+    Lift the document out of the editor's scaled, split-pane layout and pin it
+    to the top-left of the sheet. Ancestors stay hidden but still occupy space,
+    which is why this has to be absolutely positioned.
+  */
   #quotation-invoice-canvas {
-    box-shadow: none !important;
-    border: none !important;
-    margin: 0 auto !important;
-    padding: 8mm 12mm !important;
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
     width: 210mm !important;
-    min-height: 297mm !important;
-    max-height: 297mm !important;
+    max-width: none !important;
+    height: auto !important;
+    max-height: none !important;
     background: #ffffff !important;
-    page-break-inside: avoid !important;
-    page-break-after: avoid !important;
+  }
+
+  /*
+    Reset the zoom transforms on the ANCESTOR CHAIN only.
+
+    Two reasons this list is exact rather than a blanket `* { transform: none }`:
+      - A transformed ancestor becomes the containing block for an absolutely
+        positioned descendant, so leaving any of these scaled would still shrink
+        the sheet. The zoom control's scale() is inline, and inline styles are
+        only beaten by !important.
+      - The watermark uses transform for its own rotate() and scale(). Clearing
+        transforms across the subtree would print it flat and unrotated.
+  */
+  .print-zoom-wrapper,
+  .canvas-viewport,
+  #quotation-preview-container,
+  #quotation-invoice-canvas {
     transform: none !important;
   }
 
-  @page {
-    size: A4 portrait;
-    margin: 0;
+  /* Vertical rhythm between pages on screen must not become print gaps. */
+  #quotation-invoice-canvas > * + * {
+    margin-top: 0 !important;
+  }
+
+  /*
+    One .print-page == one physical sheet.
+
+    The old rule capped the canvas at max-height: 297mm and set
+    page-break-after: avoid, which clipped multi-page documents to a single
+    sheet. Page two simply never printed.
+  */
+  .print-page {
+    width: 210mm !important;
+    min-height: 297mm !important;
+    height: auto !important;
+    max-height: none !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+    background: #ffffff !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    page-break-after: always !important;
+    break-after: page !important;
+  }
+
+  /* No trailing blank sheet after the final page. */
+  .print-page:last-child {
+    page-break-after: auto !important;
+    break-after: auto !important;
+  }
+
+  /* Anything explicitly marked as screen-only stays out of print. */
+  .no-print {
+    display: none !important;
   }
 }

@@ -480,7 +480,7 @@ function StudioWorkspace({ initialIndustry, onNavigateToAdmin, onNavigateToHome 
 
           {/* Scaled Printable Document Paper */}
           <div
-            className="transition-transform duration-150 origin-top flex flex-col items-center pb-20 select-text"
+            className="print-zoom-wrapper transition-transform duration-150 origin-top flex flex-col items-center pb-20 select-text"
             style={{ transform: `scale(${zoomScale})` }}
           >
             <div id="quotation-preview-container">
