@@ -377,16 +377,22 @@ export function printDocument(elementId: string = 'quotation-invoice-canvas'): v
     window.removeEventListener('afterprint', cleanup);
   };
 
-  window.addEventListener('afterprint', cleanup);
-  // Safari and some mobile browsers fire afterprint unreliably; this guarantees
-  // the clone is never left in the DOM.
-  window.setTimeout(cleanup, 60000);
+  /*
+    Cleanup is driven ONLY by afterprint, plus a long safety net.
 
-  try {
-    window.print();
-  } finally {
-    // Chrome blocks on window.print(), so this usually runs immediately after
-    // the dialog closes. The listener and timeout cover browsers that do not.
-    window.setTimeout(cleanup, 0);
-  }
+    It must not run straight after window.print(): in current Chrome the print
+    preview is rendered ASYNCHRONOUSLY and window.print() returns immediately.
+    A cleanup scheduled on the next tick therefore removed the clone before the
+    browser snapshotted the page, leaving nothing for `body > *:not(print-root)`
+    to reveal - which printed a correctly sized but completely blank A4 sheet.
+
+    The clone is display:none on screen (see index.css) and only becomes visible
+    inside @media print, so leaving it in the DOM until afterprint is invisible
+    to the user.
+  */
+  window.addEventListener('afterprint', cleanup);
+  // Safari and some mobile browsers fire afterprint unreliably.
+  window.setTimeout(cleanup, 120000);
+
+  window.print();
 }

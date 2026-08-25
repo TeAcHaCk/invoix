@@ -165,6 +165,42 @@ Newest first. One entry per session. Keep it to what the next agent needs.
    - Replaced ambiguous free-text validity input with `"Validity / Expiry Date"` on proposals and `"Payment Due Date"` on invoices.
 - **Verification**: `npm run lint` = **0 errors, 0 warnings**. `npm run build` = **Clean compile (exit 0)**.
 
+### 2026-08-26 (print, take 3 — the actual bug) — Claude Code
+
+Take 2 isolated a clone at body level, which was the right structure, but still
+printed a blank A4. The CSS and the clone were both deployed and correct; the
+fault was timing.
+
+**`window.print()` does not block in current Chrome.** The preview renders
+asynchronously and `print()` returns immediately. Take 2 cleaned up in a
+`finally { setTimeout(cleanup, 0) }`, so the clone was **removed before the
+browser snapshotted the page**. `body > *:not(#invoix-print-root)` then had
+nothing to reveal — producing a correctly sized, completely blank sheet.
+
+Cleanup is now driven only by `afterprint`, plus a 120 s safety net for Safari,
+which fires `afterprint` unreliably.
+
+Two supporting changes make that safe:
+- `#invoix-print-root { display: none }` on screen (outside the media query).
+  The clone now lives in the DOM until `afterprint`, so it must be invisible
+  until print reveals it.
+- The blanket hide is guarded: `body:has(#invoix-print-root) > *:not(...)`. If
+  isolation ever fails, print degrades to normal browser behaviour instead of a
+  blank page. A blank sheet gives no clue what went wrong; the editor printing at
+  least points at the cause.
+
+**Debugging note for both of us.** Three rounds were spent here, and two were
+avoidable. Check the deployed artefact before theorising:
+
+```
+git status -sb                                   # unpushed?
+curl -s https://www.invoix.app/ | grep -oP '/assets/index-[^"]+\.(js|css)'
+curl -s https://www.invoix.app/assets/<file> | grep -c '<marker>'
+```
+
+Round 1 was genuinely an unpushed commit. Round 2 I assumed the same and was
+wrong — the fix was live and failing. Verifying first would have caught both.
+
 ### 2026-08-26 (print, take 2) — Claude Code
 
 **Take 1 did not work, and the CSS-only approach never could.** The preview lives

@@ -235,6 +235,15 @@
 /* ═══════════════════════════════════════════
    PRINT OPTIMIZATION — A4 Precision
    ═══════════════════════════════════════════ */
+/*
+  Print isolation root. printDocument() appends a clone of the document here and
+  leaves it until afterprint fires, so it must be invisible on screen. It is
+  revealed only inside @media print below.
+*/
+#invoix-print-root {
+  display: none;
+}
+
 @media print {
   /* A4 with no browser chrome; the document supplies its own padding. */
   @page {
@@ -265,7 +274,7 @@
     printed, then the page printed blank. Isolating a copy at body level removes
     the whole problem rather than fighting it.
   */
-  body > *:not(#invoix-print-root) {
+  body:has(#invoix-print-root) > *:not(#invoix-print-root) {
     display: none !important;
   }
 
