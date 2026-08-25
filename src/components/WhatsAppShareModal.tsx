@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import type { QuotationDocument } from '../types';
 import {
   MessageSquare,
@@ -105,13 +105,16 @@ Thank you for partnering with *${doc.studio.name}*!
     }
   }, [doc, buildMessage]);
 
+  const prevIsOpenRef = useRef(isOpen);
+
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && !prevIsOpenRef.current) {
       setRecipientPhone(doc.client.contactNo || '');
       setPdfLink(null);
       setCustomMessage(buildMessage(null));
       handleGenerateCloudLink();
     }
+    prevIsOpenRef.current = isOpen;
   }, [isOpen, doc.client.contactNo, buildMessage, handleGenerateCloudLink]);
 
   if (!isOpen) return null;

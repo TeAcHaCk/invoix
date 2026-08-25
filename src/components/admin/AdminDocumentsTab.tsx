@@ -11,7 +11,6 @@ import {
 
 export const AdminDocumentsTab: React.FC = () => {
   const [documents, setDocuments] = useState<any[]>([]);
-  const [filteredDocs, setFilteredDocs] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [isLoading, setIsLoading] = useState(true);
@@ -19,12 +18,11 @@ export const AdminDocumentsTab: React.FC = () => {
   useEffect(() => {
     fetchPlatformDocuments().then((docs) => {
       setDocuments(docs);
-      setFilteredDocs(docs);
       setIsLoading(false);
     });
   }, []);
 
-  useEffect(() => {
+  const filteredDocs = React.useMemo(() => {
     let res = documents;
 
     if (searchQuery.trim()) {
@@ -42,7 +40,7 @@ export const AdminDocumentsTab: React.FC = () => {
       res = res.filter((d) => d.status === statusFilter);
     }
 
-    setFilteredDocs(res);
+    return res;
   }, [searchQuery, statusFilter, documents]);
 
   return (

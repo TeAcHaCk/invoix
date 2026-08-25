@@ -36,6 +36,33 @@ interface HistoryVaultModalProps {
   onOpenUpgrade?: (plan?: 'pro' | 'agency') => void;
 }
 
+function createDuplicatedDocument(doc: QuotationDocument): QuotationDocument {
+  const newId = `doc_${Date.now()}`;
+  const year = new Date().getFullYear();
+  const rand = Math.floor(100 + Math.random() * 900);
+  return {
+    ...doc,
+    id: newId,
+    status: 'DRAFT',
+    viewCount: 0,
+    lastViewedAt: undefined,
+    approvedAt: undefined,
+    acceptanceAudit: undefined,
+    signatory: {
+      ...doc.signatory,
+      clientSignedName: undefined,
+      clientSignedDate: undefined,
+      clientSignatureDataUrl: undefined,
+    },
+    details: {
+      ...doc.details,
+      invoiceNo: `${doc.type === 'INVOICE' ? 'INV' : 'QUO'}-${year}-${rand}`,
+      invoiceDate: new Date().toLocaleDateString('en-GB'),
+    },
+    updatedAt: new Date().toISOString(),
+  };
+}
+
 export const HistoryVaultModal: React.FC<HistoryVaultModalProps> = ({
   isOpen,
   onClose,
@@ -45,17 +72,19 @@ export const HistoryVaultModal: React.FC<HistoryVaultModalProps> = ({
 }) => {
   const { profile } = useAuth();
   const isPaid = isPaidPlan(profile);
-  const [documents, setDocuments] = useState<QuotationDocument[]>([]);
+  const [documents, setDocuments] = useState<QuotationDocument[]>(() => getVaultDocuments());
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStatusFilter, setSelectedStatusFilter] = useState<'ALL' | 'APPROVED' | 'VIEWED' | 'DRAFT'>('ALL');
   const [selectedIndustryFilter, setSelectedIndustryFilter] = useState<string>('ALL');
   const [inspectingAuditDoc, setInspectingAuditDoc] = useState<QuotationDocument | null>(null);
   const [copiedHash, setCopiedHash] = useState(false);
+  const prevIsOpenRef = React.useRef(isOpen);
 
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && !prevIsOpenRef.current) {
       setDocuments(getVaultDocuments());
     }
+    prevIsOpenRef.current = isOpen;
   }, [isOpen]);
 
   if (!isOpen) return null;
@@ -104,30 +133,7 @@ export const HistoryVaultModal: React.FC<HistoryVaultModalProps> = ({
       }
       return;
     }
-    const newId = `doc_${Date.now()}`;
-    const year = new Date().getFullYear();
-    const rand = Math.floor(100 + Math.random() * 900);
-    const duplicated: QuotationDocument = {
-      ...doc,
-      id: newId,
-      status: 'DRAFT',
-      viewCount: 0,
-      lastViewedAt: undefined,
-      approvedAt: undefined,
-      acceptanceAudit: undefined,
-      signatory: {
-        ...doc.signatory,
-        clientSignedName: undefined,
-        clientSignedDate: undefined,
-        clientSignatureDataUrl: undefined,
-      },
-      details: {
-        ...doc.details,
-        invoiceNo: `${doc.type === 'INVOICE' ? 'INV' : 'QUO'}-${year}-${rand}`,
-        invoiceDate: new Date().toLocaleDateString('en-GB'),
-      },
-      updatedAt: new Date().toISOString(),
-    };
+    const duplicated = createDuplicatedDocument(doc);
     saveDocumentToVault(duplicated);
     setDocuments(getVaultDocuments());
   };

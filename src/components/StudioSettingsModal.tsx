@@ -1,7 +1,9 @@
 import React, { useRef, useState, useEffect } from 'react';
 import type { StudioProfile } from '../types';
-import { Building2, X, Upload, Check, CreditCard } from 'lucide-react';
+import { Building2, X, Upload, Check, CreditCard, Loader2 } from 'lucide-react';
 import { processLogoFile } from '../utils/imageTrim';
+import { useAuth } from '../context/AuthContext';
+import { uploadIfDataUrl, deleteAsset, isStoredAssetUrl } from '../services/storageService';
 
 interface StudioSettingsModalProps {
   isOpen: boolean;
@@ -16,11 +18,18 @@ export const StudioSettingsModal: React.FC<StudioSettingsModalProps> = ({
   studio,
   onSave,
 }) => {
+  const { profile } = useAuth();
   const [formData, setFormData] = useState<StudioProfile>(studio);
+  const [isUploading, setIsUploading] = useState(false);
   const logoInputRef = useRef<HTMLInputElement>(null);
 
+  const prevStudioRef = useRef(studio);
+
   useEffect(() => {
-    setFormData(studio);
+    if (prevStudioRef.current !== studio) {
+      prevStudioRef.current = studio;
+      setFormData(studio);
+    }
   }, [studio]);
 
   if (!isOpen) return null;
@@ -28,19 +37,39 @@ export const StudioSettingsModal: React.FC<StudioSettingsModalProps> = ({
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const res = await processLogoFile(file);
-      if (res.success && res.dataUrl) {
-        setFormData((prev) => ({
-          ...prev,
-          logoUrl: res.dataUrl!,
-        }));
-      } else if (res.error) {
-        alert(res.error);
-      }
-      if (logoInputRef.current) {
-        logoInputRef.current.value = '';
+      setIsUploading(true);
+      try {
+        const res = await processLogoFile(file);
+        if (res.success && res.dataUrl) {
+          // If previous logo was uploaded to Supabase, clean it up
+          if (formData.logoUrl && isStoredAssetUrl(formData.logoUrl)) {
+            deleteAsset(formData.logoUrl).catch(() => {});
+          }
+
+          // Upload to Supabase Storage (or fallback to base64 if offline)
+          const storedUrl = await uploadIfDataUrl(res.dataUrl, 'logo', profile?.id);
+
+          setFormData((prev) => ({
+            ...prev,
+            logoUrl: storedUrl || res.dataUrl!,
+          }));
+        } else if (res.error) {
+          alert(res.error);
+        }
+      } finally {
+        setIsUploading(false);
+        if (logoInputRef.current) {
+          logoInputRef.current.value = '';
+        }
       }
     }
+  };
+
+  const handleRemoveLogo = () => {
+    if (formData.logoUrl && isStoredAssetUrl(formData.logoUrl)) {
+      deleteAsset(formData.logoUrl).catch(() => {});
+    }
+    setFormData((prev) => ({ ...prev, logoUrl: '' }));
   };
 
   const handleSave = () => {
@@ -106,15 +135,20 @@ export const StudioSettingsModal: React.FC<StudioSettingsModalProps> = ({
                 <button
                   type="button"
                   onClick={() => logoInputRef.current?.click()}
-                  className="px-3 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg flex items-center space-x-1.5 transition-all cursor-pointer"
+                  disabled={isUploading}
+                  className="px-3 py-2 bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-slate-950 font-bold rounded-lg flex items-center space-x-1.5 transition-all cursor-pointer"
                 >
-                  <Upload className="w-4 h-4" />
-                  <span>{formData.logoUrl ? 'Change' : 'Upload'}</span>
+                  {isUploading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Upload className="w-4 h-4" />
+                  )}
+                  <span>{isUploading ? 'Uploading...' : formData.logoUrl ? 'Change' : 'Upload'}</span>
                 </button>
-                {formData.logoUrl && (
+                {formData.logoUrl && !isUploading && (
                   <button
                     type="button"
-                    onClick={() => setFormData((prev) => ({ ...prev, logoUrl: '' }))}
+                    onClick={handleRemoveLogo}
                     className="px-2 py-1 text-slate-400 hover:text-red-400 text-xs cursor-pointer"
                   >
                     Remove

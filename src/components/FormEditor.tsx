@@ -32,6 +32,7 @@ import { AdBanner } from './AdBanner';
 import { processLogoFile } from '../utils/imageTrim';
 import { useAuth } from '../context/AuthContext';
 import { isPaidPlan } from '../utils/planLimits';
+import { uploadIfDataUrl, deleteAsset, isStoredAssetUrl } from '../services/storageService';
 import {
   User,
   Layers,
@@ -63,6 +64,8 @@ import {
   Save,
   Eye,
   EyeOff,
+  Upload,
+  Loader2,
 } from 'lucide-react';
 
 interface FormEditorProps {
@@ -83,7 +86,10 @@ export const FormEditor: React.FC<FormEditorProps> = ({
   const [isSaveTemplateModalOpen, setIsSaveTemplateModalOpen] = useState(false);
   const [templateNameInput, setTemplateNameInput] = useState('');
   const [templateDescInput, setTemplateDescInput] = useState('');
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+  const [isUploadingSignature, setIsUploadingSignature] = useState(false);
   const logoFileInputRef = React.useRef<HTMLInputElement>(null);
+  const signatureFileInputRef = React.useRef<HTMLInputElement>(null);
 
   const update = (partial: Partial<QuotationDocument>) => {
     onChange({ ...doc, ...partial });
@@ -182,26 +188,47 @@ export const FormEditor: React.FC<FormEditorProps> = ({
     }
   };
 
-  // Logo Upload with automatic optimization & quota protection
+  // Logo Upload with automatic optimization, Supabase Storage integration & quota protection
   const handleTopLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const res = await processLogoFile(file);
-      if (res.success && res.dataUrl) {
-        const updatedStudio = {
-          ...doc.studio,
-          logoUrl: res.dataUrl,
-        };
-        saveStudioProfileToStorage(updatedStudio);
-        update({ studio: updatedStudio });
-      } else if (res.error) {
-        alert(res.error);
-      }
-      // Reset input value so user can re-upload same file if desired
-      if (logoFileInputRef.current) {
-        logoFileInputRef.current.value = '';
+      setIsUploadingLogo(true);
+      try {
+        const res = await processLogoFile(file);
+        if (res.success && res.dataUrl) {
+          // Clean up old Supabase storage asset if present
+          if (doc.studio.logoUrl && isStoredAssetUrl(doc.studio.logoUrl)) {
+            deleteAsset(doc.studio.logoUrl).catch(() => {});
+          }
+
+          // Upload to Supabase Storage or fallback to base64 if offline/unauthenticated
+          const storedUrl = await uploadIfDataUrl(res.dataUrl, 'logo', profile?.id);
+
+          const updatedStudio = {
+            ...doc.studio,
+            logoUrl: storedUrl || res.dataUrl,
+          };
+          saveStudioProfileToStorage(updatedStudio);
+          update({ studio: updatedStudio });
+        } else if (res.error) {
+          alert(res.error);
+        }
+      } finally {
+        setIsUploadingLogo(false);
+        if (logoFileInputRef.current) {
+          logoFileInputRef.current.value = '';
+        }
       }
     }
+  };
+
+  const handleRemoveTopLogo = () => {
+    if (doc.studio.logoUrl && isStoredAssetUrl(doc.studio.logoUrl)) {
+      deleteAsset(doc.studio.logoUrl).catch(() => {});
+    }
+    const updatedStudio = { ...doc.studio, logoUrl: '' };
+    saveStudioProfileToStorage(updatedStudio);
+    update({ studio: updatedStudio });
   };
 
   const handleBillTypeChange = (type: BillType) => {
@@ -479,6 +506,38 @@ export const FormEditor: React.FC<FormEditorProps> = ({
         [field]: val,
       },
     });
+  };
+
+  const handleSignatorySignatureUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setIsUploadingSignature(true);
+      try {
+        const res = await processLogoFile(file);
+        if (res.success && res.dataUrl) {
+          if (doc.signatory?.signatureDataUrl && isStoredAssetUrl(doc.signatory.signatureDataUrl)) {
+            deleteAsset(doc.signatory.signatureDataUrl).catch(() => {});
+          }
+
+          const storedUrl = await uploadIfDataUrl(res.dataUrl, 'signature', profile?.id);
+          handleSignatoryChange('signatureDataUrl', storedUrl || res.dataUrl);
+        } else if (res.error) {
+          alert(res.error);
+        }
+      } finally {
+        setIsUploadingSignature(false);
+        if (signatureFileInputRef.current) {
+          signatureFileInputRef.current.value = '';
+        }
+      }
+    }
+  };
+
+  const handleRemoveSignatorySignature = () => {
+    if (doc.signatory?.signatureDataUrl && isStoredAssetUrl(doc.signatory.signatureDataUrl)) {
+      deleteAsset(doc.signatory.signatureDataUrl).catch(() => {});
+    }
+    handleSignatoryChange('signatureDataUrl', undefined);
   };
 
   const tabs = [
@@ -992,14 +1051,20 @@ export const FormEditor: React.FC<FormEditorProps> = ({
                   <button
                     type="button"
                     onClick={() => logoFileInputRef.current?.click()}
-                    className="px-3.5 py-2 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 rounded-xl text-xs font-semibold transition-all cursor-pointer"
+                    disabled={isUploadingLogo}
+                    className="px-3.5 py-2 bg-amber-500/20 hover:bg-amber-500/30 disabled:opacity-50 text-amber-300 border border-amber-500/40 rounded-xl text-xs font-semibold transition-all cursor-pointer inline-flex items-center space-x-1.5"
                   >
-                    {doc.studio.logoUrl ? 'Change Logo' : 'Upload Logo (PNG/SVG)'}
+                    {isUploadingLogo ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <Upload className="w-3.5 h-3.5" />
+                    )}
+                    <span>{isUploadingLogo ? 'Uploading...' : doc.studio.logoUrl ? 'Change Logo' : 'Upload Logo (PNG/SVG)'}</span>
                   </button>
-                  {doc.studio.logoUrl && (
+                  {doc.studio.logoUrl && !isUploadingLogo && (
                     <button
                       type="button"
-                      onClick={() => update({ studio: { ...doc.studio, logoUrl: '' } })}
+                      onClick={handleRemoveTopLogo}
                       className="px-2.5 py-2 text-slate-400 hover:text-red-400 rounded-xl text-xs cursor-pointer"
                     >
                       Remove
@@ -2157,6 +2222,59 @@ export const FormEditor: React.FC<FormEditorProps> = ({
                       placeholder="e.g. David Zhang (CTO)"
                       className="w-full bg-slate-900/90 border border-slate-700/70 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-amber-500 input-premium"
                     />
+                  </div>
+
+                  {/* Creator / Issuer Signature Image Upload */}
+                  <div className="sm:col-span-2 pt-2 border-t border-slate-800/80">
+                    <label className="text-[11px] font-semibold text-slate-300 block mb-1.5">
+                      Issuer Digital Signature / Company Stamp (Optional)
+                    </label>
+                    <div className="flex items-center space-x-3 bg-slate-900/60 border border-slate-800 rounded-xl p-3">
+                      {doc.signatory?.signatureDataUrl ? (
+                        <div className="p-2 bg-white rounded-lg border border-slate-700 flex items-center justify-center min-w-[80px] max-w-[140px] shadow-sm">
+                          <img
+                            src={doc.signatory.signatureDataUrl}
+                            alt="Signature"
+                            className="max-h-9 object-contain"
+                          />
+                        </div>
+                      ) : (
+                        <div className="w-20 h-9 bg-slate-950 border border-slate-800 rounded-lg flex items-center justify-center text-slate-500 text-[10px]">
+                          No Signature
+                        </div>
+                      )}
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="file"
+                          ref={signatureFileInputRef}
+                          accept="image/png,image/svg+xml,image/jpeg,image/webp,.png,.svg,.jpg,.jpeg,.webp"
+                          onChange={handleSignatorySignatureUpload}
+                          className="hidden"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => signatureFileInputRef.current?.click()}
+                          disabled={isUploadingSignature}
+                          className="px-3 py-1.5 bg-amber-500/20 hover:bg-amber-500/30 disabled:opacity-50 text-amber-300 border border-amber-500/40 rounded-lg text-xs font-semibold transition-all cursor-pointer inline-flex items-center space-x-1.5"
+                        >
+                          {isUploadingSignature ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          ) : (
+                            <Upload className="w-3.5 h-3.5" />
+                          )}
+                          <span>{isUploadingSignature ? 'Uploading...' : doc.signatory?.signatureDataUrl ? 'Change Signature' : 'Upload Signature / Stamp'}</span>
+                        </button>
+                        {doc.signatory?.signatureDataUrl && !isUploadingSignature && (
+                          <button
+                            type="button"
+                            onClick={handleRemoveSignatorySignature}
+                            className="px-2 py-1.5 text-slate-400 hover:text-red-400 text-xs cursor-pointer"
+                          >
+                            Remove
+                          </button>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}

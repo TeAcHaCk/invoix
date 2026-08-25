@@ -45,24 +45,6 @@ interface NavbarProps {
   onToggleWatermark: () => void;
 }
 
-// Dropdown hook
-function useDropdown() {
-  const [isOpen, setIsOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  return { isOpen, setIsOpen, ref };
-}
-
 export const Navbar: React.FC<NavbarProps> = ({
   document: doc,
   onExportPdf,
@@ -83,16 +65,31 @@ export const Navbar: React.FC<NavbarProps> = ({
   const { user, profile, isAdmin, isCloudConnected } = useAuth();
   const isPro = isPaidPlan(profile);
   const [copiedLink, setCopiedLink] = useState(false);
+  const [isShareOpen, setIsShareOpen] = useState(false);
+  const [isMoreOpen, setIsMoreOpen] = useState(false);
+  const shareRef = useRef<HTMLDivElement>(null);
+  const moreRef = useRef<HTMLDivElement>(null);
   const preset = INDUSTRY_PRESETS[doc.industry] || INDUSTRY_PRESETS.creative_agency;
-  const shareDropdown = useDropdown();
-  const moreDropdown = useDropdown();
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (shareRef.current && !shareRef.current.contains(e.target as Node)) {
+        setIsShareOpen(false);
+      }
+      if (moreRef.current && !moreRef.current.contains(e.target as Node)) {
+        setIsMoreOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const handleCopyPublicLink = () => {
     const publicUrl = `${window.location.origin}/?view=${doc.shareToken || doc.id}`;
     navigator.clipboard.writeText(publicUrl);
     setCopiedLink(true);
     setTimeout(() => setCopiedLink(false), 2500);
-    shareDropdown.setIsOpen(false);
+    setIsShareOpen(false);
   };
 
   return (
@@ -175,19 +172,19 @@ export const Navbar: React.FC<NavbarProps> = ({
           </button>
 
           {/* === SHARE DROPDOWN === */}
-          <div ref={shareDropdown.ref} className="relative">
+          <div ref={shareRef} className="relative">
             <button
               type="button"
-              onClick={() => shareDropdown.setIsOpen(!shareDropdown.isOpen)}
+              onClick={() => setIsShareOpen(!isShareOpen)}
               className="flex items-center space-x-1 px-2.5 py-1.5 sm:px-3.5 sm:py-2 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 text-xs font-bold rounded-xl border border-emerald-500/30 transition-all cursor-pointer"
               title="Share quotation link or WhatsApp"
             >
               <Share2 className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Share</span>
-              <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${shareDropdown.isOpen ? 'rotate-180' : ''}`} />
+              <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${isShareOpen ? 'rotate-180' : ''}`} />
             </button>
 
-            {shareDropdown.isOpen && (
+            {isShareOpen && (
               <div className="absolute right-0 top-full mt-2 w-56 glass rounded-2xl p-2 shadow-2xl shadow-black/40 border border-slate-700/50 z-50 modal-enter">
                 <button
                   type="button"
@@ -202,8 +199,8 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <button
                   type="button"
                   onClick={() => {
-                    if (!isPro && onOpenUpgrade) { onOpenUpgrade('pro'); shareDropdown.setIsOpen(false); return; }
-                    onOpenClientInteractive(); shareDropdown.setIsOpen(false);
+                    if (!isPro && onOpenUpgrade) { onOpenUpgrade('pro'); setIsShareOpen(false); return; }
+                    onOpenClientInteractive(); setIsShareOpen(false);
                   }}
                   className={`w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs transition-colors cursor-pointer ${
                     isPro ? 'text-slate-200 hover:bg-slate-800/60' : 'text-slate-500'
@@ -218,8 +215,8 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <button
                   type="button"
                   onClick={() => {
-                    if (!isPro && onOpenUpgrade) { onOpenUpgrade('pro'); shareDropdown.setIsOpen(false); return; }
-                    onOpenWhatsApp(); shareDropdown.setIsOpen(false);
+                    if (!isPro && onOpenUpgrade) { onOpenUpgrade('pro'); setIsShareOpen(false); return; }
+                    onOpenWhatsApp(); setIsShareOpen(false);
                   }}
                   className={`w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs transition-colors cursor-pointer ${
                     isPro ? 'text-slate-200 hover:bg-slate-800/60' : 'text-slate-500'
@@ -232,7 +229,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
                 <button
                   type="button"
-                  onClick={() => { onPrint(); shareDropdown.setIsOpen(false); }}
+                  onClick={() => { onPrint(); setIsShareOpen(false); }}
                   className="w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs text-slate-200 hover:bg-slate-800/60 transition-colors cursor-pointer"
                 >
                   <Printer className="w-4 h-4 text-slate-400" />
@@ -255,21 +252,21 @@ export const Navbar: React.FC<NavbarProps> = ({
           </button>
 
           {/* === MORE DROPDOWN (Document Management & Mobile Settings) === */}
-          <div ref={moreDropdown.ref} className="relative">
+          <div ref={moreRef} className="relative">
             <button
               type="button"
-              onClick={() => moreDropdown.setIsOpen(!moreDropdown.isOpen)}
+              onClick={() => setIsMoreOpen(!isMoreOpen)}
               className="p-1.5 sm:p-2 glass hover:bg-slate-800/70 text-slate-400 hover:text-slate-200 rounded-xl transition-colors cursor-pointer"
               title="More options"
             >
               <MoreHorizontal className="w-4 h-4" />
             </button>
 
-            {moreDropdown.isOpen && (
+            {isMoreOpen && (
               <div className="absolute right-0 top-full mt-2 w-56 glass rounded-2xl p-2 shadow-2xl shadow-black/40 border border-slate-700/50 z-50 modal-enter">
                 <button
                   type="button"
-                  onClick={() => { onSaveToVault(); moreDropdown.setIsOpen(false); }}
+                  onClick={() => { onSaveToVault(); setIsMoreOpen(false); }}
                   className="sm:hidden w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs text-slate-200 hover:bg-slate-800/60 transition-colors cursor-pointer"
                 >
                   <Save className="w-4 h-4 text-emerald-400" />
@@ -279,7 +276,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 {onNewDocument && (
                   <button
                     type="button"
-                    onClick={() => { onNewDocument(); moreDropdown.setIsOpen(false); }}
+                    onClick={() => { onNewDocument(); setIsMoreOpen(false); }}
                     className="w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs text-slate-200 hover:bg-slate-800/60 transition-colors cursor-pointer"
                   >
                     <Plus className="w-4 h-4 text-amber-400" />
@@ -289,7 +286,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
                 <button
                   type="button"
-                  onClick={() => { onOpenVault(); moreDropdown.setIsOpen(false); }}
+                  onClick={() => { onOpenVault(); setIsMoreOpen(false); }}
                   className="w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs text-slate-200 hover:bg-slate-800/60 transition-colors cursor-pointer"
                 >
                   <Archive className="w-4 h-4 text-amber-400" />
@@ -298,7 +295,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
                 <button
                   type="button"
-                  onClick={() => { onOpenSettings(); moreDropdown.setIsOpen(false); }}
+                  onClick={() => { onOpenSettings(); setIsMoreOpen(false); }}
                   className="sm:hidden w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs text-slate-200 hover:bg-slate-800/60 transition-colors cursor-pointer"
                 >
                   <Settings className="w-4 h-4 text-slate-400" />
@@ -308,7 +305,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 {isAdmin && onOpenAdmin && (
                   <button
                     type="button"
-                    onClick={() => { onOpenAdmin(); moreDropdown.setIsOpen(false); }}
+                    onClick={() => { onOpenAdmin(); setIsMoreOpen(false); }}
                     className="md:hidden w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs text-amber-300 hover:bg-slate-800/60 transition-colors cursor-pointer"
                   >
                     <Crown className="w-4 h-4 text-amber-400" />
@@ -318,7 +315,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
                 <button
                   type="button"
-                  onClick={() => { onToggleWatermark(); moreDropdown.setIsOpen(false); }}
+                  onClick={() => { onToggleWatermark(); setIsMoreOpen(false); }}
                   className="w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs text-slate-200 hover:bg-slate-800/60 transition-colors cursor-pointer"
                 >
                   <Sparkles className="w-4 h-4 text-amber-400" />

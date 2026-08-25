@@ -8,27 +8,29 @@ interface BeforeInstallPromptEvent extends Event {
 
 export const InstallAppPrompt: React.FC = () => {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
-  const [isIOS, setIsIOS] = useState(false);
-  const [isStandalone, setIsStandalone] = useState(false);
+  const [isIOS] = useState(() =>
+    typeof window !== 'undefined' ? /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase()) : false
+  );
+  const [isStandalone] = useState(() =>
+    typeof window !== 'undefined'
+      ? window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone === true
+      : false
+  );
   const [showIOSModal, setShowIOSModal] = useState(false);
   const [isLeaving, setIsLeaving] = useState(false);
-  const [isVisible, setIsVisible] = useState(true);
+  const [isVisible, setIsVisible] = useState(() => !isStandalone);
+
+  const triggerDismiss = React.useCallback(() => {
+    setIsLeaving(true);
+    setTimeout(() => {
+      setIsVisible(false);
+    }, 650);
+  }, []);
 
   useEffect(() => {
-    // Check if already running in standalone PWA mode
-    const isStandaloneMode =
-      window.matchMedia('(display-mode: standalone)').matches ||
-      (window.navigator as any).standalone === true;
-    setIsStandalone(isStandaloneMode);
-    if (isStandaloneMode) {
-      setIsVisible(false);
+    if (isStandalone) {
       return;
     }
-
-    // Detect iOS
-    const userAgent = window.navigator.userAgent.toLowerCase();
-    const isIOSDevice = /iphone|ipad|ipod/.test(userAgent);
-    setIsIOS(isIOSDevice);
 
     // Listen for native install prompt event (Android / Chrome / Edge)
     const handleBeforeInstallPrompt = (e: Event) => {
@@ -47,14 +49,7 @@ export const InstallAppPrompt: React.FC = () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
       clearTimeout(autoDismissTimer);
     };
-  }, []);
-
-  const triggerDismiss = () => {
-    setIsLeaving(true);
-    setTimeout(() => {
-      setIsVisible(false);
-    }, 650);
-  };
+  }, [isStandalone, triggerDismiss]);
 
   const handleInstallClick = async () => {
     if (deferredPrompt) {

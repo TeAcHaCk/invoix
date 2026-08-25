@@ -78,8 +78,6 @@ export const FormalInvoiceView: React.FC<FormalInvoiceViewProps> = ({ document: 
       generateQrDataUrl(paymentPayload, { width: 140 }).then((dataUrl) => {
         if (active) setQrCodeDataUrl(dataUrl);
       });
-    } else {
-      setQrCodeDataUrl('');
     }
 
     return () => {

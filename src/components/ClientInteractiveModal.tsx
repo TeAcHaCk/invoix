@@ -32,12 +32,16 @@ export const ClientInteractiveModal: React.FC<ClientInteractiveModalProps> = ({
   const [isDrawing, setIsDrawing] = useState(false);
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const prevDocIdRef = useRef(initialDoc.id);
 
-  // Sync state when initialDoc changes
+  // Sync state when initialDoc changes to a different document
   useEffect(() => {
-    setDoc(initialDoc);
-    setSignerName(initialDoc.client.clientName || '');
-    setIsSigned(Boolean(initialDoc.signatory?.clientSignedName));
+    if (prevDocIdRef.current !== initialDoc.id) {
+      prevDocIdRef.current = initialDoc.id;
+      setDoc(initialDoc);
+      setSignerName(initialDoc.client.clientName || '');
+      setIsSigned(Boolean(initialDoc.signatory?.clientSignedName));
+    }
   }, [initialDoc]);
 
   if (!isOpen) return null;

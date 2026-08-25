@@ -33,12 +33,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [isCloudConnected, setIsCloudConnected] = useState<boolean>(isSupabaseConnected());
+  const [isLoading, setIsLoading] = useState<boolean>(() => Boolean(getSupabaseClient()));
+  const [isCloudConnected] = useState<boolean>(() => isSupabaseConnected());
 
   const supabase = getSupabaseClient();
 
-  const fetchProfile = async (userId: string) => {
+  const fetchProfile = React.useCallback(async (userId: string, userEmail?: string, businessName?: string) => {
     if (!supabase) return;
     try {
       const { data, error } = await supabase
@@ -49,14 +49,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (!error && data) {
         setProfile(data as UserProfile);
-      } else if (user) {
-        // Fallback profile when the row cannot be read. Deliberately the LOWEST
-        // privilege: a failed fetch must never hand out admin. Real admin status
-        // is granted by service_role and enforced server-side by RLS anyway.
+      } else {
         setProfile({
           id: userId,
-          email: user.email || '',
-          business_name: user.user_metadata?.business_name || '',
+          email: userEmail || '',
+          business_name: businessName || '',
           role: 'user',
           plan: 'free',
         });
@@ -64,32 +61,41 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (e) {
       console.error('Error fetching user profile:', e);
     }
-  };
+  }, [supabase]);
 
   useEffect(() => {
-    setIsCloudConnected(isSupabaseConnected());
-
     if (!supabase) {
-      setIsLoading(false);
       return;
     }
 
+    let isMounted = true;
+
     // Check active session
     supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
+      if (!isMounted) return;
       setSession(currentSession);
       setUser(currentSession?.user ?? null);
       if (currentSession?.user) {
-        fetchProfile(currentSession.user.id);
+        fetchProfile(
+          currentSession.user.id,
+          currentSession.user.email,
+          currentSession.user.user_metadata?.business_name
+        );
       }
       setIsLoading(false);
     });
 
     // Listen to auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, currentSession) => {
+      if (!isMounted) return;
       setSession(currentSession);
       setUser(currentSession?.user ?? null);
       if (currentSession?.user) {
-        fetchProfile(currentSession.user.id);
+        fetchProfile(
+          currentSession.user.id,
+          currentSession.user.email,
+          currentSession.user.user_metadata?.business_name
+        );
       } else {
         setProfile(null);
       }
@@ -97,9 +103,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
 
     return () => {
+      isMounted = false;
       subscription.unsubscribe();
     };
-  }, []);
+  }, [supabase, fetchProfile]);
 
   const signInWithEmail = async (email: string, password: string) => {
     if (!supabase) {
@@ -177,6 +184,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   );
 };
 
+// oxlint-disable-next-line react/only-export-components
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {

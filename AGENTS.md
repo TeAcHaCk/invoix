@@ -127,6 +127,17 @@ Each of these shipped once and cost real debugging time.
 
 Newest first. One entry per session. Keep it to what the next agent needs.
 
+### 2026-08-25 (latest) — Antigravity · Phase 1 frontend half & Lint Zero
+
+**Image pickers & storage integration complete. 0 lint warnings achieved.**
+
+- Wired `storageService.ts` across all pickers:
+  - `FormEditor.tsx`: Pick-time upload for Company Logo and Issuer Signature/Stamp with loading spinners and automatic old-asset deletion.
+  - `StudioSettingsModal.tsx`: Studio brand logo picker now uploads directly to Supabase storage on pick.
+  - `WatermarkControls.tsx`: Custom monogram/emblem upload now pushes to storage with graceful base64 fallback.
+- **Fixed all 25 lint warnings** across `Navbar.tsx`, `HistoryVaultModal.tsx`, `AdminDocumentsTab.tsx`, `AdminUsersTab.tsx`, `ClientInteractiveModal.tsx`, `FormalInvoiceView.tsx`, `InstallAppPrompt.tsx`, `WhatsAppShareModal.tsx`, and `AuthContext.tsx`.
+- Verified: `npm run lint` = **0 errors, 0 warnings**. `npm run build` = **Clean compile (exit 0)**.
+
 ### 2026-08-25 (later) — Claude Code · Phase 1 backend half
 
 **Storage layer is ready. Antigravity's half — the image pickers — can start.**

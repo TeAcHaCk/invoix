@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Camera, Film, Video, Wand2 } from 'lucide-react';
 import type { QuotationDocument } from '../types';
 
-export const DEFAULT_SERVICES = [
+const DEFAULT_SERVICES = [
   { id: 'trad-photo', category: 'Traditional', name: 'Traditional Photography', defaultDeliverable: 'Traditional High-Res Photo Coverage' },
   { id: 'trad-video', category: 'Traditional', name: 'Traditional Videography', defaultDeliverable: 'Traditional Full Length Video' },
   { id: 'candid-photo', category: 'Candid', name: 'Candid Photography', defaultDeliverable: 'Professionally Edited High Resolution Candid Photographs' },
@@ -10,7 +10,7 @@ export const DEFAULT_SERVICES = [
   { id: 'cinematic-films', category: 'Cinematic', name: 'Cinematic Films', defaultDeliverable: 'Cinematic Highlight Films & Teaser' },
 ];
 
-export const DEFAULT_EVENT_TYPES = [
+const DEFAULT_EVENT_TYPES = [
   'Walima',
   'Wedding Reception',
   'Pre Wedding',
@@ -24,7 +24,7 @@ export const DEFAULT_EVENT_TYPES = [
   'Muhurtham',
 ];
 
-export const DEFAULT_ADDITIONAL_SERVICES = [
+const DEFAULT_ADDITIONAL_SERVICES = [
   { id: 'drone', name: 'Drone', label: 'Drone (Aerial 4K Shoot)', deliverable: '4K Drone Aerial Footage' },
   { id: 'led-wall', name: 'LED Wall', label: 'LED Wall (Live Display Setup)', deliverable: 'Live LED Wall Projection' },
   { id: 'live-stream', name: 'Live Streaming', label: 'Live Streaming (YouTube/FB Webcast)', deliverable: 'Full HD Multi-Cam Live Stream' },

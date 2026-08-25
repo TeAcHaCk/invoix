@@ -1,8 +1,9 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import type { WatermarkConfig } from '../types';
-import { Eye, EyeOff, Sliders, RotateCw, Image as ImageIcon, Type, Sparkles, Upload, Lock } from 'lucide-react';
+import { Eye, EyeOff, Sliders, RotateCw, Image as ImageIcon, Type, Sparkles, Upload, Lock, Loader2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { canDisableWatermark } from '../utils/planLimits';
+import { uploadAsset, deleteAsset, isStoredAssetUrl } from '../services/storageService';
 
 interface WatermarkControlsProps {
   config: WatermarkConfig;
@@ -14,6 +15,7 @@ export const WatermarkControls: React.FC<WatermarkControlsProps> = ({ config, on
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { profile } = useAuth();
   const isPaid = canDisableWatermark(profile);
+  const [isUploading, setIsUploading] = useState(false);
 
   const update = (partial: Partial<WatermarkConfig>) => {
     onChange({ ...config, ...partial });
@@ -31,20 +33,50 @@ export const WatermarkControls: React.FC<WatermarkControlsProps> = ({ config, on
     update({ enabled: !config.enabled });
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        if (event.target?.result) {
+      setIsUploading(true);
+      try {
+        // Clean up previous Supabase storage asset if present
+        if (config.customImageUrl && isStoredAssetUrl(config.customImageUrl)) {
+          deleteAsset(config.customImageUrl).catch(() => {});
+        }
+
+        // Try upload to Supabase Storage
+        const res = await uploadAsset(file, 'watermark', profile?.id);
+        if (res.url) {
           update({
-            customImageUrl: event.target.result as string,
+            customImageUrl: res.url,
             type: 'monogram',
           });
+        } else {
+          // Fallback to local data URL if offline/unauthenticated
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            if (event.target?.result) {
+              update({
+                customImageUrl: event.target.result as string,
+                type: 'monogram',
+              });
+            }
+          };
+          reader.readAsDataURL(file);
         }
-      };
-      reader.readAsDataURL(file);
+      } finally {
+        setIsUploading(false);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+      }
     }
+  };
+
+  const handleResetWatermark = () => {
+    if (config.customImageUrl && isStoredAssetUrl(config.customImageUrl)) {
+      deleteAsset(config.customImageUrl).catch(() => {});
+    }
+    update({ customImageUrl: '/assets/watermark.png' });
   };
 
   return (
@@ -163,15 +195,20 @@ export const WatermarkControls: React.FC<WatermarkControlsProps> = ({ config, on
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="flex-1 flex items-center justify-center space-x-1.5 py-1.5 px-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-slate-300 transition-colors cursor-pointer"
+                  disabled={isUploading}
+                  className="flex-1 flex items-center justify-center space-x-1.5 py-1.5 px-3 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 border border-slate-700 rounded-lg text-slate-300 transition-colors cursor-pointer"
                 >
-                  <Upload className="w-3.5 h-3.5 text-amber-400" />
-                  <span>Upload Custom Watermark</span>
+                  {isUploading ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-400" />
+                  ) : (
+                    <Upload className="w-3.5 h-3.5 text-amber-400" />
+                  )}
+                  <span>{isUploading ? 'Uploading...' : 'Upload Custom Watermark'}</span>
                 </button>
-                {config.customImageUrl && (
+                {config.customImageUrl && !isUploading && (
                   <button
                     type="button"
-                    onClick={() => update({ customImageUrl: '/assets/watermark.png' })}
+                    onClick={handleResetWatermark}
                     className="text-[11px] text-slate-400 hover:text-amber-300 underline cursor-pointer"
                   >
                     Reset

@@ -14,25 +14,19 @@ import {
 
 export const AdminUsersTab: React.FC = () => {
   const [users, setUsers] = useState<UserProfile[]>([]);
-  const [filteredUsers, setFilteredUsers] = useState<UserProfile[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPlanFilter, setSelectedPlanFilter] = useState<'all' | 'free' | 'pro' | 'agency' | 'admin'>('all');
   const [isLoading, setIsLoading] = useState(true);
   const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
 
-  const loadUsers = async () => {
-    setIsLoading(true);
-    const list = await fetchAdminUsersList();
-    setUsers(list);
-    setFilteredUsers(list);
-    setIsLoading(false);
-  };
-
   useEffect(() => {
-    loadUsers();
+    fetchAdminUsersList().then((list) => {
+      setUsers(list);
+      setIsLoading(false);
+    });
   }, []);
 
-  useEffect(() => {
+  const filteredUsers = React.useMemo(() => {
     let result = users;
 
     if (searchQuery.trim()) {
@@ -52,7 +46,7 @@ export const AdminUsersTab: React.FC = () => {
       }
     }
 
-    setFilteredUsers(result);
+    return result;
   }, [searchQuery, selectedPlanFilter, users]);
 
   const handlePlanChange = async (userId: string, newPlan: 'free' | 'pro' | 'agency' | 'enterprise') => {
