@@ -318,6 +318,75 @@ export async function generatePdfBlob(
   }
 }
 
-export function printDocument(): void {
-  window.print();
+const PRINT_ROOT_ID = 'invoix-print-root';
+
+/**
+ * Prints the document by lifting a COPY of it to the top of <body>.
+ *
+ * A plain window.print() printed the editor sidebar, then printed blank once the
+ * CSS hid it. The reason is the ancestor chain the preview lives in:
+ *
+ *   .overflow-y-auto.relative   <- clips, and is the containing block
+ *     .print-zoom-wrapper       <- inline transform: scale()
+ *       #quotation-preview-container
+ *         .canvas-viewport      <- another inline transform: scale()
+ *           #quotation-invoice-canvas
+ *
+ * No @media print rule can reliably free an element from a clipping, positioned
+ * and transformed chain like that - which is why the page came out empty. Moving
+ * it out of the chain is the only robust fix.
+ *
+ * A CLONE is used rather than the live node: relocating React-managed DOM risks
+ * a reconciliation error if a render lands mid-print. The clone is an inert
+ * snapshot, restored by simply deleting it.
+ *
+ * Deliberately does NOT touch PDF export, which works and is not in the way.
+ */
+export function printDocument(elementId: string = 'quotation-invoice-canvas'): void {
+  const source =
+    document.getElementById(elementId) ||
+    document.getElementById('quotation-preview-container') ||
+    document.querySelector<HTMLElement>('.print-page');
+
+  if (!source) {
+    // Nothing to isolate - fall back to the browser's own behaviour.
+    window.print();
+    return;
+  }
+
+  // Clear any root left behind by an interrupted previous run.
+  document.getElementById(PRINT_ROOT_ID)?.remove();
+
+  const printRoot = document.createElement('div');
+  printRoot.id = PRINT_ROOT_ID;
+
+  const clone = source.cloneNode(true) as HTMLElement;
+  // The clone must not inherit the zoom transform or the id it was cloned from.
+  clone.removeAttribute('id');
+  clone.style.transform = 'none';
+  clone.style.width = 'auto';
+  printRoot.appendChild(clone);
+
+  document.body.appendChild(printRoot);
+
+  let cleaned = false;
+  const cleanup = () => {
+    if (cleaned) return;
+    cleaned = true;
+    printRoot.remove();
+    window.removeEventListener('afterprint', cleanup);
+  };
+
+  window.addEventListener('afterprint', cleanup);
+  // Safari and some mobile browsers fire afterprint unreliably; this guarantees
+  // the clone is never left in the DOM.
+  window.setTimeout(cleanup, 60000);
+
+  try {
+    window.print();
+  } finally {
+    // Chrome blocks on window.print(), so this usually runs immediately after
+    // the dialog closes. The listener and timeout cover browsers that do not.
+    window.setTimeout(cleanup, 0);
+  }
 }

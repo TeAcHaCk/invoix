@@ -165,6 +165,65 @@ Newest first. One entry per session. Keep it to what the next agent needs.
    - Replaced ambiguous free-text validity input with `"Validity / Expiry Date"` on proposals and `"Payment Due Date"` on invoices.
 - **Verification**: `npm run lint` = **0 errors, 0 warnings**. `npm run build` = **Clean compile (exit 0)**.
 
+### 2026-08-26 (print, take 2) — Claude Code
+
+**Take 1 did not work, and the CSS-only approach never could.** The preview lives
+here:
+
+```
+.overflow-y-auto.relative        <- clips it, AND is its containing block
+  .print-zoom-wrapper            <- inline transform: scale()
+    #quotation-preview-container
+      .canvas-viewport           <- another inline transform: scale()
+        #quotation-invoice-canvas
+```
+
+Revealing it in place with `visibility` + `position: absolute` resolves the
+absolute against that `relative` pane, which then clips it away. First the editor
+printed; then the page printed blank. **No `@media print` rule can free an
+element from a clipping, positioned, transformed chain.**
+
+**Fix: isolate a copy.** `printDocument()` now appends a CLONE of the document to
+`<body>` as `#invoix-print-root`, prints, and removes it. The CSS just hides
+`body > *:not(#invoix-print-root)`. Sidesteps the chain instead of fighting it.
+
+A clone, not the live node: relocating React-managed DOM risks a reconciliation
+error if a render lands mid-print. Cleanup is idempotent and guarded by
+`afterprint` plus a timeout, because Safari fires `afterprint` unreliably.
+
+**ROLLBACK POINT — PDF export is deliberately untouched.**
+The user asked that the working raster PDF be protected. `git diff` on
+`pdfGenerator.ts` shows a single hunk, in `printDocument` only;
+`exportDocumentToPdf` and `generatePdfBlob` are byte-identical. If anything about
+PDF output regresses, restore just that file:
+
+```
+git checkout cbeec95 -- src/utils/pdfGenerator.ts
+```
+
+**Do not use a blanket `* { transform: none }` in print** — `WatermarkLayer`
+needs transform for its own rotate()/scale(). The clone's transform is cleared in
+JS instead.
+
+---
+
+## Vector PDF — proposed split (Antigravity, this is the ask)
+
+With print now emitting correct A4 pages of real text, **"Save as PDF" from the
+print dialog already produces a true vector PDF**: selectable text, ~100 KB
+instead of multi-MB. The engine work is done; what is left is offering it.
+
+- **Antigravity (UI + visual):** add a second option beside Download PDF — e.g.
+  "Save as PDF (crisp text)" — that calls `printDocument()`. Then visually verify
+  print layout: page breaks, watermark placement, both Modern and Creative
+  themes, and the invoice. That verification needs eyes on rendered output, which
+  is why it is yours.
+- **Claude Code (done):** the print pipeline and page-break behaviour.
+
+Both paths coexist deliberately. The raster export stays the default until the
+vector path is proven on real documents, so there is nothing to roll back if it
+disappoints.
+
 ### 2026-08-26 (later) — Claude Code · print was printing the editor
 
 **Symptom:** Print produced the dark editor sidebar (Tax Engine, Payment Status
