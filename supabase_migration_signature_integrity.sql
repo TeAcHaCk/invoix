@@ -42,7 +42,7 @@ BEGIN
   SELECT id, document_data
     INTO v_id, v_data
     FROM public.documents
-   WHERE share_token = p_token AND is_public = TRUE
+   WHERE (share_token = p_token OR id = p_token) AND is_public = TRUE
    LIMIT 1;
 
   IF v_id IS NULL THEN

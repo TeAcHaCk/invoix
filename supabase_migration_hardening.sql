@@ -94,6 +94,10 @@ DROP POLICY IF EXISTS "Creators can view own documents or admins can view all"  
 DROP POLICY IF EXISTS "Creators can insert own documents"                        ON public.documents;
 DROP POLICY IF EXISTS "Creators can update own documents or admins can update any" ON public.documents;
 DROP POLICY IF EXISTS "Creators can delete own documents or admins can delete any" ON public.documents;
+DROP POLICY IF EXISTS "documents_select_own_or_admin"                            ON public.documents;
+DROP POLICY IF EXISTS "documents_insert_own"                                     ON public.documents;
+DROP POLICY IF EXISTS "documents_update_own_or_admin"                            ON public.documents;
+DROP POLICY IF EXISTS "documents_delete_own_or_admin"                            ON public.documents;
 
 CREATE POLICY "documents_select_own_or_admin"
   ON public.documents FOR SELECT
@@ -116,8 +120,10 @@ CREATE POLICY "documents_delete_own_or_admin"
 -- ==============================================================================
 -- SECTION 4 — DOCUMENT_VIEWS: RLS was on with no policies (all inserts denied)
 -- ==============================================================================
-DROP POLICY IF EXISTS "document_views_insert_anyone" ON public.document_views;
-DROP POLICY IF EXISTS "document_views_select_owner"  ON public.document_views;
+DROP POLICY IF EXISTS "document_views_insert_anyone"                  ON public.document_views;
+DROP POLICY IF EXISTS "document_views_select_owner"                   ON public.document_views;
+DROP POLICY IF EXISTS "Anyone can insert view events"                 ON public.document_views;
+DROP POLICY IF EXISTS "Document owners and admins can view analytics" ON public.document_views;
 
 -- Anyone opening a share link may record a view. The row carries no user data
 -- beyond the user agent, and cannot be read back by the public.
@@ -141,9 +147,9 @@ CREATE POLICY "document_views_select_owner"
 -- SECTION 5 — PUBLIC CLIENT-PORTAL FUNCTIONS
 -- ==============================================================================
 -- These are the ONLY way an anonymous visitor touches the documents table.
--- Each requires the unguessable share_token.
+-- Each requires the unguessable share_token or legacy id.
 
--- 5a. Read one document by share token.
+-- 5a. Read one document by share token (or legacy id fallback).
 CREATE OR REPLACE FUNCTION public.get_public_document(p_token TEXT)
 RETURNS JSONB AS $$
 DECLARE
@@ -151,7 +157,7 @@ DECLARE
 BEGIN
   SELECT document_data INTO v_data
     FROM public.documents
-   WHERE share_token = p_token
+   WHERE (share_token = p_token OR id = p_token)
      AND is_public = TRUE
    LIMIT 1;
 
@@ -159,7 +165,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
--- 5b. Record a view against a share token.
+-- 5b. Record a view against a share token (or legacy id).
 CREATE OR REPLACE FUNCTION public.record_public_view(p_token TEXT)
 RETURNS VOID AS $$
 DECLARE
@@ -167,7 +173,7 @@ DECLARE
 BEGIN
   SELECT id INTO v_id
     FROM public.documents
-   WHERE share_token = p_token AND is_public = TRUE
+   WHERE (share_token = p_token OR id = p_token) AND is_public = TRUE
    LIMIT 1;
 
   IF v_id IS NULL THEN
@@ -217,7 +223,7 @@ BEGIN
   SELECT id, document_data
     INTO v_id, v_data
     FROM public.documents
-   WHERE share_token = p_token AND is_public = TRUE
+   WHERE (share_token = p_token OR id = p_token) AND is_public = TRUE
    LIMIT 1;
 
   IF v_id IS NULL THEN
