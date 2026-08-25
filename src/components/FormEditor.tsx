@@ -2055,54 +2055,219 @@ export const FormEditor: React.FC<FormEditorProps> = ({
               </div>
             </div>
 
-            {/* Payment Milestone Structure */}
-            <div className="bg-slate-950/70 border border-slate-800/80 rounded-2xl p-4 space-y-3">
-              <label className="text-xs font-bold text-slate-200 uppercase tracking-wider block font-['Outfit']">
-                Milestone Payment Tranches
-              </label>
+            {/* Payment Milestone Structure for Proposals VS Payment Tracking for Invoices */}
+            {doc.type === 'INVOICE' ? (
+              <div className="bg-slate-950/70 border border-slate-800/80 rounded-2xl p-4 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <CreditCard className="w-3.5 h-3.5 text-blue-400" />
+                    <label className="text-xs font-bold text-slate-200 uppercase tracking-wider font-['Outfit']">
+                      Invoice Payment Status & Settlement
+                    </label>
+                  </div>
+                  <span className="text-[10px] text-slate-400 font-mono">
+                    Currency: {doc.currency.code}
+                  </span>
+                </div>
 
-              <div className="grid grid-cols-3 gap-2.5">
+                {/* Status Switcher Buttons */}
                 <div>
-                  <label className="text-[10px] text-slate-400 block mb-1">Advance %</label>
-                  <input
-                    type="number"
-                    value={doc.paymentTerms.advancePercent}
-                    onChange={(e) =>
-                      update({
-                        paymentTerms: { ...doc.paymentTerms, advancePercent: Number(e.target.value) },
-                      })
-                    }
-                    className="w-full bg-slate-900/90 border border-slate-700/70 rounded-xl px-2.5 py-2 text-xs text-slate-100 font-mono text-center input-premium"
-                  />
+                  <label className="text-[11px] font-semibold text-slate-300 block mb-1.5">
+                    Payment Status
+                  </label>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {[
+                      { id: 'UNPAID', label: 'Payment Pending', color: 'text-blue-400 border-blue-500/40 bg-blue-500/10' },
+                      { id: 'PARTIALLY_PAID', label: 'Partially Paid', color: 'text-amber-400 border-amber-500/40 bg-amber-500/10' },
+                      { id: 'PAID', label: 'Paid in Full', color: 'text-emerald-400 border-emerald-500/40 bg-emerald-500/10' },
+                      { id: 'OVERDUE', label: 'Overdue', color: 'text-red-400 border-red-500/40 bg-red-500/10' },
+                    ].map((st) => {
+                      const isSelected = (doc.invoicePayment?.status || 'UNPAID') === st.id;
+                      return (
+                        <button
+                          key={st.id}
+                          type="button"
+                          onClick={() =>
+                            update({
+                              invoicePayment: {
+                                ...(doc.invoicePayment || { amountReceived: 0 }),
+                                status: st.id as any,
+                              },
+                            })
+                          }
+                          className={`p-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer text-center ${
+                            isSelected
+                              ? `${st.color} shadow-md`
+                              : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:bg-slate-800/60'
+                          }`}
+                        >
+                          {st.label}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-                <div>
-                  <label className="text-[10px] text-slate-400 block mb-1">Interim %</label>
-                  <input
-                    type="number"
-                    value={doc.paymentTerms.afterEventPercent}
-                    onChange={(e) =>
-                      update({
-                        paymentTerms: { ...doc.paymentTerms, afterEventPercent: Number(e.target.value) },
-                      })
-                    }
-                    className="w-full bg-slate-900/90 border border-slate-700/70 rounded-xl px-2.5 py-2 text-xs text-slate-100 font-mono text-center input-premium"
-                  />
-                </div>
-                <div>
-                  <label className="text-[10px] text-slate-400 block mb-1">Handover %</label>
-                  <input
-                    type="number"
-                    value={doc.paymentTerms.balancePercent}
-                    onChange={(e) =>
-                      update({
-                        paymentTerms: { ...doc.paymentTerms, balancePercent: Number(e.target.value) },
-                      })
-                    }
-                    className="w-full bg-slate-900/90 border border-slate-700/70 rounded-xl px-2.5 py-2 text-xs text-slate-100 font-mono text-center input-premium"
-                  />
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {/* Payment Due Date */}
+                  <div>
+                    <label className="text-[11px] font-semibold text-slate-300 block mb-1">
+                      Payment Due Date
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Due on Receipt, 2026-09-30, or +15 Days"
+                      value={doc.details.dueDate || ''}
+                      onChange={(e) => handleDetailsChange('dueDate', e.target.value)}
+                      className="w-full bg-slate-900/90 border border-slate-700/70 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-amber-500 input-premium"
+                    />
+                  </div>
+
+                  {/* Amount Received */}
+                  <div>
+                    <div className="flex justify-between items-center mb-1">
+                      <label className="text-[11px] font-semibold text-slate-300">
+                        Amount Paid / Received
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const total = doc.totalInvestment || 0;
+                          update({
+                            invoicePayment: {
+                              ...(doc.invoicePayment || {}),
+                              status: 'PAID',
+                              amountReceived: total,
+                            },
+                            paymentTerms: {
+                              ...doc.paymentTerms,
+                              advanceReceived: total,
+                            },
+                          });
+                        }}
+                        className="text-[10px] text-amber-400 hover:underline cursor-pointer"
+                      >
+                        Mark 100% Paid
+                      </button>
+                    </div>
+                    <input
+                      type="number"
+                      placeholder="0"
+                      value={doc.invoicePayment?.amountReceived ?? doc.paymentTerms?.advanceReceived ?? ''}
+                      onChange={(e) => {
+                        const val = Number(e.target.value);
+                        update({
+                          invoicePayment: {
+                            ...(doc.invoicePayment || { status: 'UNPAID' }),
+                            amountReceived: val,
+                            status: val > 0 ? (val >= (doc.totalInvestment || 0) ? 'PAID' : 'PARTIALLY_PAID') : 'UNPAID',
+                          },
+                          paymentTerms: {
+                            ...doc.paymentTerms,
+                            advanceReceived: val,
+                          },
+                        });
+                      }}
+                      className="w-full bg-slate-900/90 border border-slate-700/70 rounded-xl px-3 py-2 text-xs text-slate-100 font-mono focus:outline-none focus:border-amber-500 input-premium"
+                    />
+                  </div>
+
+                  {/* Payment Mode */}
+                  <div>
+                    <label className="text-[11px] font-semibold text-slate-300 block mb-1">
+                      Payment Mode
+                    </label>
+                    <select
+                      value={doc.invoicePayment?.paymentMode || 'Bank Transfer / Wire'}
+                      onChange={(e) =>
+                        update({
+                          invoicePayment: {
+                            ...(doc.invoicePayment || { status: 'UNPAID', amountReceived: 0 }),
+                            paymentMode: e.target.value,
+                          },
+                        })
+                      }
+                      className="w-full bg-slate-900/90 border border-slate-700/70 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-amber-500 input-premium"
+                    >
+                      <option value="Bank Transfer / Wire">Bank Transfer / Wire Remittance</option>
+                      <option value="UPI / Instant Pay">UPI / Instant QR</option>
+                      <option value="Credit / Debit Card">Credit / Debit Card (Stripe)</option>
+                      <option value="PayPal / Online">PayPal / Online Gateway</option>
+                      <option value="Cash / Cheque">Cash / Cheque</option>
+                    </select>
+                  </div>
+
+                  {/* Transaction Ref / Notes */}
+                  <div>
+                    <label className="text-[11px] font-semibold text-slate-300 block mb-1">
+                      Payment / Transaction Reference #
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. UTR-98234812 or Chq #40921"
+                      value={doc.invoicePayment?.transactionRef || ''}
+                      onChange={(e) =>
+                        update({
+                          invoicePayment: {
+                            ...(doc.invoicePayment || { status: 'UNPAID', amountReceived: 0 }),
+                            transactionRef: e.target.value,
+                          },
+                        })
+                      }
+                      className="w-full bg-slate-900/90 border border-slate-700/70 rounded-xl px-3 py-2 text-xs text-slate-100 font-mono focus:outline-none focus:border-amber-500 input-premium"
+                    />
+                  </div>
                 </div>
               </div>
-            </div>
+            ) : (
+              <div className="bg-slate-950/70 border border-slate-800/80 rounded-2xl p-4 space-y-3">
+                <label className="text-xs font-bold text-slate-200 uppercase tracking-wider block font-['Outfit']">
+                  Milestone Payment Tranches
+                </label>
+
+                <div className="grid grid-cols-3 gap-2.5">
+                  <div>
+                    <label className="text-[10px] text-slate-400 block mb-1">Advance %</label>
+                    <input
+                      type="number"
+                      value={doc.paymentTerms.advancePercent}
+                      onChange={(e) =>
+                        update({
+                          paymentTerms: { ...doc.paymentTerms, advancePercent: Number(e.target.value) },
+                        })
+                      }
+                      className="w-full bg-slate-900/90 border border-slate-700/70 rounded-xl px-2.5 py-2 text-xs text-slate-100 font-mono text-center input-premium"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-slate-400 block mb-1">Interim %</label>
+                    <input
+                      type="number"
+                      value={doc.paymentTerms.afterEventPercent}
+                      onChange={(e) =>
+                        update({
+                          paymentTerms: { ...doc.paymentTerms, afterEventPercent: Number(e.target.value) },
+                        })
+                      }
+                      className="w-full bg-slate-900/90 border border-slate-700/70 rounded-xl px-2.5 py-2 text-xs text-slate-100 font-mono text-center input-premium"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-slate-400 block mb-1">Handover %</label>
+                    <input
+                      type="number"
+                      value={doc.paymentTerms.balancePercent}
+                      onChange={(e) =>
+                        update({
+                          paymentTerms: { ...doc.paymentTerms, balancePercent: Number(e.target.value) },
+                        })
+                      }
+                      className="w-full bg-slate-900/90 border border-slate-700/70 rounded-xl px-2.5 py-2 text-xs text-slate-100 font-mono text-center input-premium"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

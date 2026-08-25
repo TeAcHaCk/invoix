@@ -38,23 +38,37 @@ export const FormalInvoiceView: React.FC<FormalInvoiceViewProps> = ({ document: 
   const balanceDue = Math.max(0, grandTotal - amountReceived);
 
   // Status calculation
+  const paymentStatus =
+    doc.invoicePayment?.status ||
+    (amountReceived >= grandTotal && grandTotal > 0
+      ? 'PAID'
+      : amountReceived > 0
+      ? 'PARTIALLY_PAID'
+      : 'UNPAID');
+
   let statusBadge = {
     label: 'PAYMENT DUE',
-    color: 'bg-red-50 text-red-700 border-red-200',
-    icon: <AlertCircle className="w-3.5 h-3.5 mr-1 shrink-0" />,
+    color: 'bg-blue-50 text-blue-700 border-blue-200',
+    icon: <Clock className="w-3.5 h-3.5 mr-1 shrink-0" />,
   };
 
-  if (amountReceived >= grandTotal && grandTotal > 0) {
+  if (paymentStatus === 'PAID' || (amountReceived >= grandTotal && grandTotal > 0)) {
     statusBadge = {
       label: 'PAID IN FULL',
       color: 'bg-emerald-50 text-emerald-700 border-emerald-300',
       icon: <CheckCircle2 className="w-3.5 h-3.5 mr-1 shrink-0" />,
     };
-  } else if (amountReceived > 0) {
+  } else if (paymentStatus === 'PARTIALLY_PAID' || amountReceived > 0) {
     statusBadge = {
       label: 'PARTIALLY PAID',
       color: 'bg-amber-50 text-amber-800 border-amber-300',
       icon: <Clock className="w-3.5 h-3.5 mr-1 shrink-0" />,
+    };
+  } else if (paymentStatus === 'OVERDUE') {
+    statusBadge = {
+      label: 'OVERDUE',
+      color: 'bg-red-50 text-red-700 border-red-200',
+      icon: <AlertCircle className="w-3.5 h-3.5 mr-1 shrink-0" />,
     };
   }
 
@@ -147,7 +161,19 @@ export const FormalInvoiceView: React.FC<FormalInvoiceViewProps> = ({ document: 
               {doc.details.dueDate && (
                 <div className="flex justify-end space-x-2">
                   <span className="text-slate-500">Payment Due:</span>
-                  <span className="font-bold text-red-600">{doc.details.dueDate}</span>
+                  <span
+                    className={`font-semibold ${
+                      paymentStatus === 'PAID'
+                        ? 'text-emerald-700 font-medium'
+                        : paymentStatus === 'OVERDUE'
+                        ? 'font-bold text-red-600'
+                        : 'text-slate-900'
+                    }`}
+                  >
+                    {doc.details.dueDate}
+                    {paymentStatus === 'PAID' && ' (Paid)'}
+                    {paymentStatus === 'OVERDUE' && ' (Overdue)'}
+                  </span>
                 </div>
               )}
               {doc.details.poNumber && (

@@ -127,7 +127,27 @@ Each of these shipped once and cost real debugging time.
 
 Newest first. One entry per session. Keep it to what the next agent needs.
 
-### 2026-08-26 (latest) — Antigravity · All 5 UI Product Audit Tasks Complete
+### 2026-08-26 (latest) — Antigravity · Invoice Payment Settlement & Due Date Polish
+
+**Fixed Invoice Due Date & Added Full Payment Settlement Controls:**
+
+1. **Fixed Red Payment Due Text**:
+   - `FormalInvoiceView.tsx`: Removed unconditional hardcoded `text-red-600` on the due date and red `PAYMENT DUE` badge.
+   - Status badge and due date now dynamically reflect reality:
+     - `PAID` / `Amount Paid >= Total`: Green `PAID IN FULL` badge and `Payment Due: DD/MM/YYYY (Paid)`
+     - `PARTIALLY_PAID` / `Amount Paid > 0`: Amber `PARTIALLY PAID` badge and amber text with `Amount Paid` & `Balance Due` breakdown
+     - `OVERDUE`: Red `OVERDUE` badge and red due date text
+     - `UNPAID` (Default pending): Professional Blue `PAYMENT PENDING` badge and clean dark slate text.
+2. **Built Complete Invoice Payment Controls in `FormEditor.tsx` Tab 7**:
+   - When in Invoice mode (`doc.type === 'INVOICE'`), Tab 7 ('Taxes & Terms') now provides a full **Invoice Payment Status & Settlement** card:
+     - 4-way Status Selector (`Payment Pending`, `Partially Paid`, `Paid in Full`, `Overdue`)
+     - Payment Due Date input (with presets)
+     - Amount Paid / Received input (with 1-click "Mark 100% Paid" shortcut)
+     - Payment Mode selector (Bank Transfer, UPI, Stripe, PayPal, Cash)
+     - Transaction / Remittance Ref input (UTR / Cheque #).
+- **Verification**: `npm run lint` = **0 errors, 0 warnings**. `npm run build` = **Clean compile (exit 0)**.
+
+### 2026-08-26 — Antigravity · All 5 UI Product Audit Tasks Complete
 
 **Delivered all 5 UI tasks from Claude Code's audit:**
 
