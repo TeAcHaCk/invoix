@@ -3,6 +3,7 @@ import type { QuotationDocument } from '../types';
 import { INDUSTRY_PRESETS } from '../constants/industryPresets';
 import { useAuth } from '../context/AuthContext';
 import { isPaidPlan } from '../utils/planLimits';
+import { getShareLinkState } from '../services/documentService';
 import {
   Download,
   Printer,
@@ -85,10 +86,23 @@ export const Navbar: React.FC<NavbarProps> = ({
   }, []);
 
   const handleCopyPublicLink = () => {
-    const publicUrl = `${window.location.origin}/?view=${doc.shareToken || doc.id}`;
-    navigator.clipboard.writeText(publicUrl);
-    setCopiedLink(true);
-    setTimeout(() => setCopiedLink(false), 2500);
+    const linkState = getShareLinkState(doc, user?.id);
+
+    if (!linkState.shareable) {
+      if (linkState.reason === 'not_signed_in') {
+        onOpenAuth();
+      } else if (linkState.reason === 'not_synced') {
+        onSaveToVault();
+      }
+      setIsShareOpen(false);
+      return;
+    }
+
+    if (linkState.url) {
+      navigator.clipboard.writeText(linkState.url);
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 2500);
+    }
     setIsShareOpen(false);
   };
 

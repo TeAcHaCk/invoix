@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import type { QuotationDocument } from '../types';
+import { useAuth } from '../context/AuthContext';
+import { getShareLinkState } from '../services/documentService';
 import {
   MessageSquare,
   X,
@@ -8,6 +10,7 @@ import {
   Send,
   CloudUpload,
   Loader2,
+  AlertCircle,
 } from 'lucide-react';
 import { formatCurrency } from '../utils/formatters';
 import { generatePdfBlob } from '../utils/pdfGenerator';
@@ -24,6 +27,7 @@ export const WhatsAppShareModal: React.FC<WhatsAppShareModalProps> = ({
   onClose,
   document: doc,
 }) => {
+  const { user } = useAuth();
   const [copied, setCopied] = useState(false);
   const [isGeneratingLink, setIsGeneratingLink] = useState(false);
   const [recipientPhone, setRecipientPhone] = useState(doc.client.contactNo || '');
@@ -31,6 +35,7 @@ export const WhatsAppShareModal: React.FC<WhatsAppShareModalProps> = ({
   const [customMessage, setCustomMessage] = useState('');
 
   const currency = doc.currency;
+  const shareState = getShareLinkState(doc, user?.id);
   const eventDates =
     doc.details.eventDateMode === 'single'
       ? doc.details.eventDate
@@ -42,6 +47,8 @@ export const WhatsAppShareModal: React.FC<WhatsAppShareModalProps> = ({
 
   const buildMessage = useCallback(
     (onlineLink?: string | null) => {
+      const publicLink = shareState.url || `${window.location.origin}/?view=${doc.shareToken || doc.id}`;
+
       let msg = `*${doc.studio.name}*
 _${doc.studio.tagline}_
 
@@ -66,7 +73,7 @@ ${doc.deliverables
 *Advance Deposit (${doc.paymentTerms?.advancePercent || 30}%):* ${formatCurrency(advanceAmt, currency)}
 
 🔗 *View & E-Sign Interactive Proposal Online:*
-${window.location.origin}/?view=${doc.shareToken || doc.id}`;
+${publicLink}`;
 
       if (onlineLink) {
         msg += `\n\n📄 *Direct PDF Download Link:*
@@ -81,7 +88,7 @@ Thank you for partnering with *${doc.studio.name}*!
 
       return msg;
     },
-    [doc, eventDates, currency, advanceAmt]
+    [doc, eventDates, currency, advanceAmt, shareState.url]
   );
 
   const handleGenerateCloudLink = useCallback(async () => {
@@ -199,6 +206,17 @@ Thank you for partnering with *${doc.studio.name}*!
               </span>
             ) : null}
           </div>
+
+          {/* Cloud Sync Warning Banner for Unregistered / Unsynced Users */}
+          {!shareState.shareable && (
+            <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-3 text-amber-300 text-xs flex items-start space-x-2.5">
+              <AlertCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+              <div>
+                <p className="font-bold">Cloud Sync Required for Interactive Link</p>
+                <p className="text-[11px] text-amber-300/80 mt-0.5 leading-relaxed">{shareState.message}</p>
+              </div>
+            </div>
+          )}
 
           {/* Message Preview */}
           <div>
