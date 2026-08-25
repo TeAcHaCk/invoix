@@ -27,6 +27,7 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
 
   // Pricing calculations
   const selectedItems = doc.pricingItems.filter((i) => !i.isOptional || i.selected);
+  const optionalAddons = doc.pricingItems.filter((i) => i.isOptional && !i.selected);
   const subtotal =
     selectedItems.reduce((sum, item) => {
       const itemTotal = item.qty && item.rate ? item.qty * item.rate : item.amount || 0;
@@ -70,7 +71,10 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
   const hasPage2 =
     (doc.includeCrewSection && activeTeam.length > 0) ||
     (doc.includeWhyChooseUs && activeWhy.length > 0) ||
-    (doc.termsAndConditions && doc.termsAndConditions.length > 5);
+    (doc.termsAndConditions && doc.termsAndConditions.length > 5) ||
+    activeMilestones.length > 4 ||
+    activeDeliverables.length > 6 ||
+    (doc.pricingItems && doc.pricingItems.length > 8);
 
   const accentColor = doc.accentColor || '#f59e0b';
   const fontFamily = doc.fontFamily || 'Plus Jakarta Sans';
@@ -206,7 +210,7 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
                 </div>
 
                 <div className="grid grid-cols-2 gap-2.5">
-                  {activeMilestones.slice(0, 4).map((m, idx) => (
+                  {activeMilestones.map((m, idx) => (
                     <div
                       key={m.id || idx}
                       className="bg-white border border-slate-200/90 rounded-lg p-2.5 shadow-sm text-[11px]"
@@ -218,7 +222,7 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
                         <span>{m.dayTitle}</span>
                       </p>
                       <ul className="mt-1 space-y-0.5 pl-5 list-disc text-slate-600 text-[10.5px]">
-                        {m.services.slice(0, 3).map((s, sIdx) => (
+                        {m.services.map((s, sIdx) => (
                           <li key={sIdx} className="leading-tight">
                             {s}
                           </li>
@@ -281,6 +285,35 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
                           </td>
                           <td className="py-2 px-3 text-right font-bold font-mono text-slate-900">
                             {formatCurrency(itemTotal, currency, { showFraction: false })}
+                          </td>
+                        </tr>
+                      );
+                    })}
+
+                    {/* Optional Upsell Add-ons (Visible in PDF as available upgrades) */}
+                    {optionalAddons.map((item, optIdx) => {
+                      const itemRate = item.rate || 0;
+                      const itemQty = item.qty || 1;
+                      const itemTotal = item.qty && item.rate ? itemQty * itemRate : item.amount || 0;
+
+                      return (
+                        <tr key={item.id || `opt-${optIdx}`} className="bg-amber-50/40 border-t border-dashed border-amber-200/80">
+                          <td className="py-2 px-3 text-center text-amber-500 font-mono text-[10px]">+</td>
+                          <td className="py-2 px-3">
+                            <span className="font-medium text-slate-800">{item.description}</span>
+                            <span className="ml-2 text-[9px] bg-amber-100 text-amber-800 border border-amber-300/60 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">
+                              Available Add-on
+                            </span>
+                          </td>
+                          <td className="py-2 px-3 text-center text-slate-500 font-mono">{itemQty}</td>
+                          <td className="py-2 px-3 text-center text-slate-400 text-[10px] uppercase">
+                            {item.unit || 'units'}
+                          </td>
+                          <td className="py-2 px-3 text-right font-mono text-slate-500 italic">
+                            {formatCurrency(itemRate, currency, { showFraction: false })}
+                          </td>
+                          <td className="py-2 px-3 text-right font-semibold font-mono text-amber-900">
+                            +{formatCurrency(itemTotal, currency, { showFraction: false })}
                           </td>
                         </tr>
                       );
@@ -373,11 +406,11 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
                       {doc.sectionTitles?.deliverablesTitle || 'Included Key Deliverables'}
                     </span>
                   </div>
-                  <ul className="space-y-1 text-[10.5px] text-slate-700">
-                    {activeDeliverables.slice(0, 4).map((d) => (
-                      <li key={d.id} className="flex items-start space-x-1.5 leading-tight">
+                  <ul className="space-y-1.5 text-[10.5px] text-slate-700">
+                    {activeDeliverables.map((d) => (
+                      <li key={d.id} className="flex items-start space-x-1.5 leading-snug">
                         <span className="text-emerald-600 font-bold shrink-0">✓</span>
-                        <span className="line-clamp-1">{d.text}</span>
+                        <span className="break-words">{d.text}</span>
                       </li>
                     ))}
                   </ul>

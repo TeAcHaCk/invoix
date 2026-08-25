@@ -72,16 +72,24 @@ interface FormEditorProps {
   document: QuotationDocument;
   onChange: (doc: QuotationDocument) => void;
   onOpenUpgrade?: (plan?: 'pro' | 'agency') => void;
+  activeTab?: string;
+  onTabChange?: (tab: string) => void;
+  onOpenHealth?: () => void;
 }
 
 export const FormEditor: React.FC<FormEditorProps> = ({
   document: doc,
   onChange,
   onOpenUpgrade,
+  activeTab: externalTab,
+  onTabChange,
+  onOpenHealth,
 }) => {
   const { profile } = useAuth();
   const isPro = isPaidPlan(profile);
-  const [activeTab, setActiveTab] = useState<string>('industry');
+  const [internalTab, setInternalTab] = useState<string>('industry');
+  const activeTab = externalTab ?? internalTab;
+  const setActiveTab = onTabChange ?? setInternalTab;
   const [customTemplates, setCustomTemplates] = useState<CustomTemplatePreset[]>(() => getCustomTemplates());
   const [isSaveTemplateModalOpen, setIsSaveTemplateModalOpen] = useState(false);
   const [templateNameInput, setTemplateNameInput] = useState('');
@@ -600,6 +608,18 @@ export const FormEditor: React.FC<FormEditorProps> = ({
             </button>
           );
         })}
+
+        {onOpenHealth && (
+          <button
+            type="button"
+            onClick={onOpenHealth}
+            className="px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap flex items-center space-x-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 transition-all cursor-pointer ml-auto"
+            title="Pre-flight Document Health Inspector"
+          >
+            <ShieldCheck className="w-3.5 h-3.5" />
+            <span>Health Check</span>
+          </button>
+        )}
       </div>
 
       {/* Tab Panels */}
@@ -641,7 +661,27 @@ export const FormEditor: React.FC<FormEditorProps> = ({
               </p>
 
               <div className="space-y-2">
-                {/* 1. Scope & Milestones */}
+                {/* 1. Client & Project Banner */}
+                <div className="p-2.5 bg-slate-900/60 border border-slate-800/80 rounded-xl space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <LayoutTemplate className="w-3.5 h-3.5 text-amber-400" />
+                      <span className="text-xs font-semibold text-slate-200">Client & Project Info Banner</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => toggleSectionVisibility('banner')}
+                      className={`p-1 rounded-lg transition-colors cursor-pointer ${
+                        currentVisibility.banner ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-500 bg-slate-800'
+                      }`}
+                      title={currentVisibility.banner ? 'Hide section' : 'Show section'}
+                    >
+                      {currentVisibility.banner ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                    </button>
+                  </div>
+                </div>
+
+                {/* 2. Scope & Milestones */}
                 <div className="p-2.5 bg-slate-900/60 border border-slate-800/80 rounded-xl space-y-2">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
@@ -670,7 +710,7 @@ export const FormEditor: React.FC<FormEditorProps> = ({
                   )}
                 </div>
 
-                {/* 2. Deliverables Checklist */}
+                {/* 3. Deliverables Checklist */}
                 <div className="p-2.5 bg-slate-900/60 border border-slate-800/80 rounded-xl space-y-2">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
@@ -699,7 +739,7 @@ export const FormEditor: React.FC<FormEditorProps> = ({
                   )}
                 </div>
 
-                {/* 3. Assigned Specialists / Team */}
+                {/* 4. Assigned Specialists / Team */}
                 <div className="p-2.5 bg-slate-900/60 border border-slate-800/80 rounded-xl space-y-2">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
@@ -728,7 +768,7 @@ export const FormEditor: React.FC<FormEditorProps> = ({
                   )}
                 </div>
 
-                {/* 4. Why Partner With Us */}
+                {/* 5. Why Partner With Us */}
                 <div className="p-2.5 bg-slate-900/60 border border-slate-800/80 rounded-xl space-y-2">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
@@ -757,7 +797,7 @@ export const FormEditor: React.FC<FormEditorProps> = ({
                   )}
                 </div>
 
-                {/* 5. Pricing Schedule */}
+                {/* 6. Pricing Schedule */}
                 <div className="p-2.5 bg-slate-900/60 border border-slate-800/80 rounded-xl space-y-2">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
@@ -786,7 +826,47 @@ export const FormEditor: React.FC<FormEditorProps> = ({
                   )}
                 </div>
 
-                {/* 6. Terms & SLA */}
+                {/* 7. Milestone Payment Terms */}
+                <div className="p-2.5 bg-slate-900/60 border border-slate-800/80 rounded-xl space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <CreditCard className="w-3.5 h-3.5 text-amber-400" />
+                      <span className="text-xs font-semibold text-slate-200">Milestone Payment Schedule</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => toggleSectionVisibility('paymentMilestones')}
+                      className={`p-1 rounded-lg transition-colors cursor-pointer ${
+                        currentVisibility.paymentMilestones ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-500 bg-slate-800'
+                      }`}
+                      title={currentVisibility.paymentMilestones ? 'Hide section' : 'Show section'}
+                    >
+                      {currentVisibility.paymentMilestones ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                    </button>
+                  </div>
+                </div>
+
+                {/* 8. Bank Account & Payment QR */}
+                <div className="p-2.5 bg-slate-900/60 border border-slate-800/80 rounded-xl space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <Building2 className="w-3.5 h-3.5 text-cyan-400" />
+                      <span className="text-xs font-semibold text-slate-200">Bank Details & Payment QR Code</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => toggleSectionVisibility('bankDetails')}
+                      className={`p-1 rounded-lg transition-colors cursor-pointer ${
+                        currentVisibility.bankDetails ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-500 bg-slate-800'
+                      }`}
+                      title={currentVisibility.bankDetails ? 'Hide section' : 'Show section'}
+                    >
+                      {currentVisibility.bankDetails ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                    </button>
+                  </div>
+                </div>
+
+                {/* 9. Terms & SLA */}
                 <div className="p-2.5 bg-slate-900/60 border border-slate-800/80 rounded-xl space-y-2">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
@@ -815,7 +895,7 @@ export const FormEditor: React.FC<FormEditorProps> = ({
                   )}
                 </div>
 
-                {/* 7. Signatory Block */}
+                {/* 10. Signatory Block */}
                 <div className="p-2.5 bg-slate-900/60 border border-slate-800/80 rounded-xl flex items-center justify-between">
                   <div className="flex items-center space-x-2">
                     <FileSignature className="w-3.5 h-3.5 text-indigo-400" />
@@ -1319,10 +1399,11 @@ export const FormEditor: React.FC<FormEditorProps> = ({
 
               <div>
                 <label className="text-[11px] font-semibold text-slate-300 block mb-1">
-                  {doc.type === 'INVOICE' ? 'Payment Due Date' : 'Quotation Validity'}
+                  {doc.type === 'INVOICE' ? 'Payment Due Date' : 'Validity / Expiry Date'}
                 </label>
                 <input
                   type="text"
+                  placeholder={doc.type === 'INVOICE' ? 'e.g. Due on Receipt or 2026-09-30' : 'e.g. 30 Days from issue or 2026-09-30'}
                   value={doc.type === 'INVOICE' ? doc.details.dueDate || '' : doc.details.validUntilDate || ''}
                   onChange={(e) =>
                     handleDetailsChange(doc.type === 'INVOICE' ? 'dueDate' : 'validUntilDate', e.target.value)

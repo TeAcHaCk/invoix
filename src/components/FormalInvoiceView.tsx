@@ -375,9 +375,9 @@ export const FormalInvoiceView: React.FC<FormalInvoiceViewProps> = ({ document: 
                   {doc.sectionTitles?.termsTitle || 'Terms & Payment Conditions:'}
                 </p>
                 {doc.termsAndConditions && doc.termsAndConditions.length > 0 ? (
-                  <div className="space-y-0.5">
-                    {doc.termsAndConditions.slice(0, 3).map((term, idx) => (
-                      <p key={idx} className="line-clamp-1">
+                  <div className="space-y-1 text-[9.5px]">
+                    {doc.termsAndConditions.map((term, idx) => (
+                      <p key={idx} className="leading-snug">
                         {idx + 1}. {term}
                       </p>
                     ))}

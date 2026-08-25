@@ -53,70 +53,53 @@ export const auditDocument = (doc: QuotationDocument): AuditIssue[] => {
   const isInvoice = doc.type === 'INVOICE';
 
   // ---------------------------------------------------------------------------
-  // Content the document silently drops. The highest-value check here: it is the
-  // only warning before a client receives an incomplete document.
+  // Length & multi-page overflow checks (Content is fully rendered without hard drops)
   // ---------------------------------------------------------------------------
   const activeDeliverables = (doc.deliverables || []).filter((d) => d.included);
-  if (activeDeliverables.length > RENDER_LIMITS.deliverables) {
-    const dropped = activeDeliverables.length - RENDER_LIMITS.deliverables;
+  if (activeDeliverables.length > 8) {
     issues.push({
-      id: 'deliverables-truncated',
-      severity: 'error',
+      id: 'deliverables-multipage',
+      severity: 'info',
       tab: 'Deliverables',
-      message: dropped + ' ' + plural(dropped, 'deliverable', 'deliverables') + ' will not appear in the document.',
-      hint: 'Only the first ' + RENDER_LIMITS.deliverables + ' of your ' + activeDeliverables.length + ' ticked deliverables are printed.',
+      message: `${activeDeliverables.length} deliverables included — will cleanly format across multi-page PDF.`,
+      hint: 'All deliverables are included in full with no text truncation.',
     });
   }
 
   const activeMilestones = (doc.eventCoverage || []).filter(
     (m) => m.dayTitle || (m.services || []).length
   );
-  if (activeMilestones.length > RENDER_LIMITS.milestones) {
-    const dropped = activeMilestones.length - RENDER_LIMITS.milestones;
+  if (activeMilestones.length > 6) {
     issues.push({
-      id: 'milestones-truncated',
-      severity: 'error',
+      id: 'milestones-multipage',
+      severity: 'info',
       tab: 'Scope & Phases',
-      message: dropped + ' project ' + plural(dropped, 'phase', 'phases') + ' will not appear in the document.',
-      hint: 'Only the first ' + RENDER_LIMITS.milestones + ' phases are printed.',
+      message: `${activeMilestones.length} project phases included.`,
+      hint: 'All phases and task items are rendered in full.',
     });
   }
 
-  activeMilestones.slice(0, RENDER_LIMITS.milestones).forEach((m, i) => {
-    const count = (m.services || []).filter(Boolean).length;
-    if (count > RENDER_LIMITS.servicesPerMilestone) {
-      issues.push({
-        id: 'milestone-' + i + '-tasks-truncated',
-        severity: 'warning',
-        tab: 'Scope & Phases',
-        message: 'Phase ' + (i + 1) + ' has ' + count + ' tasks but only ' + RENDER_LIMITS.servicesPerMilestone + ' are printed.',
-        hint: m.dayTitle || undefined,
-      });
-    }
-  });
-
-  if (isInvoice && (doc.termsAndConditions || []).length > RENDER_LIMITS.invoiceTerms) {
-    const dropped = doc.termsAndConditions.length - RENDER_LIMITS.invoiceTerms;
+  if (isInvoice && (doc.termsAndConditions || []).length > 6) {
     issues.push({
-      id: 'invoice-terms-truncated',
-      severity: 'error',
+      id: 'invoice-terms-long',
+      severity: 'info',
       tab: 'Taxes & Terms',
-      message: dropped + ' ' + plural(dropped, 'term', 'terms') + ' will not appear on the invoice.',
-      hint: 'Invoices print only the first ' + RENDER_LIMITS.invoiceTerms + ' clauses.',
+      message: `${doc.termsAndConditions.length} invoice terms configured.`,
+      hint: 'All clauses are printed with full line wrapping.',
     });
   }
 
   // ---------------------------------------------------------------------------
-  // Upsells the client will never see on a PDF
+  // Upsells rendering check
   // ---------------------------------------------------------------------------
-  const hiddenUpsells = (doc.pricingItems || []).filter((i) => i.isOptional && !i.selected);
-  if (hiddenUpsells.length > 0) {
+  const optionalAddons = (doc.pricingItems || []).filter((i) => i.isOptional && !i.selected);
+  if (optionalAddons.length > 0) {
     issues.push({
-      id: 'upsells-pdf-hidden',
+      id: 'upsells-pdf-included',
       severity: 'info',
       tab: 'Pricing & Items',
-      message: hiddenUpsells.length + ' optional add-' + plural(hiddenUpsells.length, 'on is', 'ons are') + ' not shown in the PDF.',
-      hint: 'Optional add-ons appear only on the interactive client link, not in a downloaded PDF.',
+      message: `${optionalAddons.length} optional add-${plural(optionalAddons.length, 'on', 'ons')} available.`,
+      hint: 'Optional upgrades appear with an "Available Add-on" tag in the PDF and can be toggled on the interactive link.',
     });
   }
 

@@ -22,6 +22,7 @@ import { PrivacyPolicyPage } from './components/landing/PrivacyPolicyPage';
 import { TermsOfServicePage } from './components/landing/TermsOfServicePage';
 import { InstallAppPrompt } from './components/InstallAppPrompt';
 import { UpgradePlanModal } from './components/UpgradePlanModal';
+import { DocumentHealthModal } from './components/DocumentHealthModal';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { saveDocument } from './services/documentService';
 import { exportDocumentToPdf, printDocument } from './utils/pdfGenerator';
@@ -75,6 +76,8 @@ function StudioWorkspace({ initialIndustry, onNavigateToAdmin, onNavigateToHome 
   const [isInteractiveOpen, setIsInteractiveOpen] = useState<boolean>(false);
   const [isAuthOpen, setIsAuthOpen] = useState<boolean>(false);
   const [isUpgradeOpen, setIsUpgradeOpen] = useState<boolean>(false);
+  const [isHealthOpen, setIsHealthOpen] = useState<boolean>(false);
+  const [editorActiveTab, setEditorActiveTab] = useState<string>('industry');
   const [upgradePlan, setUpgradePlan] = useState<'pro' | 'agency'>('pro');
   const [mobileActiveView, setMobileActiveView] = useState<'editor' | 'preview'>('editor');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -355,6 +358,7 @@ function StudioWorkspace({ initialIndustry, onNavigateToAdmin, onNavigateToHome 
           setUpgradePlan(plan || 'pro');
           setIsUpgradeOpen(true);
         }}
+        onOpenHealth={() => setIsHealthOpen(true)}
         onNavigateToHome={onNavigateToHome}
         onNewDocument={handleNewDocument}
         onResetSample={handleResetSample}
@@ -402,6 +406,9 @@ function StudioWorkspace({ initialIndustry, onNavigateToAdmin, onNavigateToHome 
           <FormEditor
             document={document}
             onChange={setDocument}
+            activeTab={editorActiveTab}
+            onTabChange={setEditorActiveTab}
+            onOpenHealth={() => setIsHealthOpen(true)}
             onOpenUpgrade={(plan) => {
               setUpgradePlan(plan || 'pro');
               setIsUpgradeOpen(true);
@@ -524,6 +531,16 @@ function StudioWorkspace({ initialIndustry, onNavigateToAdmin, onNavigateToHome 
         isOpen={isUpgradeOpen}
         onClose={() => setIsUpgradeOpen(false)}
         defaultPlan={upgradePlan}
+      />
+
+      <DocumentHealthModal
+        isOpen={isHealthOpen}
+        onClose={() => setIsHealthOpen(false)}
+        document={document}
+        onJumpToTab={(tabId) => {
+          setEditorActiveTab(tabId);
+          setMobileActiveView('editor');
+        }}
       />
     </div>
   );

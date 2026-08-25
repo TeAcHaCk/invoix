@@ -4,6 +4,7 @@ import { INDUSTRY_PRESETS } from '../constants/industryPresets';
 import { useAuth } from '../context/AuthContext';
 import { isPaidPlan } from '../utils/planLimits';
 import { getShareLinkState } from '../services/documentService';
+import { auditDocument, countBlocking } from '../utils/documentAudit';
 import {
   Download,
   Printer,
@@ -25,6 +26,9 @@ import {
   MoreHorizontal,
   Zap,
   Lock,
+  ShieldAlert,
+  ShieldCheck,
+  AlertTriangle,
 } from 'lucide-react';
 
 interface NavbarProps {
@@ -39,6 +43,7 @@ interface NavbarProps {
   onOpenAuth: () => void;
   onOpenAdmin?: () => void;
   onOpenUpgrade?: (plan?: 'pro' | 'agency') => void;
+  onOpenHealth?: () => void;
   onNavigateToHome?: () => void;
   onResetSample?: () => void;
   onNewDocument?: () => void;
@@ -58,6 +63,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenAuth,
   onOpenAdmin,
   onOpenUpgrade,
+  onOpenHealth,
   onNavigateToHome,
   onNewDocument,
   isExporting,
@@ -71,6 +77,10 @@ export const Navbar: React.FC<NavbarProps> = ({
   const shareRef = useRef<HTMLDivElement>(null);
   const moreRef = useRef<HTMLDivElement>(null);
   const preset = INDUSTRY_PRESETS[doc.industry] || INDUSTRY_PRESETS.creative_agency;
+
+  const issues = auditDocument(doc);
+  const blockingCount = countBlocking(issues);
+  const warningCount = issues.filter((i) => i.severity === 'warning').length;
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -172,8 +182,38 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
 
         {/* Right: Grouped Actions */}
-        {/* Right: Grouped Actions */}
         <div className="flex items-center space-x-1.5 sm:space-x-2 shrink-0">
+          {/* === PRE-FLIGHT HEALTH INSPECTOR === */}
+          {onOpenHealth && (
+            <button
+              type="button"
+              onClick={onOpenHealth}
+              className={`flex items-center space-x-1.5 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
+                blockingCount > 0
+                  ? 'bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border-rose-500/40 shadow-sm shadow-rose-500/20 animate-pulse'
+                  : warningCount > 0
+                  ? 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border-amber-500/40'
+                  : 'bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+              }`}
+              title="Inspect document readiness, verify no truncated text, and run pre-flight checks"
+            >
+              {blockingCount > 0 ? (
+                <ShieldAlert className="w-3.5 h-3.5" />
+              ) : warningCount > 0 ? (
+                <AlertTriangle className="w-3.5 h-3.5" />
+              ) : (
+                <ShieldCheck className="w-3.5 h-3.5" />
+              )}
+              <span className="hidden sm:inline">
+                {blockingCount > 0
+                  ? `${blockingCount} Issue${blockingCount > 1 ? 's' : ''}`
+                  : warningCount > 0
+                  ? `${warningCount} Warn`
+                  : 'Health: Ready'}
+              </span>
+            </button>
+          )}
+
           {/* === PRIMARY: Save (Desktop only; on mobile accessible via More dropdown) === */}
           <button
             type="button"

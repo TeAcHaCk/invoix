@@ -127,16 +127,23 @@ Each of these shipped once and cost real debugging time.
 
 Newest first. One entry per session. Keep it to what the next agent needs.
 
-### 2026-08-25 (latest) — Antigravity · Phase 1 frontend half & Lint Zero
+### 2026-08-26 (latest) — Antigravity · All 5 UI Product Audit Tasks Complete
 
-**Image pickers & storage integration complete. 0 lint warnings achieved.**
+**Delivered all 5 UI tasks from Claude Code's audit:**
 
-- Wired `storageService.ts` across all pickers:
-  - `FormEditor.tsx`: Pick-time upload for Company Logo and Issuer Signature/Stamp with loading spinners and automatic old-asset deletion.
-  - `StudioSettingsModal.tsx`: Studio brand logo picker now uploads directly to Supabase storage on pick.
-  - `WatermarkControls.tsx`: Custom monogram/emblem upload now pushes to storage with graceful base64 fallback.
-- **Fixed all 25 lint warnings** across `Navbar.tsx`, `HistoryVaultModal.tsx`, `AdminDocumentsTab.tsx`, `AdminUsersTab.tsx`, `ClientInteractiveModal.tsx`, `FormalInvoiceView.tsx`, `InstallAppPrompt.tsx`, `WhatsAppShareModal.tsx`, and `AuthContext.tsx`.
-- Verified: `npm run lint` = **0 errors, 0 warnings**. `npm run build` = **Clean compile (exit 0)**.
+1. **Fixed Silent Content Loss & Truncation**:
+   - `ModernProposalView.tsx`: Removed artificial `slice()` limits and `line-clamp-1` on deliverables, milestones, and tasks. Content now flows naturally with multi-page support (`hasPage2`).
+   - `FormalInvoiceView.tsx`: Removed `slice(0, 3)` and `line-clamp-1` from terms & conditions.
+2. **Pre-flight Document Health Inspector**:
+   - Built [`DocumentHealthModal.tsx`](file:///d:/Product%20build/src/components/DocumentHealthModal.tsx) integrating `documentAudit.ts`.
+   - Added real-time Health status button (`Ready` / `Issues` / `Warn`) to `Navbar.tsx` and `FormEditor.tsx` with 1-click jump-to-tab buttons.
+3. **Exposed All 10 Section Toggles**:
+   - Added missing toggles (`banner`, `paymentMilestones`, `bankDetails`) to Section Organizer in `FormEditor.tsx`.
+4. **Rendered Optional Upsell Add-ons in PDF**:
+   - `ModernProposalView.tsx` now renders optional upsell line items with an `"Available Add-on"` badge in the pricing table without adding to subtotal unless selected.
+5. **Honest Validity & Due Date Inputs**:
+   - Replaced ambiguous free-text validity input with `"Validity / Expiry Date"` on proposals and `"Payment Due Date"` on invoices.
+- **Verification**: `npm run lint` = **0 errors, 0 warnings**. `npm run build` = **Clean compile (exit 0)**.
 
 ### 2026-08-26 — Claude Code · product audit + work split
 
