@@ -144,8 +144,14 @@ export const saveDocument = async (
       .select('share_token')
       .maybeSingle();
 
-    if (!error && saved?.share_token && saved.share_token !== document.shareToken) {
-      saveDocumentToVault({ ...document, shareToken: saved.share_token });
+    if (!error) {
+      // Record that this document is genuinely in the cloud, and adopt the
+      // authoritative token. Both matter for deciding whether a share link works.
+      saveDocumentToVault({
+        ...document,
+        shareToken: saved?.share_token || document.shareToken,
+        cloudSyncedAt: new Date().toISOString(),
+      });
     }
 
     if (error) {
@@ -418,4 +424,55 @@ export const deleteDocument = async (id: string, userId?: string): Promise<void>
       console.error('Failed to delete cloud document:', e);
     }
   }
+};
+
+
+export interface ShareLinkState {
+  /** False when the link would 404 for anyone but this browser. */
+  shareable: boolean;
+  url: string | null;
+  reason?: 'not_signed_in' | 'not_synced';
+  /** Plain-language explanation, safe to show in the UI. */
+  message?: string;
+}
+
+/**
+ * The single answer to "can this document be shared, and with what URL?"
+ *
+ * Both the Copy Link button and the WhatsApp share build links, and neither
+ * used to check anything — so a signed-out user got a URL that resolves only in
+ * their own browser and 404s for the client they send it to. The owner cannot
+ * detect this themselves, because their localStorage copy makes the link look
+ * healthy when they test it.
+ *
+ * Returns the URL even when not shareable, so callers can still show it in a
+ * disabled state rather than rendering an empty field.
+ */
+export const getShareLinkState = (
+  doc: QuotationDocument,
+  userId?: string
+): ShareLinkState => {
+  const url = `${window.location.origin}/?view=${doc.shareToken || doc.id}`;
+
+  if (!userId) {
+    return {
+      shareable: false,
+      url,
+      reason: 'not_signed_in',
+      message:
+        'Sign in to sync this proposal to the cloud. Until then the link only opens on this device.',
+    };
+  }
+
+  if (!doc.cloudSyncedAt) {
+    return {
+      shareable: false,
+      url,
+      reason: 'not_synced',
+      message:
+        'This proposal has not synced yet. Save it, then copy the link again.',
+    };
+  }
+
+  return { shareable: true, url };
 };

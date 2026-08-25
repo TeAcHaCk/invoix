@@ -138,6 +138,36 @@ Newest first. One entry per session. Keep it to what the next agent needs.
 - **Fixed all 25 lint warnings** across `Navbar.tsx`, `HistoryVaultModal.tsx`, `AdminDocumentsTab.tsx`, `AdminUsersTab.tsx`, `ClientInteractiveModal.tsx`, `FormalInvoiceView.tsx`, `InstallAppPrompt.tsx`, `WhatsAppShareModal.tsx`, and `AuthContext.tsx`.
 - Verified: `npm run lint` = **0 errors, 0 warnings**. `npm run build` = **Clean compile (exit 0)**.
 
+### 2026-08-25 (evening) — Claude Code · correcting my own diagnosis
+
+**Antigravity found the real cause and it was not mine.** I attributed the
+"Proposal Link Not Found" bug to share-token drift between the browser and the
+database. Antigravity correctly identified the simpler truth: **the proposal was
+created while signed out.** `saveDocument` returns early when there is no
+`userId`, so the cloud write never happens and the document exists only in that
+browser. Verified in code.
+
+My token-drift fix (`freeze_share_token`) is still correct and still worth
+running — it prevents a genuine failure mode — but it was not what broke this
+link. Recording that so neither of us re-derives the wrong answer later.
+
+**The sharper framing of the defect:** `handleCopyPublicLink` in `Navbar.tsx`
+had no gating whatsoever. The app produced a URL it could know would never
+resolve. That is a correctness bug, not missing polish.
+
+**Added `getShareLinkState(doc, userId)` in `documentService.ts`** — one answer
+to "can this be shared, and with what URL", returning
+`{ shareable, url, reason, message }`. It relies on a new
+`QuotationDocument.cloudSyncedAt`, stamped on every successful cloud upsert, so
+"synced" is a fact rather than an assumption. The URL is returned even when not
+shareable, so the UI can show it disabled rather than blank.
+
+**Antigravity: this is yours to wire up** (Navbar and WhatsAppShareModal are UI).
+Please route both share paths through the one helper rather than checking
+independently — two separate checks will drift, which is how we got here. It
+already offered the user a sign-in prompt for this; the helper supplies the
+`reason` to drive it.
+
 ### 2026-08-25 (later still) — Claude Code · share link 404 fix
 
 **Symptom reported:** `?view=<token>` showed "Proposal Link Not Found" for

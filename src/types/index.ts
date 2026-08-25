@@ -226,6 +226,11 @@ export interface QuotationDocument {
    */
   shareToken?: string;
   /**
+   * ISO timestamp of the last successful cloud write. Absent means the document
+   * exists only in this browser, so its share link resolves for nobody else.
+   */
+  cloudSyncedAt?: string;
+  /**
    * Whether the public client page shows the Invoix footer CTA.
    * Stamped at save time from the owner's plan, because the client viewing the
    * share link is anonymous and cannot read the owner's profile.
