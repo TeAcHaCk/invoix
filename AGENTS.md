@@ -165,6 +165,93 @@ Newest first. One entry per session. Keep it to what the next agent needs.
    - Replaced ambiguous free-text validity input with `"Validity / Expiry Date"` on proposals and `"Payment Due Date"` on invoices.
 - **Verification**: `npm run lint` = **0 errors, 0 warnings**. `npm run build` = **Clean compile (exit 0)**.
 
+### 2026-08-26 — PLAN: text-based PDF download (Claude Code → Antigravity)
+
+**Goal:** "Download PDF" currently exports a rasterised screenshot — text is not
+selectable or searchable and files run to several MB. Replace it with a real
+text PDF, without duplicating any layout code and without breaking the working
+export.
+
+**What we already know works:** the browser's own print path now produces a
+TRUE VECTOR PDF — selectable text, correct 2-page pagination, watermark intact,
+verified against a real exported file. The `@media print` stylesheet is the
+asset that makes this possible, and it is already correct.
+
+---
+
+#### Options considered
+
+| Option | Verdict |
+| --- | --- |
+| **Print → Save as PDF** | Already works. Free. Browser dialog UX; cannot set a filename or produce a `File` for WhatsApp. |
+| **Server-side Chromium** | **Recommended.** True text, real download, correct filename, produces a Blob. Reuses the existing HTML views and print CSS — zero layout duplication. |
+| jsPDF text primitives | Rejected. Re-implements 3 themes + custom templates by hand in drawing calls. Every design change would need doing twice. |
+| `@react-pdf/renderer` | Rejected. Same duplication problem, plus ~500 KB of bundle. |
+
+The deciding factor is duplication: we have three view components plus a custom
+template designer. Any option that re-implements layout doubles the maintenance
+cost of every future design change. Server-side Chromium renders the components
+we already have.
+
+---
+
+#### Phase 1 — ship the free win now (Antigravity, UI)
+
+Offer "Save as PDF (crisp text)" next to Download PDF, calling `printDocument()`.
+No new code needed beyond the button; the pipeline is done. Keeps the raster
+export as the default until Phase 2 proves out.
+
+#### Phase 2 — `/api/pdf` server render (Claude Code)
+
+`puppeteer-core` + `@sparticuz/chromium` on Vercel, rendering the existing public
+proposal page:
+
+1. load `https://invoix.app/?view=<shareToken>`
+2. wait for network idle and `document.fonts.ready`
+3. `page.evaluate(() => window.__invoixPreparePrint())`
+4. `page.emulateMediaType('print')`
+5. `page.pdf({ format: 'A4', printBackground: true, preferCSSPageSize: true })`
+
+**Critical detail — step 3 is not optional.** `page.pdf()` does **not** fire
+`beforeprint`, which is the only thing that currently builds the isolation root
+(`installPrintIsolation()` in `main.tsx`). Without it the server would render the
+whole page chrome. `buildPrintRoot` must be exposed as
+`window.__invoixPreparePrint` for this.
+
+**Risks to check before committing to it:**
+- Vercel Hobby function size limit is 250 MB unzipped; `@sparticuz/chromium` is
+  ~50 MB. Should fit, but verify on a real deploy before wiring the UI to it.
+- Cold start of 2–5 s. The UI needs a real progress state, not a spinner that
+  looks hung.
+- Only works for documents synced to the cloud, since it renders by share token.
+  A local-only document must fall back to the raster export — which is another
+  reason that path stays.
+
+---
+
+#### Split
+
+- **Claude Code:** the `/api/pdf` function, chromium setup, the
+  `window.__invoixPreparePrint` export, the client service with automatic
+  fallback to raster, and the WhatsApp Blob path.
+- **Antigravity:** Phase 1 button; the crisp-vs-image choice in the UI and its
+  loading states; and visual verification of print output across Modern,
+  Creative, the invoice, and a custom template. That verification needs eyes on
+  rendered output, which is the whole reason it is yours.
+
+**Raster export stays the default until vector is proven on real documents.**
+`exportDocumentToPdf` and `generatePdfBlob` remain untouched; rollback for that
+file alone is `git checkout cbeec95 -- src/utils/pdfGenerator.ts`.
+
+---
+
+#### Small cleanup, whoever gets there first
+
+`RENDER_LIMITS` in `src/utils/documentAudit.ts` is now dead — Antigravity removed
+every `slice()` cap from the views (confirmed: 0 hard caps across all three), so
+nothing reads it. Delete it rather than leave a constant that claims limits which
+no longer exist.
+
 ### 2026-08-26 (print, take 4 — working, and it gives us vector PDF) — Claude Code
 
 **Print now produces a true VECTOR PDF**: selectable text, correct 2-page layout,
