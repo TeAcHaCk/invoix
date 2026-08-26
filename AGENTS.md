@@ -125,7 +125,23 @@ Each of these shipped once and cost real debugging time.
 
 ## Handoff log
 
-### 2026-08-26 (latest) — Antigravity · Landing Page Redesign, Brand Monogram Logo, Light/Dark Theme & Overhauled Live Demo
+### 2026-08-26 (latest) — Antigravity · Comprehensive Landing Page Functionality & Theme Audit
+
+**Delivered Deep Audit & Polish Across Both Themes:**
+
+1. **Light & Dark Theme Parity & High Contrast**:
+   - Resolved above-the-fold scroll reveal rendering bug in `LandingHero.tsx` that left hero headline at `opacity: 0` on initial load.
+   - Refined light theme tokens: pure white cards, high-contrast slate-950 headings, gold/amber investment value cards, and clean borders.
+   - Fixed text contrast on `IndustryShowcaseSection.tsx` for package investment calculations.
+2. **Interactive Live Demo & E-Signature Canvas Scaling**:
+   - Fixed responsive coordinate scaling for HTML5 canvas in `LandingHero.tsx` using `scaleX = canvas.width / rect.width` and `scaleY = canvas.height / rect.height` so touchscreen and desktop mouse drawing match cursor position exactly.
+   - Added touch propagation guards preventing unwanted page scroll during signing on mobile devices.
+   - Verified dynamic add-on recalculations, dual-mode signature (typed legal name & canvas drawing), confetti celebration, audit stamp, and state reset in both themes.
+3. **Unified Brand Logo & Removed Public Super Admin Link**:
+   - Replaced white-box wrapper bugs in `PrivacyPolicyPage.tsx` and `TermsOfServicePage.tsx` with unified `InvoixBrandLogo`.
+   - Replaced legacy text monogram in `TemplateLandingPage.tsx` with `InvoixBrandLogo`.
+   - Removed public "Super Admin" button from footer in `LandingPage.tsx`. Admin Panel is now exclusively exposed in header navigation upon authenticated admin sign-in (`profile.role === 'admin'`).
+- **Verification**: `npm run lint` = **0 warnings, 0 errors**. `npm run build` = **Clean compile (exit 0)** with entry bundle ~535 kB.
 
 **Delivered Landing Page Visual & Conversion Overhaul:**
 

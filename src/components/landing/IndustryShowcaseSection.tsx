@@ -207,7 +207,9 @@ export const IndustryShowcaseSection: React.FC<IndustryShowcaseSectionProps> = (
               </div>
 
               <div className="pt-3 border-t border-slate-200/20 flex items-center justify-between text-xs">
-                <span className="text-slate-400 font-medium">Estimated Package Investment</span>
+                <span className={`font-medium ${isDark ? 'text-slate-400' : 'text-slate-600 font-semibold'}`}>
+                  Estimated Package Investment
+                </span>
                 <span className="text-lg font-mono text-amber-500 font-extrabold">
                   {currency.symbol}
                   {totalEstimate.toLocaleString()}

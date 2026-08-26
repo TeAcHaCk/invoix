@@ -1,5 +1,6 @@
 import React from 'react';
 import { ArrowLeft, FileText, ArrowRight } from 'lucide-react';
+import { InvoixBrandLogo } from './InvoixBrandLogo';
 
 interface TermsOfServicePageProps {
   onBack: () => void;
@@ -18,19 +19,15 @@ export const TermsOfServicePage: React.FC<TermsOfServicePageProps> = ({
       <header className="sticky top-0 z-40 bg-slate-950/90 backdrop-blur-xl border-b border-slate-800/60 px-4 sm:px-8 py-3.5">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center space-x-3 cursor-pointer" onClick={onBack}>
-            <div className="p-1 rounded-xl bg-white/95 shadow-lg flex items-center justify-center">
-              <img src="/invoix-logo-light.png" alt="Invoix" className="h-7 w-auto object-contain" />
-            </div>
-            <div>
-              <div className="flex items-center space-x-1.5">
-                <h1 className="text-base font-extrabold text-slate-100 tracking-tight font-['Outfit']">
-                  Invoix
-                </h1>
-                <span className="text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-1.5 py-0.2 rounded font-bold uppercase">
-                  Terms
-                </span>
-              </div>
-            </div>
+            <InvoixBrandLogo
+              theme="dark"
+              size="md"
+              showQuote={false}
+              onClick={onBack}
+            />
+            <span className="text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-1.5 py-0.2 rounded font-bold uppercase">
+              Terms
+            </span>
           </div>
 
           {/* Center Nav */}

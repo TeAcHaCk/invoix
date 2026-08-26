@@ -13,6 +13,7 @@ import {
   ChevronRight,
   HelpCircle,
 } from 'lucide-react';
+import { InvoixBrandLogo } from './InvoixBrandLogo';
 
 interface TemplateLandingPageProps {
   slug: string;
@@ -70,18 +71,12 @@ export const TemplateLandingPage: React.FC<TemplateLandingPageProps> = ({
       {/* Top Sticky Header */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-slate-950/80 backdrop-blur-lg border-b border-slate-800/80 px-4 sm:px-8 py-3.5 select-none">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <button
-            type="button"
+          <InvoixBrandLogo
+            theme="dark"
+            size="md"
+            showQuote={false}
             onClick={onNavigateHome}
-            className="flex items-center space-x-2.5 cursor-pointer group"
-          >
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow-lg shadow-amber-500/20 group-hover:scale-105 transition-transform">
-              <span className="font-extrabold text-slate-950 font-['Outfit'] text-sm tracking-tight">IX</span>
-            </div>
-            <span className="font-extrabold text-lg text-slate-100 font-['Outfit'] tracking-tight">
-              Invoix<span className="text-amber-400">.</span>
-            </span>
-          </button>
+          />
 
           <div className="flex items-center space-x-3">
             <button
