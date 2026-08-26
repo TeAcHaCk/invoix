@@ -7,7 +7,7 @@ import {
 } from '../services/documentService';
 import { generateContractSignatureHash, generateCertificateId } from '../utils/cryptoAudit';
 import { formatCurrency } from '../utils/formatters';
-import { exportDocumentToPdf, printDocument } from '../utils/pdfGenerator';
+import { downloadPdf, type PdfQuality } from '../services/pdfExportService';
 import { InvoiceDocumentView } from './InvoiceDocumentView';
 import confetti from 'canvas-confetti';
 import {
@@ -445,15 +445,15 @@ export const PublicProposalPage: React.FC<PublicProposalPageProps> = ({ document
     setTimeout(() => setCopiedLabel(null), 2500);
   };
 
-  const handleDownloadPdf = async () => {
+  const handleDownloadPdf = async (quality: PdfQuality = 'text') => {
     setIsExporting(true);
-    const clientSlug = (document.client.clientName || document.client.nameOfEvent || 'Proposal').replace(
-      /[^a-zA-Z0-9]/g,
-      '_'
-    );
-    const fileName = `${document.type}_${clientSlug}_${document.details.invoiceNo}.pdf`;
-    await exportDocumentToPdf('quotation-invoice-canvas', fileName);
-    setIsExporting(false);
+    try {
+      await downloadPdf(document, quality, 'quotation-invoice-canvas');
+    } catch (e) {
+      console.error('Download PDF error:', e);
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   const hasBankDetails =
@@ -481,24 +481,25 @@ export const PublicProposalPage: React.FC<PublicProposalPageProps> = ({ document
           <div className="flex items-center space-x-2.5">
             <button
               type="button"
-              onClick={() => printDocument()}
-              className="px-3.5 py-1.5 bg-gradient-to-r from-amber-500/20 to-amber-600/20 hover:from-amber-500/30 hover:to-amber-600/30 text-amber-300 text-xs font-semibold rounded-xl border border-amber-500/40 flex items-center space-x-1.5 transition-all cursor-pointer shadow-sm shadow-amber-500/10"
+              onClick={() => handleDownloadPdf('text')}
+              disabled={isExporting}
+              className="px-3.5 py-1.5 bg-gradient-to-r from-amber-500/20 to-amber-600/20 hover:from-amber-500/30 hover:to-amber-600/30 text-amber-300 text-xs font-semibold rounded-xl border border-amber-500/40 flex items-center space-x-1.5 transition-all cursor-pointer shadow-sm shadow-amber-500/10 disabled:opacity-50"
               title="Save as crisp vector PDF (selectable text, ~100 KB)"
             >
               <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-              <span className="hidden sm:inline">Save PDF (Crisp Text)</span>
-              <span className="sm:hidden">Crisp PDF</span>
+              <span className="hidden sm:inline">{isExporting ? 'Generating...' : 'Save PDF (Crisp Text)'}</span>
+              <span className="sm:hidden">{isExporting ? '...' : 'Crisp PDF'}</span>
             </button>
 
             <button
               type="button"
-              onClick={handleDownloadPdf}
+              onClick={() => handleDownloadPdf('image')}
               disabled={isExporting}
               className="px-3 py-1.5 bg-slate-800/80 hover:bg-slate-700 text-slate-300 text-xs font-medium rounded-xl border border-slate-700/80 flex items-center space-x-1.5 transition-all disabled:opacity-50 cursor-pointer"
               title="Download raster image PDF snapshot"
             >
               <Download className="w-3.5 h-3.5" />
-              <span>{isExporting ? 'Generating...' : 'Download'}</span>
+              <span>Download</span>
             </button>
 
             {isApproved ? (
@@ -805,7 +806,7 @@ export const PublicProposalPage: React.FC<PublicProposalPageProps> = ({ document
 
                   <button
                     type="button"
-                    onClick={handleDownloadPdf}
+                    onClick={() => handleDownloadPdf('text')}
                     disabled={isExporting}
                     className="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl border border-slate-700 flex items-center space-x-2 transition-all cursor-pointer disabled:opacity-50"
                   >

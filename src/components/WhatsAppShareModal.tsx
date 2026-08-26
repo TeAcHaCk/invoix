@@ -13,7 +13,7 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { formatCurrency } from '../utils/formatters';
-import { generatePdfBlob } from '../utils/pdfGenerator';
+import { buildPdfFile } from '../services/pdfExportService';
 import { uploadPdfToCloud } from '../utils/cloudStorage';
 
 interface WhatsAppShareModalProps {
@@ -28,11 +28,11 @@ export const WhatsAppShareModal: React.FC<WhatsAppShareModalProps> = ({
   document: doc,
 }) => {
   const { user } = useAuth();
-  const [copied, setCopied] = useState(false);
-  const [isGeneratingLink, setIsGeneratingLink] = useState(false);
   const [recipientPhone, setRecipientPhone] = useState(doc.client.contactNo || '');
-  const [pdfLink, setPdfLink] = useState<string | null>(null);
   const [customMessage, setCustomMessage] = useState('');
+  const [pdfLink, setPdfLink] = useState<string | null>(null);
+  const [isGeneratingLink, setIsGeneratingLink] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const currency = doc.currency;
   const shareState = getShareLinkState(doc, user?.id);
@@ -93,13 +93,11 @@ Thank you for partnering with *${doc.studio.name}*!
 
   const handleGenerateCloudLink = useCallback(async () => {
     setIsGeneratingLink(true);
-    const eventSlug = (doc.client.nameOfEvent || 'Quotation').replace(/[^a-zA-Z0-9]/g, '_');
-    const fileName = `${doc.type}_${eventSlug}.pdf`;
 
     try {
-      const pdfBlob = await generatePdfBlob('quotation-invoice-canvas', fileName);
-      if (pdfBlob) {
-        const url = await uploadPdfToCloud(pdfBlob);
+      const pdfFile = await buildPdfFile(doc, 'quotation-invoice-canvas');
+      if (pdfFile) {
+        const url = await uploadPdfToCloud(pdfFile);
         if (url) {
           setPdfLink(url);
           setCustomMessage(buildMessage(url));

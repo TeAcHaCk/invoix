@@ -25,7 +25,8 @@ import { UpgradePlanModal } from './components/UpgradePlanModal';
 import { DocumentHealthModal } from './components/DocumentHealthModal';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { saveDocument } from './services/documentService';
-import { exportDocumentToPdf, printDocument } from './utils/pdfGenerator';
+import { downloadPdf, type PdfQuality } from './services/pdfExportService';
+import { printDocument } from './utils/pdfGenerator';
 import { getVaultDocuments } from './utils/vaultStorage';
 import { isPaidPlan, FREE_PLAN_MAX_DOCUMENTS } from './utils/planLimits';
 import confetti from 'canvas-confetti';
@@ -180,19 +181,28 @@ function StudioWorkspace({ initialIndustry, onNavigateToAdmin, onNavigateToHome 
     setTimeout(() => setToastMessage(null), 3000);
   };
 
-  const handleExportPdf = async () => {
+  const handleExportPdf = async (quality: PdfQuality = 'text') => {
     setIsExporting(true);
-    showToast('Rendering high-fidelity A4 PDF...');
+    showToast(
+      quality === 'text'
+        ? 'Generating crisp vector PDF (server render)...'
+        : 'Rendering PDF image snapshot...'
+    );
     try {
-      const success = await exportDocumentToPdf(
-        'quotation-preview-container',
-        `Quotation-${document.details.invoiceNo || 'Document'}.pdf`
-      );
-      if (success) {
+      const res = await downloadPdf(document, quality, 'quotation-preview-container');
+      if (res.success) {
         confetti({ particleCount: 80, spread: 60, origin: { y: 0.7 } });
-        showToast('PDF successfully downloaded!');
+        if (res.fallbackReason) {
+          showToast(res.fallbackReason);
+        } else {
+          showToast(
+            res.usedQuality === 'text'
+              ? 'Crisp vector PDF downloaded!'
+              : 'PDF downloaded successfully!'
+          );
+        }
       } else {
-        showToast('Failed to export PDF. Please try printing.');
+        showToast(res.error || 'Failed to export PDF. Please try printing.');
       }
     } catch (err) {
       console.error(err);

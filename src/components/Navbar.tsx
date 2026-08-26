@@ -33,7 +33,7 @@ import {
 
 interface NavbarProps {
   document: QuotationDocument;
-  onExportPdf: () => void;
+  onExportPdf: (quality?: 'text' | 'image') => void;
   onPrint: () => void;
   onOpenWhatsApp: () => void;
   onOpenClientInteractive: () => void;
@@ -303,13 +303,14 @@ export const Navbar: React.FC<NavbarProps> = ({
             <div className="inline-flex rounded-xl shadow-lg shadow-amber-500/20 bg-gradient-to-r from-amber-500 to-amber-600">
               <button
                 type="button"
-                onClick={() => { onPrint(); }}
-                className="flex items-center space-x-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 text-slate-950 text-xs font-extrabold hover:opacity-95 transition-all cursor-pointer"
+                onClick={() => onExportPdf('text')}
+                disabled={isExporting}
+                className="flex items-center space-x-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 text-slate-950 text-xs font-extrabold hover:opacity-95 transition-all cursor-pointer disabled:opacity-50"
                 title="Save as Crisp Vector PDF"
               >
                 <Download className="w-3.5 h-3.5 stroke-[2.5]" />
-                <span className="hidden sm:inline">Save PDF</span>
-                <span className="sm:hidden">PDF</span>
+                <span className="hidden sm:inline">{isExporting ? 'Exporting...' : 'Save PDF'}</span>
+                <span className="sm:hidden">{isExporting ? '...' : 'PDF'}</span>
               </button>
               <button
                 type="button"
@@ -332,7 +333,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
                 <button
                   type="button"
-                  onClick={() => { onPrint(); setIsPdfMenuOpen(false); }}
+                  onClick={() => { onExportPdf('text'); setIsPdfMenuOpen(false); }}
                   className="w-full flex items-start space-x-2.5 p-2.5 rounded-xl hover:bg-slate-800/70 transition-colors text-left cursor-pointer group mt-1"
                 >
                   <div className="p-1.5 rounded-lg bg-amber-500/15 text-amber-300 border border-amber-500/30 group-hover:bg-amber-500 group-hover:text-slate-950 transition-colors shrink-0">
@@ -353,7 +354,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
                 <button
                   type="button"
-                  onClick={() => { onExportPdf(); setIsPdfMenuOpen(false); }}
+                  onClick={() => { onExportPdf('image'); setIsPdfMenuOpen(false); }}
                   disabled={isExporting}
                   className="w-full flex items-start space-x-2.5 p-2.5 rounded-xl hover:bg-slate-800/70 transition-colors text-left cursor-pointer group disabled:opacity-50"
                 >
