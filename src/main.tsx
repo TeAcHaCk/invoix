@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
 import { ErrorBoundary } from './components/ErrorBoundary'
-import { installPrintIsolation } from './utils/pdfGenerator'
+import { installPrintIsolation } from './utils/printIsolation'
 
 // Register Service Worker for PWA (Production)
 if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production') {

@@ -192,6 +192,69 @@ Each of these shipped once and cost real debugging time.
    - Replaced ambiguous free-text validity input with `"Validity / Expiry Date"` on proposals and `"Payment Due Date"` on invoices.
 - **Verification**: `npm run lint` = **0 errors, 0 warnings**. `npm run build` = **Clean compile (exit 0)**.
 
+### 2026-08-26 — SEO: technical half DONE (Claude Code). Antigravity, content half is yours.
+
+**Entry chunk cut by 60%.** This is the measurable part of the SEO work — it is
+the ranking factor we could actually move today.
+
+| | before | after |
+| --- | --- | --- |
+| entry chunk | 1,321.31 kB | **521.21 kB** |
+| gzipped | 363.99 kB | **149.03 kB** |
+
+Two changes got there:
+
+1. **Route-level code splitting.** `StudioWorkspace` was defined inside
+   `App.tsx`, so FormEditor (132 KB of source), all three document views and
+   every modal sat in the initial bundle — a visitor reading the landing page
+   downloaded the entire editor before first paint. Extracted to
+   `src/components/StudioWorkspace.tsx` and lazy-loaded, along with
+   `AdminLayout`, `PublicProposalPage`, `PrivacyPolicyPage` and
+   `TermsOfServicePage`. Landing stays eager: it is the entry point for every
+   search visitor. Each route has a `Suspense` boundary using
+   `components/RouteFallback.tsx`.
+
+2. **The bigger win, and a non-obvious one.** `main.tsx` imported
+   `installPrintIsolation` from `pdfGenerator.ts`, which statically imports
+   **jsPDF and html-to-image**. Print isolation is pure DOM code, but sharing a
+   module with the rasteriser dragged the whole PDF stack into the entry chunk
+   for every visitor. Carved out to `src/utils/printIsolation.ts`, which must
+   stay dependency-free — `pdfGenerator.ts` re-exports from it for compatibility.
+   Verified: **0 jsPDF references remain in the entry chunk.**
+
+3. **`sitemap.xml` is now generated** by `scripts/generate-sitemap.mjs` on every
+   build; the hand-maintained `public/sitemap.xml` is deleted. Add new indexable
+   routes to the `ROUTES` array there — it is the only place. Query params, never
+   `#fragments` (crawlers strip fragments; the reasoning is in an earlier entry).
+
+Smoke-tested against `vite preview`: landing serves, all three lazy chunks
+resolve 200, lint and both type-checks clean.
+
+---
+
+#### Antigravity — the content half, and it is the larger half
+
+Splitting the bundle makes the site *capable* of ranking. It does not give it
+anything to rank **for**. Three URLs will not compete with Zoho or Refrens.
+
+1. **Per-industry template pages — the actual traffic.** One real URL per preset
+   (`/templates/photography-quotation`, `/templates/gst-invoice`, …), each with a
+   live preview, genuine copy, and a CTA into the editor. These target winnable
+   long-tail terms. "invoice generator" is not winnable.
+   **These need path-based routes**, which `parseCurrentRoute()` in `App.tsx`
+   does not yet handle — tell me and I will add the routing, or take it yourself
+   if you are already in that file. Add each new page to `ROUTES` in
+   `scripts/generate-sitemap.mjs`.
+2. **Landing copy that answers "why pay".** At ₹499/mo against a free Zoho, the
+   page has to lead with the interactive client link — e-signature, upsells, view
+   tracking — not "create invoices".
+3. **Heading hierarchy, semantics, alt text.** One `h1`, descriptive `h2`s. Cheap,
+   and it needs eyes on the rendered page.
+
+**Still worth saying plainly:** a days-old domain will not rank quickly whatever
+we do. This decides whether the site can rank in 6–12 months. The share-link
+viral loop remains the faster route to first users.
+
 ### 2026-08-26 — PLAN: landing page SEO (Claude Code → Antigravity)
 
 **The blunt problem: invoix.app is a client-rendered SPA with three URLs, a
