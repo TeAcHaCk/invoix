@@ -108,50 +108,114 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         </section>
       </main>
 
-      {/* Footer */}
-      <footer ref={footerRef} className="border-t border-slate-800/50 bg-slate-950 py-16 px-4 sm:px-8 text-xs text-slate-400">
-        <div className="reveal-on-scroll max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-8">
-          <div className="flex items-center space-x-3">
-            <div className="p-1 rounded-xl bg-white/95 shadow-lg shadow-amber-500/10 flex items-center justify-center">
-              <img src="/invoix-logo.png" alt="Invoix" className="h-6 max-w-[100px] object-contain" />
+      {/* Footer & Crawlable Template Directory */}
+      <footer ref={footerRef} className="border-t border-slate-800/60 bg-slate-950/90 py-16 px-4 sm:px-8 text-xs text-slate-400">
+        <div className="reveal-on-scroll max-w-7xl mx-auto space-y-12">
+          {/* Top Columns Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 pb-10 border-b border-slate-800/80">
+            {/* Brand Column */}
+            <div className="space-y-3 md:col-span-1">
+              <div className="flex items-center space-x-2.5">
+                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow-lg shadow-amber-500/20">
+                  <span className="font-extrabold text-slate-950 font-['Outfit'] text-sm tracking-tight">IX</span>
+                </div>
+                <span className="font-extrabold text-lg text-slate-100 font-['Outfit'] tracking-tight">
+                  Invoix<span className="text-amber-400">.</span>
+                </span>
+              </div>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                The high-converting quotation, proposal, and invoicing SaaS. Interactive client links, touch-screen e-signatures, live upsells, and instant payments.
+              </p>
             </div>
-            <span className="font-bold text-slate-100 font-['Outfit'] text-sm">
-              Invoix Proposal & Invoicing Platform
-            </span>
+
+            {/* Template Directory Column (Key SEO mesh) */}
+            <div className="space-y-2 md:col-span-2">
+              <span className="font-bold text-slate-200 uppercase tracking-wider text-[11px] font-['Outfit'] block">
+                Free Quotation & Invoice Templates
+              </span>
+              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
+                <li>
+                  <a href="/?template=photography-quotation" className="hover:text-amber-300 transition-colors flex items-center space-x-1">
+                    <span>•</span>
+                    <span>Photography Quotation Template</span>
+                  </a>
+                </li>
+                <li>
+                  <a href="/?template=web-development-proposal" className="hover:text-amber-300 transition-colors flex items-center space-x-1">
+                    <span>•</span>
+                    <span>Web & Software SOW Proposal</span>
+                  </a>
+                </li>
+                <li>
+                  <a href="/?template=creative-agency-proposal" className="hover:text-amber-300 transition-colors flex items-center space-x-1">
+                    <span>•</span>
+                    <span>Creative Agency & Design Proposal</span>
+                  </a>
+                </li>
+                <li>
+                  <a href="/?template=consulting-agreement" className="hover:text-amber-300 transition-colors flex items-center space-x-1">
+                    <span>•</span>
+                    <span>Management Consulting Proposal</span>
+                  </a>
+                </li>
+                <li>
+                  <a href="/?template=gst-invoice" className="hover:text-amber-300 transition-colors flex items-center space-x-1">
+                    <span>•</span>
+                    <span>GST Tax Invoice & Billing Template</span>
+                  </a>
+                </li>
+              </ul>
+            </div>
+
+            {/* Platform & Navigation Column */}
+            <div className="space-y-2">
+              <span className="font-bold text-slate-200 uppercase tracking-wider text-[11px] font-['Outfit'] block">
+                Platform & Legal
+              </span>
+              <ul className="space-y-1.5 text-[11px]">
+                {['Features', 'Industries', 'Pricing', 'FAQ'].map((link) => (
+                  <li key={link}>
+                    <a href={`#${link.toLowerCase()}`} className="hover:text-amber-300 transition-colors">
+                      {link}
+                    </a>
+                  </li>
+                ))}
+                <li>
+                  <button
+                    type="button"
+                    onClick={onNavigateToPrivacy}
+                    className="hover:text-amber-300 transition-colors cursor-pointer"
+                  >
+                    Privacy Policy
+                  </button>
+                </li>
+                <li>
+                  <button
+                    type="button"
+                    onClick={onNavigateToTerms}
+                    className="hover:text-amber-300 transition-colors cursor-pointer"
+                  >
+                    Terms of Service
+                  </button>
+                </li>
+                <li>
+                  <button
+                    type="button"
+                    onClick={onOpenAdmin}
+                    className="text-amber-400 hover:text-amber-300 transition-colors cursor-pointer"
+                  >
+                    Super Admin
+                  </button>
+                </li>
+              </ul>
+            </div>
           </div>
 
-          <div className="flex flex-wrap items-center justify-center gap-8 text-[11px]">
-            {['Features', 'Industries', 'Pricing', 'FAQ'].map((link) => (
-              <a key={link} href={`#${link.toLowerCase()}`} className="hover:text-amber-300 transition-colors">
-                {link}
-              </a>
-            ))}
-            <button
-              type="button"
-              onClick={onNavigateToPrivacy}
-              className="hover:text-amber-300 transition-colors cursor-pointer"
-            >
-              Privacy Policy
-            </button>
-            <button
-              type="button"
-              onClick={onNavigateToTerms}
-              className="hover:text-amber-300 transition-colors cursor-pointer"
-            >
-              Terms of Service
-            </button>
-            <button
-              type="button"
-              onClick={onOpenAdmin}
-              className="text-amber-400 hover:text-amber-300 transition-colors cursor-pointer"
-            >
-              Super Admin
-            </button>
+          {/* Bottom Copyright */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-slate-500">
+            <p>© {new Date().getFullYear()} Invoix. All rights reserved.</p>
+            <p>Designed for fast conversion, mobile signing & crisp vector exports.</p>
           </div>
-
-          <p className="text-[11px] text-slate-500">
-            © {new Date().getFullYear()} Invoix. All rights reserved.
-          </p>
         </div>
       </footer>
     </div>

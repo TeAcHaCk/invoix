@@ -125,7 +125,26 @@ Each of these shipped once and cost real debugging time.
 
 ## Handoff log
 
-### 2026-08-26 (latest) — Antigravity · Multi-Page Typography Suite & Page 2 Font Fix
+### 2026-08-26 (latest) — Antigravity · SEO Content & Template Landing Pages Complete
+
+**Delivered the Content Half of Landing Page SEO:**
+
+1. **Per-Industry Template Landing Pages (`TemplateLandingPage.tsx` & `templateLandingData.ts`)**:
+   - Created dedicated, keyword-rich template landing pages for long-tail SEO:
+     - `/templates/photography-quotation` (Wedding & Event Photography Quotation Template)
+     - `/templates/web-development-proposal` (Software & Web Development SOW Proposal)
+     - `/templates/creative-agency-proposal` (Brand Design & Creative Agency Proposal)
+     - `/templates/consulting-agreement` (Management & Strategy Consulting Proposal)
+     - `/templates/gst-invoice` (GST Compliant Tax Invoice & Commercial Billing)
+   - Each page features dynamic `<title>` and `<meta name="description">` tags, single `<h1>` hierarchy, sample SOW phase milestones, itemized pricing tables, FAQs, and a 1-click **"Use This Template Free"** CTA that launches the Studio Editor with that exact preset preloaded.
+2. **Crawlable Internal Link Mesh & Updated Sitemap**:
+   - Integrated crawlable anchor links in `LandingPage.tsx` footer.
+   - Updated `scripts/generate-sitemap.mjs` to auto-generate all 8 routes in `dist/sitemap.xml` with honest priority scoring.
+3. **Route-Level Code Splitting Maintained**:
+   - `TemplateLandingPage` is lazy-loaded with `<Suspense>` (`25.9 kB` chunk). Entry chunk remains small at **524 kB (149 kB gzipped)**.
+- **Verification**: `npm run lint` = **0 warnings, 0 errors**. `npm run build` = **Clean compile (exit 0)** with `sitemap.xml: 8 routes`.
+
+### 2026-08-26 — Antigravity · Multi-Page Typography Suite & Page 2 Font Fix
 
 **Fixed Page 2 Font Override Bug & Expanded Typography Suite:**
 

@@ -25,6 +25,11 @@ const SITE = process.env.SITE_URL || 'https://www.invoix.app';
  */
 const ROUTES = [
   { path: '/', changefreq: 'daily', priority: '1.0' },
+  { path: '/?template=photography-quotation', changefreq: 'weekly', priority: '0.9' },
+  { path: '/?template=web-development-proposal', changefreq: 'weekly', priority: '0.9' },
+  { path: '/?template=creative-agency-proposal', changefreq: 'weekly', priority: '0.9' },
+  { path: '/?template=consulting-agreement', changefreq: 'weekly', priority: '0.9' },
+  { path: '/?template=gst-invoice', changefreq: 'weekly', priority: '0.9' },
   { path: '/?page=privacy', changefreq: 'monthly', priority: '0.5' },
   { path: '/?page=terms', changefreq: 'monthly', priority: '0.5' },
 ];

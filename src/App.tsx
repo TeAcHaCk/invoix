@@ -29,23 +29,34 @@ const PrivacyPolicyPage = lazy(() =>
 const TermsOfServicePage = lazy(() =>
   import('./components/landing/TermsOfServicePage').then((m) => ({ default: m.TermsOfServicePage }))
 );
+const TemplateLandingPage = lazy(() =>
+  import('./components/landing/TemplateLandingPage').then((m) => ({ default: m.TemplateLandingPage }))
+);
 
 // URL Route Resolver Helper
 function parseCurrentRoute(): {
-  type: 'landing' | 'studio' | 'admin' | 'public_proposal' | 'privacy' | 'terms';
+  type: 'landing' | 'studio' | 'admin' | 'public_proposal' | 'privacy' | 'terms' | 'template';
   docId?: string;
   section?: string;
+  templateSlug?: string;
 } {
   const urlParams = new URLSearchParams(window.location.search);
   const viewParam = urlParams.get('view');
   const pageParam = urlParams.get('page');
+  const templateParam = urlParams.get('template');
   const rawHash = window.location.hash.replace('#', '').toLowerCase();
 
   // 1. Direct Public Proposal Link (?view=<shareToken> or #view/<shareToken>)
   if (viewParam) return { type: 'public_proposal', docId: viewParam };
   if (rawHash.startsWith('view/')) return { type: 'public_proposal', docId: rawHash.replace('view/', '') };
 
-  // 2. Landing Page Anchor Navigation (#features, #industries, #pricing, #faq, #home)
+  // 2. Template Landing Pages (?template=<slug> or #template/<slug>)
+  if (templateParam) return { type: 'template', templateSlug: templateParam };
+  if (rawHash.startsWith('template/')) {
+    return { type: 'template', templateSlug: rawHash.replace('template/', '') };
+  }
+
+  // 3. Landing Page Anchor Navigation (#features, #industries, #pricing, #faq, #home)
   const isLandingAnchor = ['features', 'industries', 'pricing', 'faq', 'home', ''].includes(rawHash);
   if (isLandingAnchor && rawHash !== '') {
     if (pageParam) {
@@ -54,13 +65,13 @@ function parseCurrentRoute(): {
     return { type: 'landing', section: rawHash };
   }
 
-  // 3. Page Routes (by hash or query param)
+  // 4. Page Routes (by hash or query param)
   if (rawHash === 'admin' || pageParam === 'admin') return { type: 'admin' };
   if (rawHash === 'studio' || pageParam === 'studio') return { type: 'studio' };
   if (rawHash === 'privacy' || pageParam === 'privacy') return { type: 'privacy' };
   if (rawHash === 'terms' || pageParam === 'terms') return { type: 'terms' };
 
-  // 4. Default to Landing Page
+  // 5. Default to Landing Page
   return { type: 'landing' };
 }
 
@@ -186,6 +197,19 @@ export function App() {
           onBack={() => navigateToHome()}
           onNavigateSection={(sec) => navigateToHome(sec)}
           onLaunchStudio={navigateToStudio}
+          />
+        </Suspense>
+      ) : currentView.type === 'template' ? (
+        <Suspense fallback={<RouteFallback label="Loading Proposal Template…" />}>
+          <TemplateLandingPage
+            slug={currentView.templateSlug || 'photography-quotation'}
+            onUseTemplate={(industry) => {
+              setSelectedIndustry(industry);
+              window.history.pushState(null, '', '/#studio');
+              setCurrentView({ type: 'studio' });
+            }}
+            onNavigateHome={() => navigateToHome()}
+            onNavigatePricing={() => navigateToHome('pricing')}
           />
         </Suspense>
       ) : currentView.type === 'landing' ? (
