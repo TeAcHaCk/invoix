@@ -125,7 +125,19 @@ Each of these shipped once and cost real debugging time.
 
 ## Handoff log
 
-### 2026-08-26 (latest) — Antigravity · Phase 1 Vector PDF UI & Headless Hooks Complete (Ready for Claude Phase 2)
+### 2026-08-26 (latest) — Antigravity · Multi-Page Typography Suite & Page 2 Font Fix
+
+**Fixed Page 2 Font Override Bug & Expanded Typography Suite:**
+
+1. **Fixed Page 2 Font Inheritance Bug**:
+   - **Root Cause**: `ModernProposalView.tsx` (line 444) and `CreativeProposalView.tsx` (line 316) had hardcoded `font-['Plus_Jakarta_Sans',sans-serif]` and multiple `font-['Outfit']` utility classes on Page 2 containers, stomping over the parent `style={{ fontFamily: doc.fontFamily }}` whenever a user selected a custom font (e.g. `Playfair Display`, `Inter`, `Cinzel`).
+   - **Fix**: Removed hardcoded font classes across `ModernProposalView.tsx`, `CreativeProposalView.tsx`, and `FormalInvoiceView.tsx`. `fontFamily` now cascades reliably across Page 1, Page 2, headers, and totals.
+2. **Expanded Typography Suite (15 Curated Google Fonts)**:
+   - Updated `index.html` to load Google Fonts: `Plus Jakarta Sans`, `Outfit`, `Inter`, `Montserrat`, `Poppins`, `DM Sans`, `Manrope`, `Raleway`, `Playfair Display`, `Space Grotesk`, `Cinzel`, `Cormorant Garamond`, `Lora`, `Syne`, `Merriweather`.
+   - Updated `FormEditor.tsx` font dropdown with Free and Pro classifications.
+- **Verification**: `npm run lint` = **0 warnings, 0 errors**. `npm run build` = **Clean compile (exit 0)**.
+
+### 2026-08-26 — Antigravity · Phase 1 Vector PDF UI & Headless Hooks Complete (Ready for Claude Phase 2)
 
 **Delivered Phase 1 of the Vector PDF Upgrade:**
 

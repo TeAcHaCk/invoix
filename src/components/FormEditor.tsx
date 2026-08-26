@@ -570,11 +570,21 @@ export const FormEditor: React.FC<FormEditorProps> = ({
   ];
 
   const fontOptions = [
-    { name: 'Plus Jakarta Sans (Modern Clean)', value: 'Plus Jakarta Sans' },
-    { name: 'Outfit (Bold & Tech)', value: 'Outfit' },
-    { name: 'Inter (Minimalist Corporate)', value: 'Inter' },
-    { name: 'Playfair Display (Luxury Serif)', value: 'Playfair Display' },
-    { name: 'Space Grotesk (Design Studio)', value: 'Space Grotesk' },
+    { name: 'Plus Jakarta Sans (Modern Clean SaaS)', value: 'Plus Jakarta Sans', pro: false },
+    { name: 'Outfit (Bold & Modern Tech)', value: 'Outfit', pro: false },
+    { name: 'Inter (Minimalist Corporate)', value: 'Inter', pro: false },
+    { name: 'Montserrat (Geometric Modern)', value: 'Montserrat', pro: false },
+    { name: 'Poppins (Friendly Creative)', value: 'Poppins', pro: false },
+    { name: 'DM Sans (Sleek Minimalist)', value: 'DM Sans', pro: false },
+    { name: 'Manrope (European Modern FinTech)', value: 'Manrope', pro: false },
+    { name: 'Raleway (Refined Sans)', value: 'Raleway', pro: false },
+    { name: 'Playfair Display (Luxury Editorial Serif)', value: 'Playfair Display', pro: true },
+    { name: 'Space Grotesk (Design Studio & Tech)', value: 'Space Grotesk', pro: true },
+    { name: 'Cinzel (Royal Luxury & Roman Serif)', value: 'Cinzel', pro: true },
+    { name: 'Cormorant Garamond (Classic Fine Serif)', value: 'Cormorant Garamond', pro: true },
+    { name: 'Lora (Contemporary Book Serif)', value: 'Lora', pro: true },
+    { name: 'Syne (Avant-Garde Art & Fashion)', value: 'Syne', pro: true },
+    { name: 'Merriweather (Warm Literary Serif)', value: 'Merriweather', pro: true },
   ];
 
   return (
@@ -972,7 +982,8 @@ export const FormEditor: React.FC<FormEditorProps> = ({
                 value={doc.fontFamily || 'Plus Jakarta Sans'}
                 onChange={(e) => {
                   const val = e.target.value;
-                  if ((val === 'Playfair Display' || val === 'Space Grotesk') && !isPro && onOpenUpgrade) {
+                  const opt = fontOptions.find((f) => f.value === val);
+                  if (opt?.pro && !isPro && onOpenUpgrade) {
                     onOpenUpgrade('pro');
                     return;
                   }
@@ -982,7 +993,7 @@ export const FormEditor: React.FC<FormEditorProps> = ({
               >
                 {fontOptions.map((f) => (
                   <option key={f.value} value={f.value}>
-                    {f.name} {(f.value === 'Playfair Display' || f.value === 'Space Grotesk') && !isPro ? '🔒 [PRO]' : ''}
+                    {f.name} {f.pro && !isPro ? '🔒 [PRO]' : ''}
                   </option>
                 ))}
               </select>
