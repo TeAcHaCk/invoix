@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Check, Sparkles, ArrowRight, Crown } from 'lucide-react';
-import { useScrollReveal } from '../../hooks/useScrollReveal';
 
 interface PricingSectionProps {
   theme?: 'dark' | 'light';
@@ -39,7 +38,6 @@ export const PricingSection: React.FC<PricingSectionProps> = ({
   const isDark = theme === 'dark';
   const [isAnnual, setIsAnnual] = useState(true);
   const [currency, setCurrency] = useState<'USD' | 'INR'>('USD');
-  const sectionRef = useScrollReveal();
 
   const pricingData = {
     USD: {
@@ -70,7 +68,6 @@ export const PricingSection: React.FC<PricingSectionProps> = ({
   return (
     <section
       id="pricing"
-      ref={sectionRef}
       className={`py-24 px-4 sm:px-8 font-['Plus_Jakarta_Sans',sans-serif] relative transition-colors duration-300 ${
         isDark ? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-900'
       }`}
@@ -80,7 +77,7 @@ export const PricingSection: React.FC<PricingSectionProps> = ({
 
       <div className="max-w-7xl mx-auto space-y-14">
         {/* Section Header */}
-        <div className="text-center space-y-3 max-w-2xl mx-auto reveal-on-scroll">
+        <div className="text-center space-y-3 max-w-2xl mx-auto">
           <span className="text-xs font-bold text-amber-500 uppercase tracking-[0.2em] font-['Outfit']">
             Transparent Pricing
           </span>
@@ -97,7 +94,7 @@ export const PricingSection: React.FC<PricingSectionProps> = ({
         </div>
 
         {/* Currency & Billing Period Switchers */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 reveal-on-scroll">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
           {/* Currency Toggle */}
           <div className={`p-1.5 rounded-2xl flex items-center border ${isDark ? 'glass-dark border-slate-800' : 'bg-white border-slate-300/80 shadow-sm'}`}>
             {(['USD', 'INR'] as const).map((c) => (
@@ -153,7 +150,7 @@ export const PricingSection: React.FC<PricingSectionProps> = ({
         {/* 3 Pricing Cards Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-7 items-stretch">
           {/* Free Tier */}
-          <div className={`reveal-on-scroll reveal-delay-1 rounded-3xl p-7 sm:p-8 space-y-6 flex flex-col justify-between transition-all duration-300 hover:-translate-y-1 border ${
+          <div className={`rounded-3xl p-7 sm:p-8 space-y-6 flex flex-col justify-between transition-all duration-300 hover:-translate-y-1 border ${
             isDark
               ? 'glass-dark border-slate-800/80 hover-glow-blue'
               : 'bg-white border-slate-200/90 shadow-md shadow-slate-200/60 hover:shadow-xl hover:border-slate-300'
@@ -199,7 +196,7 @@ export const PricingSection: React.FC<PricingSectionProps> = ({
           </div>
 
           {/* Pro Solo (Most Popular) */}
-          <div className="reveal-on-scroll reveal-delay-2 relative">
+          <div className="relative">
             <div className="absolute -inset-[2px] bg-gradient-to-br from-amber-400 via-orange-500 to-amber-400 rounded-[26px] opacity-75 blur-[1.5px]" />
             <div className={`relative rounded-3xl p-7 sm:p-8 space-y-6 flex flex-col justify-between h-full border ${
               isDark
@@ -258,7 +255,7 @@ export const PricingSection: React.FC<PricingSectionProps> = ({
           </div>
 
           {/* Agency Plan */}
-          <div className={`reveal-on-scroll reveal-delay-3 rounded-3xl p-7 sm:p-8 space-y-6 flex flex-col justify-between transition-all duration-300 hover:-translate-y-1 border ${
+          <div className={`rounded-3xl p-7 sm:p-8 space-y-6 flex flex-col justify-between transition-all duration-300 hover:-translate-y-1 border ${
             isDark
               ? 'glass-dark border-slate-800/80 hover-glow-purple'
               : 'bg-white border-slate-200/90 shadow-md shadow-slate-200/60 hover:shadow-xl hover:border-purple-300'

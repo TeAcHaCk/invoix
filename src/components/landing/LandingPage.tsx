@@ -9,7 +9,6 @@ import { InvoixBrandLogo } from './InvoixBrandLogo';
 import { AdBanner } from '../AdBanner';
 import type { IndustryCategory } from '../../types';
 import { ArrowRight, CheckCircle2 } from 'lucide-react';
-import { useScrollReveal } from '../../hooks/useScrollReveal';
 
 interface LandingPageProps {
   onLaunchStudio: () => void;
@@ -47,8 +46,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   };
 
   const isDark = theme === 'dark';
-  const ctaRef = useScrollReveal();
-  const footerRef = useScrollReveal();
 
   return (
     <div
@@ -96,8 +93,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         <FaqSection theme={theme} />
 
         {/* Bottom CTA Closing Banner */}
-        <section ref={ctaRef} className="py-28 px-4 sm:px-8">
-          <div className="reveal-on-scroll max-w-5xl mx-auto bg-gradient-to-r from-amber-500 via-amber-400 to-orange-500 rounded-3xl p-8 sm:p-14 text-slate-950 shadow-2xl shadow-amber-500/20 relative overflow-hidden text-center space-y-7">
+        <section className="py-28 px-4 sm:px-8">
+          <div className="max-w-5xl mx-auto bg-gradient-to-r from-amber-500 via-amber-400 to-orange-500 rounded-3xl p-8 sm:p-14 text-slate-950 shadow-2xl shadow-amber-500/20 relative overflow-hidden text-center space-y-7">
             {/* Decorative blurred circles */}
             <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/20 rounded-full blur-3xl pointer-events-none" />
             <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-white/20 rounded-full blur-3xl pointer-events-none" />
@@ -143,14 +140,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
       {/* Footer & Crawlable Template Directory */}
       <footer
-        ref={footerRef}
         className={`border-t py-16 px-4 sm:px-8 text-xs transition-colors duration-300 ${
           isDark
             ? 'border-slate-800/80 bg-slate-950 text-slate-400'
             : 'border-slate-200 bg-white text-slate-600'
         }`}
       >
-        <div className="reveal-on-scroll max-w-7xl mx-auto space-y-12">
+        <div className="max-w-7xl mx-auto space-y-12">
           {/* Top Columns Grid */}
           <div className={`grid grid-cols-1 md:grid-cols-4 gap-8 pb-10 border-b ${isDark ? 'border-slate-800/80' : 'border-slate-200'}`}>
             {/* Brand Column */}

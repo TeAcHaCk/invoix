@@ -12,7 +12,6 @@ import {
   CheckCircle2,
   ArrowRight,
 } from 'lucide-react';
-import { useScrollReveal } from '../../hooks/useScrollReveal';
 
 interface IndustryShowcaseSectionProps {
   theme?: 'dark' | 'light';
@@ -26,7 +25,6 @@ export const IndustryShowcaseSection: React.FC<IndustryShowcaseSectionProps> = (
   const isDark = theme === 'dark';
   const [activeCategory, setActiveCategory] = useState<IndustryCategory>('creative_agency');
   const [isTransitioning, setIsTransitioning] = useState(false);
-  const sectionRef = useScrollReveal();
 
   const categories: { id: IndustryCategory; label: string; icon: React.ReactNode }[] = [
     { id: 'creative_agency', label: 'Creative Agency', icon: <Palette className="w-4 h-4" /> },
@@ -57,7 +55,6 @@ export const IndustryShowcaseSection: React.FC<IndustryShowcaseSectionProps> = (
   return (
     <section
       id="industries"
-      ref={sectionRef}
       className={`py-28 px-4 sm:px-8 font-['Plus_Jakarta_Sans',sans-serif] relative transition-colors duration-300 ${
         isDark ? 'bg-slate-950/70 text-slate-100' : 'bg-slate-100/70 text-slate-900'
       }`}
@@ -67,7 +64,7 @@ export const IndustryShowcaseSection: React.FC<IndustryShowcaseSectionProps> = (
 
       <div className="max-w-7xl mx-auto space-y-14">
         {/* Header */}
-        <div className="text-center space-y-4 max-w-2xl mx-auto reveal-on-scroll">
+        <div className="text-center space-y-4 max-w-2xl mx-auto">
           <span className="text-xs font-bold text-amber-500 uppercase tracking-[0.2em] font-['Outfit']">
             Tailored Industry Workflows
           </span>
@@ -88,7 +85,7 @@ export const IndustryShowcaseSection: React.FC<IndustryShowcaseSectionProps> = (
         </div>
 
         {/* Industry Switcher Tabs */}
-        <div className="flex flex-wrap items-center justify-center gap-2 reveal-on-scroll">
+        <div className="flex flex-wrap items-center justify-center gap-2">
           {categories.map((cat) => {
             const isActive = activeCategory === cat.id;
             return (
@@ -112,7 +109,7 @@ export const IndustryShowcaseSection: React.FC<IndustryShowcaseSectionProps> = (
         </div>
 
         {/* Preset Preview Card — with cross-fade */}
-        <div className="reveal-on-scroll">
+        <div>
           <div
             className={`rounded-3xl p-6 sm:p-10 border grid grid-cols-1 lg:grid-cols-12 gap-8 items-center transition-all duration-300 ${
               isDark

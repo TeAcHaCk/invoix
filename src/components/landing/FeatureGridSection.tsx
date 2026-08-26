@@ -7,7 +7,6 @@ import {
   Eye,
   Share2,
 } from 'lucide-react';
-import { useScrollReveal } from '../../hooks/useScrollReveal';
 
 interface FeatureGridSectionProps {
   theme?: 'dark' | 'light';
@@ -17,7 +16,6 @@ export const FeatureGridSection: React.FC<FeatureGridSectionProps> = ({
   theme = 'dark',
 }) => {
   const isDark = theme === 'dark';
-  const sectionRef = useScrollReveal();
 
   const features = [
     {
@@ -79,7 +77,6 @@ export const FeatureGridSection: React.FC<FeatureGridSectionProps> = ({
   return (
     <section
       id="features"
-      ref={sectionRef}
       className={`py-28 px-4 sm:px-8 font-['Plus_Jakarta_Sans',sans-serif] relative transition-colors duration-300 ${
         isDark ? 'bg-slate-950 text-slate-100' : 'bg-white text-slate-900'
       }`}
@@ -89,7 +86,7 @@ export const FeatureGridSection: React.FC<FeatureGridSectionProps> = ({
 
       <div className="max-w-7xl mx-auto space-y-16">
         {/* Section Header */}
-        <div className="text-center space-y-4 max-w-2xl mx-auto reveal-on-scroll">
+        <div className="text-center space-y-4 max-w-2xl mx-auto">
           <span className="text-xs font-bold text-amber-500 uppercase tracking-[0.2em] font-['Outfit']">
             Engineered For Speed & Conversion
           </span>
@@ -109,12 +106,12 @@ export const FeatureGridSection: React.FC<FeatureGridSectionProps> = ({
           </p>
         </div>
 
-        {/* 6 Feature Grid — staggered reveal */}
+        {/* 6 Feature Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {features.map((f, i) => (
             <div
               key={i}
-              className={`reveal-on-scroll reveal-delay-${i + 1} rounded-2xl p-7 space-y-4 transition-all duration-300 hover:-translate-y-1.5 group cursor-default border ${
+              className={`rounded-2xl p-7 space-y-4 transition-all duration-300 hover:-translate-y-1.5 group cursor-default border ${
                 isDark
                   ? 'glass-dark text-slate-100 border-slate-800/80 hover:border-amber-500/40'
                   : 'glass-light text-slate-900 border-slate-200 hover:border-amber-500/50 shadow-md shadow-slate-200/50'

@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
-import { useScrollReveal } from '../../hooks/useScrollReveal';
 
 interface FaqSectionProps {
   theme?: 'dark' | 'light';
@@ -11,7 +10,6 @@ export const FaqSection: React.FC<FaqSectionProps> = ({
 }) => {
   const isDark = theme === 'dark';
   const [openIndex, setOpenIndex] = useState<number | null>(0);
-  const sectionRef = useScrollReveal();
 
   const faqs = [
     {
@@ -47,14 +45,13 @@ export const FaqSection: React.FC<FaqSectionProps> = ({
   return (
     <section
       id="faq"
-      ref={sectionRef}
       className={`py-28 px-4 sm:px-8 font-['Plus_Jakarta_Sans',sans-serif] transition-colors duration-300 ${
         isDark ? 'bg-slate-950/80 text-slate-100' : 'bg-slate-50 text-slate-900'
       }`}
     >
       <div className="max-w-3xl mx-auto space-y-12">
         {/* Header */}
-        <div className="text-center space-y-4 reveal-on-scroll">
+        <div className="text-center space-y-4">
           <span className="text-xs font-bold text-amber-500 uppercase tracking-[0.2em] font-['Outfit']">
             Got Questions?
           </span>
@@ -71,7 +68,7 @@ export const FaqSection: React.FC<FaqSectionProps> = ({
         </div>
 
         {/* Accordion */}
-        <div className="space-y-3 reveal-on-scroll">
+        <div className="space-y-3">
           {faqs.map((faq, i) => {
             const isOpen = openIndex === i;
             return (
