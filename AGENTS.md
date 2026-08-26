@@ -125,7 +125,21 @@ Each of these shipped once and cost real debugging time.
 
 ## Handoff log
 
-### 2026-08-26 (latest) — Antigravity · Comprehensive Landing Page Functionality & Theme Audit
+### 2026-08-26 (latest) — Antigravity · Fixed Scroll-Reveal Disappearing Cards Bug on Theme/State Toggles
+
+**Critical React Virtual-DOM Reconciliation Bug Fixed:**
+
+1. **Root Cause of Disappearing Cards**:
+   - `useScrollReveal` used an imperatively added `.revealed` DOM class to transition elements from `.reveal-on-scroll { opacity: 0; }` to `opacity: 1`.
+   - When React re-rendered on any state change (Theme toggle, USD/INR currency switch, Annual/Monthly billing toggle), React reconciled the DOM and overwrote `className` with the static JSX string, **wiping out `.revealed`**.
+   - Because `.reveal-on-scroll` defaulted to `opacity: 0`, and the IntersectionObserver had already unobserved the element, cards (Feature Grid, Free & Agency pricing tiers) were permanently hidden at `opacity: 0`.
+2. **Comprehensive Resolution**:
+   - Updated `index.css` to make `.reveal-on-scroll` always default to `opacity: 1; transform: translateY(0);`.
+   - Removed all `useScrollReveal` and `reveal-on-scroll` wrappers from [`FeatureGridSection.tsx`](file:///d:/Product%20build/src/components/landing/FeatureGridSection.tsx), [`PricingSection.tsx`](file:///d:/Product%20build/src/components/landing/PricingSection.tsx), [`IndustryShowcaseSection.tsx`](file:///d:/Product%20build/src/components/landing/IndustryShowcaseSection.tsx), [`FaqSection.tsx`](file:///d:/Product%20build/src/components/landing/FaqSection.tsx), and [`LandingPage.tsx`](file:///d:/Product%20build/src/components/landing/LandingPage.tsx).
+   - Visually verified via browser snapshots: toggling theme, currency, or billing keeps 100% of cards and text visible and interactive in both Light and Dark modes.
+- **Verification**: `npm run lint` = **0 warnings, 0 errors**. `npm run build` = **Clean compile (exit 0)**.
+
+### 2026-08-26 — Antigravity · Comprehensive Landing Page Functionality & Theme Audit
 
 **Delivered Deep Audit & Polish Across Both Themes:**
 
