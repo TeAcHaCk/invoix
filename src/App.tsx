@@ -149,6 +149,26 @@ function StudioWorkspace({ initialIndustry, onNavigateToAdmin, onNavigateToHome 
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  /**
+   * Merges the server's authoritative token and sync stamp back into state.
+   *
+   * Guarded so it only fires the first time (or if the token changes): the
+   * timestamp differs on every save, so an unguarded merge would mutate the
+   * document, retrigger the autosave effect, and loop forever.
+   */
+  const reconcileSynced = (synced?: { shareToken?: string; cloudSyncedAt: string }) => {
+    if (!synced) return;
+    setDocument((prev) => {
+      const tokenMatches = !synced.shareToken || prev.shareToken === synced.shareToken;
+      if (prev.cloudSyncedAt && tokenMatches) return prev;
+      return {
+        ...prev,
+        shareToken: synced.shareToken || prev.shareToken,
+        cloudSyncedAt: prev.cloudSyncedAt || synced.cloudSyncedAt,
+      };
+    });
+  };
+
   // Autosave current draft to localStorage & Cloud
   useEffect(() => {
     try {
@@ -180,26 +200,6 @@ function StudioWorkspace({ initialIndustry, onNavigateToAdmin, onNavigateToHome 
     // profile is a dependency so an upgrade re-stamps showInvoixBranding on the
     // next save, clearing the footer CTA from the user's client links.
   }, [document, user, profile]);
-
-  /**
-   * Merges the server's authoritative token and sync stamp back into state.
-   *
-   * Guarded so it only fires the first time (or if the token changes): the
-   * timestamp differs on every save, so an unguarded merge would mutate the
-   * document, retrigger the autosave effect, and loop forever.
-   */
-  const reconcileSynced = (synced?: { shareToken?: string; cloudSyncedAt: string }) => {
-    if (!synced) return;
-    setDocument((prev) => {
-      const tokenMatches = !synced.shareToken || prev.shareToken === synced.shareToken;
-      if (prev.cloudSyncedAt && tokenMatches) return prev;
-      return {
-        ...prev,
-        shareToken: synced.shareToken || prev.shareToken,
-        cloudSyncedAt: prev.cloudSyncedAt || synced.cloudSyncedAt,
-      };
-    });
-  };
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
