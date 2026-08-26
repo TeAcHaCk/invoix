@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
 import confetti from 'canvas-confetti';
-import { useScrollReveal } from '../../hooks/useScrollReveal';
 import {
   Sparkles,
   ArrowRight,
@@ -27,7 +26,6 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
   onStartFree,
 }) => {
   const isDark = theme === 'dark';
-  const sectionRef = useScrollReveal();
 
   const [selectedAddons, setSelectedAddons] = useState<string[]>(['addon-seo']);
   const [signerName, setSignerName] = useState('Alex Mercer');
@@ -156,32 +154,31 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
 
   return (
     <section
-      ref={sectionRef}
-      className={`relative pt-32 sm:pt-36 pb-24 px-4 sm:px-8 overflow-hidden font-['Plus_Jakarta_Sans',sans-serif] transition-colors duration-300 ${
-        isDark ? 'dot-grid-bg-dark bg-slate-950 text-slate-100' : 'dot-grid-bg-light bg-slate-50/80 text-slate-900'
+      className={`relative pt-32 sm:pt-36 pb-20 px-4 sm:px-8 overflow-hidden font-['Plus_Jakarta_Sans',sans-serif] transition-colors duration-300 ${
+        isDark ? 'dot-grid-bg-dark bg-slate-950 text-slate-100' : 'dot-grid-bg-light bg-slate-50 text-slate-900'
       }`}
     >
-      {/* Dynamic Ambient Background Glows */}
+      {/* Ambient Lighting Gradients */}
       <div
         className={`absolute top-1/4 left-1/2 -translate-x-1/2 w-[850px] h-[450px] rounded-full pointer-events-none -z-10 blur-[150px] ${
-          isDark ? 'bg-amber-500/10' : 'bg-amber-400/15'
+          isDark ? 'bg-amber-500/10' : 'bg-amber-400/20'
         }`}
       />
       <div
         className={`absolute top-[60%] left-[15%] w-[400px] h-[400px] rounded-full pointer-events-none -z-10 blur-[130px] ${
-          isDark ? 'bg-emerald-500/8' : 'bg-emerald-400/10'
+          isDark ? 'bg-emerald-500/8' : 'bg-emerald-400/15'
         }`}
       />
 
       <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-14 items-center">
-        {/* Left: Value Proposition & High-Converting Pitch */}
-        <div className="lg:col-span-6 space-y-7 text-center lg:text-left">
+        {/* Left Column: Value Prop & High-Converting Pitch (Instantly Visible) */}
+        <div className="lg:col-span-6 space-y-6 text-center lg:text-left">
           {/* Floating Pill Badge */}
           <div
-            className={`reveal-on-scroll inline-flex items-center space-x-2 px-4 py-2 rounded-full text-xs font-semibold shadow-inner border transition-all ${
+            className={`inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full text-xs font-semibold border transition-all ${
               isDark
-                ? 'bg-slate-900/80 border-amber-500/30 text-amber-300'
-                : 'bg-white border-amber-400/40 text-amber-800 shadow-amber-500/10'
+                ? 'bg-slate-900/90 border-amber-500/30 text-amber-300'
+                : 'bg-amber-50 border-amber-300/80 text-amber-900 shadow-sm'
             }`}
           >
             <Sparkles className="w-3.5 h-3.5 text-amber-500 animate-pulse" />
@@ -190,32 +187,36 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
 
           {/* Main Headline */}
           <h1
-            className={`reveal-on-scroll text-3xl sm:text-5xl lg:text-[3.6rem] font-extrabold tracking-tight font-['Outfit'] leading-[1.12] ${
-              isDark ? 'text-slate-100' : 'text-slate-950'
+            className={`text-3.5xl sm:text-5xl lg:text-[3.5rem] font-extrabold tracking-tight font-['Outfit'] leading-[1.12] ${
+              isDark ? 'text-white' : 'text-slate-950'
             }`}
           >
             Your Proposals.
             <br />
-            <span className="bg-gradient-to-r from-amber-400 via-amber-500 to-orange-500 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-amber-500 via-amber-400 to-orange-500 bg-clip-text text-transparent">
               Their Standing Ovation.
             </span>
           </h1>
 
           {/* Subtitle */}
           <p
-            className={`reveal-on-scroll text-sm sm:text-base max-w-xl leading-relaxed mx-auto lg:mx-0 ${
-              isDark ? 'text-slate-400' : 'text-slate-600'
+            className={`text-sm sm:text-base max-w-xl leading-relaxed mx-auto lg:mx-0 ${
+              isDark ? 'text-slate-300' : 'text-slate-700'
             }`}
           >
-            Stop emailing flat, forgotten PDFs. Send <strong>interactive client portals</strong> with live package add-ons, instant touch-screen e-signatures, real-time view notifications, and dynamic scan-to-pay QR codes.
+            Stop emailing flat, forgotten PDFs. Send{' '}
+            <strong className={isDark ? 'text-white' : 'text-slate-950'}>
+              interactive client portals
+            </strong>{' '}
+            with live package add-ons, instant touch-screen e-signatures, real-time view notifications, and dynamic scan-to-pay QR codes.
           </p>
 
           {/* Primary Action Buttons */}
-          <div className="reveal-on-scroll flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3.5 pt-2">
+          <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3.5 pt-2">
             <button
               type="button"
               onClick={onStartFree}
-              className="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-extrabold text-sm rounded-2xl shadow-xl shadow-amber-500/25 flex items-center justify-center space-x-2 transition-all transform hover:scale-[1.02] cursor-pointer"
+              className="w-full sm:w-auto px-7 py-3.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-extrabold text-sm rounded-2xl shadow-xl shadow-amber-500/25 flex items-center justify-center space-x-2 transition-all transform hover:scale-[1.02] cursor-pointer"
             >
               <Zap className="w-4 h-4 fill-slate-950" />
               <span>Create Your First Proposal (Free)</span>
@@ -224,10 +225,10 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
 
             <a
               href="#industries"
-              className={`w-full sm:w-auto px-6 py-4 rounded-2xl text-sm font-bold border transition-all flex items-center justify-center space-x-2 cursor-pointer ${
+              className={`w-full sm:w-auto px-6 py-3.5 rounded-2xl text-sm font-bold border transition-all flex items-center justify-center space-x-2 cursor-pointer ${
                 isDark
-                  ? 'bg-slate-900/60 hover:bg-slate-800 text-slate-200 border-slate-700/80'
-                  : 'bg-white hover:bg-slate-100 text-slate-800 border-slate-200 shadow-sm'
+                  ? 'bg-slate-900/70 hover:bg-slate-800 text-slate-200 border-slate-700/80'
+                  : 'bg-white hover:bg-slate-100 text-slate-800 border-slate-300 shadow-sm'
               }`}
             >
               <span>Explore Industry Presets</span>
@@ -236,21 +237,21 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
 
           {/* Social Proof Stats */}
           <div
-            className={`reveal-on-scroll pt-8 border-t grid grid-cols-3 gap-4 sm:gap-6 text-center lg:text-left ${
+            className={`pt-7 border-t grid grid-cols-3 gap-4 sm:gap-6 text-center lg:text-left ${
               isDark ? 'border-slate-800/80' : 'border-slate-200'
             }`}
           >
             <div>
-              <h3 className={`text-xl sm:text-2xl font-bold font-mono ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+              <h3 className={`text-xl sm:text-2xl font-bold font-mono ${isDark ? 'text-white' : 'text-slate-950'}`}>
                 10,000+
               </h3>
-              <p className="text-[11px] text-slate-500 mt-0.5">Proposals Created</p>
+              <p className={`text-[11px] mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Proposals Created</p>
             </div>
             <div>
               <h3 className="text-xl sm:text-2xl font-bold font-mono text-amber-500">
                 $4.8M+
               </h3>
-              <p className="text-[11px] text-slate-500 mt-0.5">Closed Deal Volume</p>
+              <p className={`text-[11px] mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Closed Deal Volume</p>
             </div>
             <div>
               <div className="flex items-center justify-center lg:justify-start space-x-0.5 text-amber-400">
@@ -258,19 +259,19 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
                   <Star key={i} className="w-3.5 h-3.5 fill-current" />
                 ))}
               </div>
-              <p className="text-[11px] text-slate-500 mt-1">4.9/5 from 900+ Studios</p>
+              <p className={`text-[11px] mt-1 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>4.9/5 from 900+ Studios</p>
             </div>
           </div>
         </div>
 
-        {/* Right: Hyper-Attractive Interactive Proposal Widget with Mac Chrome Frame */}
-        <div className="lg:col-span-6 relative reveal-on-scroll perspective-container">
-          {/* Animated floating notification pill */}
+        {/* Right Column: Interactive Proposal Widget with Mac Chrome Frame */}
+        <div className="lg:col-span-6 relative perspective-container">
+          {/* Floating live activity badge */}
           <div
-            className={`absolute -top-4 right-4 z-20 px-3.5 py-1.5 rounded-full text-[10.5px] font-bold shadow-xl border flex items-center space-x-2 animate-float ${
+            className={`absolute -top-3.5 right-4 z-20 px-3 py-1.5 rounded-full text-[10.5px] font-bold shadow-lg border flex items-center space-x-2 animate-float ${
               isDark
                 ? 'bg-slate-900 text-emerald-300 border-emerald-500/40 shadow-emerald-950/40'
-                : 'bg-white text-emerald-800 border-emerald-300 shadow-slate-300/60'
+                : 'bg-white text-emerald-800 border-emerald-300 shadow-slate-200/80'
             }`}
           >
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
@@ -278,7 +279,7 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
             <span>Client viewed proposal 2m ago</span>
           </div>
 
-          {/* Interactive Card with Mac Window Chrome */}
+          {/* Interactive Card */}
           <div
             className={`tilt-card rounded-3xl shadow-2xl overflow-hidden border transition-all duration-300 animated-gradient-border ${
               isDark
@@ -286,17 +287,17 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
                 : 'glass-light text-slate-900'
             }`}
           >
-            {/* Top Mac Window Chrome Header Bar */}
+            {/* Top Mac Chrome Header Bar */}
             <div
               className={`px-4 py-3 border-b flex items-center justify-between text-xs ${
-                isDark ? 'bg-slate-950/90 border-slate-800' : 'bg-slate-100/90 border-slate-200'
+                isDark ? 'bg-slate-950/90 border-slate-800' : 'bg-slate-100/95 border-slate-200'
               }`}
             >
-              {/* Red / Yellow / Green Window Dots */}
+              {/* Window Dots */}
               <div className="flex items-center space-x-2">
-                <span className="w-3 h-3 rounded-full bg-rose-500/90 inline-block shadow-sm" />
-                <span className="w-3 h-3 rounded-full bg-amber-400/90 inline-block shadow-sm" />
-                <span className="w-3 h-3 rounded-full bg-emerald-500/90 inline-block shadow-sm" />
+                <span className="w-3 h-3 rounded-full bg-rose-500 inline-block shadow-sm" />
+                <span className="w-3 h-3 rounded-full bg-amber-400 inline-block shadow-sm" />
+                <span className="w-3 h-3 rounded-full bg-emerald-500 inline-block shadow-sm" />
               </div>
 
               {/* URL Address Bar */}
@@ -304,14 +305,14 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
                 className={`px-3 py-1 rounded-lg text-[10.5px] font-mono flex items-center space-x-1.5 border max-w-[200px] truncate ${
                   isDark
                     ? 'bg-slate-900/90 border-slate-800 text-slate-300'
-                    : 'bg-white border-slate-200 text-slate-700 shadow-inner'
+                    : 'bg-white border-slate-300 text-slate-700 shadow-inner'
                 }`}
               >
                 <Lock className="w-3 h-3 text-emerald-500 shrink-0" />
                 <span className="truncate">invoix.app/p/acme-q1</span>
               </div>
 
-              {/* Status Badge */}
+              {/* Live Badge */}
               <span
                 className={`text-[9.5px] font-extrabold uppercase px-2 py-0.5 rounded-full border ${
                   isSigned
@@ -323,18 +324,18 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
               </span>
             </div>
 
-            {/* Proposal Body Inside Mockup */}
+            {/* Proposal Body */}
             <div className="p-5 sm:p-6 space-y-4">
               {/* Proposal Header Meta */}
-              <div className="flex items-start justify-between border-b pb-3 border-slate-200/20">
+              <div className={`flex items-start justify-between border-b pb-3 ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
                 <div>
                   <span className="text-[9.5px] font-extrabold uppercase tracking-wider text-amber-500 block font-['Outfit']">
                     Commercial Proposal
                   </span>
-                  <h4 className="text-base sm:text-lg font-bold font-['Outfit'] leading-tight">
+                  <h4 className={`text-base sm:text-lg font-bold font-['Outfit'] leading-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
                     Full-Stack Next.js Platform Build
                   </h4>
-                  <p className={`text-[11px] mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                  <p className={`text-[11px] mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
                     Prepared for Acme International Corp
                   </p>
                 </div>
@@ -347,7 +348,7 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
               {/* Core Fixed Line Item */}
               <div
                 className={`p-3 rounded-xl border flex items-center justify-between text-xs ${
-                  isDark ? 'bg-slate-950/70 border-slate-800' : 'bg-slate-100/80 border-slate-200'
+                  isDark ? 'bg-slate-950/70 border-slate-800' : 'bg-slate-50 border-slate-200'
                 }`}
               >
                 <div className="flex items-center space-x-2.5">
@@ -355,17 +356,19 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
                     <Check className="w-3 h-3 stroke-[3]" />
                   </div>
                   <div>
-                    <span className="font-semibold block">Core Application Architecture & API</span>
+                    <span className={`font-semibold block ${isDark ? 'text-slate-200' : 'text-slate-900'}`}>
+                      Core Application Architecture & API
+                    </span>
                     <span className="text-[9.5px] text-slate-400">Included Scope Base</span>
                   </div>
                 </div>
-                <span className="font-mono font-bold text-sm">$3,500</span>
+                <span className={`font-mono font-bold text-sm ${isDark ? 'text-white' : 'text-slate-900'}`}>$3,500</span>
               </div>
 
-              {/* Optional Upsell Add-ons with live toggles */}
+              {/* Optional Upsell Add-ons */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
+                  <span className={`text-[10px] font-extrabold uppercase tracking-wider ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
                     Optional Add-ons (Toggle to calculate):
                   </span>
                   <span className="text-[10px] text-amber-500 font-bold">Try clicking!</span>
@@ -381,10 +384,10 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
                         isChecked
                           ? isDark
                             ? 'bg-slate-900/90 border-amber-500/50 shadow-md shadow-amber-500/5'
-                            : 'bg-amber-50/80 border-amber-400 shadow-sm'
+                            : 'bg-amber-50/90 border-amber-300 shadow-sm'
                           : isDark
                           ? 'bg-slate-950/40 border-slate-800/60 opacity-60 hover:opacity-90'
-                          : 'bg-white border-slate-200 opacity-60 hover:opacity-90'
+                          : 'bg-white border-slate-200 text-slate-700 opacity-70 hover:opacity-100 hover:border-slate-300'
                       }`}
                     >
                       <div className="flex items-center space-x-2.5">
@@ -392,15 +395,17 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
                           className={`w-4 h-4 rounded flex items-center justify-center border transition-all ${
                             isChecked
                               ? 'bg-amber-500 border-amber-500 text-slate-950'
-                              : 'border-slate-500 bg-transparent'
+                              : isDark ? 'border-slate-500 bg-transparent' : 'border-slate-400 bg-white'
                           }`}
                         >
                           {isChecked && <Check className="w-3 h-3 stroke-[3]" />}
                         </div>
                         <div>
                           <div className="flex items-center space-x-1.5">
-                            <span className="text-xs font-semibold">{addon.name}</span>
-                            <span className="text-[9px] px-1.5 py-0.2 rounded font-bold uppercase bg-amber-500/15 text-amber-500">
+                            <span className={`text-xs font-semibold ${isDark ? 'text-slate-200' : 'text-slate-900'}`}>
+                              {addon.name}
+                            </span>
+                            <span className="text-[9px] px-1.5 py-0.2 rounded font-bold uppercase bg-amber-500/15 text-amber-600 dark:text-amber-400">
                               {addon.badge}
                             </span>
                           </div>
@@ -412,22 +417,24 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
                 })}
               </div>
 
-              {/* Total Investment Card */}
+              {/* Total Investment Card — Perfectly Themed */}
               <div
-                className={`p-3.5 rounded-xl border flex items-center justify-between ${
-                  isDark ? 'bg-slate-950/90 border-slate-800' : 'bg-slate-900 text-white border-slate-800'
+                className={`p-3.5 rounded-xl border flex items-center justify-between transition-colors ${
+                  isDark
+                    ? 'bg-slate-950/90 border-slate-800 text-white'
+                    : 'bg-gradient-to-br from-amber-50/90 via-orange-50/60 to-amber-50/90 border-amber-200/90 text-slate-950 shadow-sm'
                 }`}
               >
                 <div>
-                  <span className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wide block">
+                  <span className={`text-[10px] font-extrabold uppercase tracking-wide block ${isDark ? 'text-slate-400' : 'text-slate-700'}`}>
                     Total Investment Value
                   </span>
-                  <span className="text-[10.5px] text-emerald-400 font-bold">
+                  <span className={`text-[10.5px] font-bold ${isDark ? 'text-emerald-400' : 'text-emerald-700'}`}>
                     30% Advance Booking: ${advanceAmount.toLocaleString()}
                   </span>
                 </div>
                 <div className="text-right">
-                  <span className="text-xl sm:text-2xl font-mono text-amber-400 font-black tracking-tight">
+                  <span className="text-xl sm:text-2xl font-mono text-amber-500 font-black tracking-tight">
                     ${currentTotal.toLocaleString()}
                   </span>
                 </div>
@@ -453,7 +460,7 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
                   </div>
 
                   <div className="flex items-center space-x-2">
-                    <div className="p-1 bg-white rounded-lg border border-emerald-300 shrink-0">
+                    <div className="p-1 bg-white rounded-lg border border-emerald-300 shrink-0 shadow-sm">
                       <QrCode className="w-6 h-6 text-slate-900" />
                     </div>
                     <button
@@ -470,7 +477,7 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
                 <div className="space-y-2.5">
                   {/* Switch Sign Mode */}
                   <div className="flex items-center justify-between text-[11px]">
-                    <span className="font-bold text-slate-400">Acceptance Signature:</span>
+                    <span className={`font-bold ${isDark ? 'text-slate-400' : 'text-slate-700'}`}>Acceptance Signature:</span>
                     <div className="flex items-center space-x-2">
                       <button
                         type="button"
@@ -478,7 +485,7 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
                         className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer ${
                           signMode === 'type'
                             ? 'bg-amber-500 text-slate-950'
-                            : 'text-slate-400 hover:text-slate-200'
+                            : isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-600 hover:text-slate-900'
                         }`}
                       >
                         Type Name
@@ -489,7 +496,7 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
                         className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer ${
                           signMode === 'draw'
                             ? 'bg-amber-500 text-slate-950'
-                            : 'text-slate-400 hover:text-slate-200'
+                            : isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-600 hover:text-slate-900'
                         }`}
                       >
                         Draw Signature
@@ -506,7 +513,7 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
                       className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-semibold border focus:outline-none transition-all ${
                         isDark
                           ? 'bg-slate-950/80 border-slate-700/80 text-slate-100 focus:border-amber-500/60'
-                          : 'bg-white border-slate-300 text-slate-900 focus:border-amber-500'
+                          : 'bg-white border-slate-300 text-slate-900 focus:border-amber-500 shadow-sm'
                       }`}
                     />
                   ) : (
@@ -523,19 +530,19 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
                         onTouchMove={draw}
                         onTouchEnd={stopDrawing}
                         className={`w-full h-[65px] rounded-xl border cursor-crosshair touch-none ${
-                          isDark ? 'bg-slate-950/80 border-slate-700' : 'bg-white border-slate-300'
+                          isDark ? 'bg-slate-950/80 border-slate-700' : 'bg-white border-slate-300 shadow-sm'
                         }`}
                       />
                       {!hasDrawn && (
-                        <span className="absolute inset-0 flex items-center justify-center text-[10.5px] text-slate-500 pointer-events-none italic">
-                          ✍️ Draw your signature here with mouse or finger
+                        <span className="absolute inset-0 flex items-center justify-center text-[10.5px] text-slate-400 pointer-events-none italic">
+                          ✍️ Draw signature with mouse or touch
                         </span>
                       )}
                       {hasDrawn && (
                         <button
                           type="button"
                           onClick={clearCanvas}
-                          className="absolute right-2 top-2 text-[9.5px] text-slate-400 hover:text-slate-200 bg-slate-800/80 px-2 py-0.5 rounded"
+                          className="absolute right-2 top-2 text-[9.5px] text-slate-400 hover:text-slate-200 bg-slate-800/80 px-2 py-0.5 rounded cursor-pointer"
                         >
                           Clear
                         </button>

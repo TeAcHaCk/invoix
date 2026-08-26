@@ -127,26 +127,26 @@
 
 /* Glassmorphism panels */
 .glass, .glass-dark {
-  background: rgba(15, 23, 42, 0.70);
+  background: rgba(15, 23, 42, 0.75);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(148, 163, 184, 0.08);
+  border: 1px solid rgba(148, 163, 184, 0.12);
 }
 .glass-light {
-  background: rgba(255, 255, 255, 0.85);
+  background: #ffffff;
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(226, 232, 240, 0.80);
-  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 20px 45px -12px rgba(15, 23, 42, 0.08), 0 1px 3px 0 rgba(0, 0, 0, 0.05);
 }
 
 /* Dot grid patterns for landing */
 .dot-grid-bg, .dot-grid-bg-dark {
-  background-image: radial-gradient(circle, rgba(148, 163, 184, 0.05) 1px, transparent 1px);
+  background-image: radial-gradient(circle, rgba(148, 163, 184, 0.06) 1px, transparent 1px);
   background-size: 28px 28px;
 }
 .dot-grid-bg-light {
-  background-image: radial-gradient(circle, rgba(100, 116, 139, 0.12) 1px, transparent 1px);
+  background-image: radial-gradient(circle, rgba(148, 163, 184, 0.20) 1px, transparent 1px);
   background-size: 28px 28px;
 }
 
