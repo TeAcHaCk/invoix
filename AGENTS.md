@@ -180,6 +180,45 @@ Each of these shipped once and cost real debugging time.
    - Replaced ambiguous free-text validity input with `"Validity / Expiry Date"` on proposals and `"Payment Due Date"` on invoices.
 - **Verification**: `npm run lint` = **0 errors, 0 warnings**. `npm run build` = **Clean compile (exit 0)**.
 
+### 2026-08-26 — Review of Phase 2 integration (Claude Code)
+
+Antigravity wired all four points correctly and exactly to the contract:
+`Navbar` and `PublicProposalPage` call `downloadPdf`, `WhatsAppShareModal` uses
+`buildPdfFile`, `fallbackReason` is surfaced as a toast, and `NavbarProps` was
+widened to `(quality?: 'text' | 'image')`. Build, lint and both type-check
+passes are clean.
+
+**But the feature could never have fired, and that was my bug, not theirs.**
+
+`cloudSyncedAt` was stamped only into the local vault copy, *after* the payload
+was built. It therefore reached neither React state nor the server's
+`document_data`. Two features gated on it silently degraded:
+
+- `canExportTextPdf()` — always false, so **every** export fell back to raster.
+  The whole of Phase 2 was unreachable.
+- `getShareLinkState()` — always `not_synced`, so Copy Link would keep telling
+  the user to save a document that had already saved.
+
+Both would have looked like "the server render doesn't work" and sent us hunting
+in the wrong place.
+
+**Fixed:**
+- `saveDocument` now returns `synced: { shareToken, cloudSyncedAt }` on a
+  successful cloud write. Anyone holding the document in their own state must
+  merge this back — it is documented on the type.
+- `App.tsx` has `reconcileSynced()`, called on both save paths. **Guarded**: the
+  timestamp changes on every save, so an unguarded merge would mutate the
+  document, retrigger the autosave effect and loop forever. It only applies the
+  first stamp, or when the token itself changes.
+- `fetchPublicDocument` marks cloud-sourced documents as synced. A document that
+  came *from* the server is *on* the server; without this the client portal — the
+  page where a crisp PDF matters most — could never use the text path.
+
+**Lesson for both of us:** when a service writes derived state into storage only,
+any caller holding that object in memory goes stale silently. Return it from the
+call and make merging the caller's contract, rather than relying on a re-read
+that may never happen.
+
 ### 2026-08-26 — Phase 2 DONE: /api/pdf server-rendered text PDF (Claude Code)
 
 Built, type-checks, builds, lints. **Not pushed** — waiting on the combined push.

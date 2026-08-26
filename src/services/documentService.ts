@@ -16,6 +16,15 @@ export interface CloudSaveResult {
   error?: string;
   /** Local storage is full. Data is still safe if isCloud is true. */
   quotaExceeded?: boolean;
+  /**
+   * The authoritative share token and sync stamp after a successful cloud write.
+   *
+   * Callers holding the document in their own state MUST merge this back.
+   * Without it the in-memory copy never learns it is synced, and every feature
+   * gated on that — the text-PDF export and the share-link check — silently
+   * degrades even though the save worked.
+   */
+  synced?: { shareToken?: string; cloudSyncedAt: string };
 }
 
 /** Documents created before share tokens existed get one on first touch. */
@@ -144,14 +153,16 @@ export const saveDocument = async (
       .select('share_token')
       .maybeSingle();
 
+    let synced: { shareToken?: string; cloudSyncedAt: string } | undefined;
+
     if (!error) {
       // Record that this document is genuinely in the cloud, and adopt the
       // authoritative token. Both matter for deciding whether a share link works.
-      saveDocumentToVault({
-        ...document,
+      synced = {
         shareToken: saved?.share_token || document.shareToken,
         cloudSyncedAt: new Date().toISOString(),
-      });
+      };
+      saveDocumentToVault({ ...document, ...synced });
     }
 
     if (error) {
@@ -166,7 +177,7 @@ export const saveDocument = async (
     }
 
     // Cloud write succeeded, so the document is safe even if localStorage is full.
-    return { success: true, isCloud: true, quotaExceeded: local.quotaExceeded };
+    return { success: true, isCloud: true, quotaExceeded: local.quotaExceeded, synced };
   } catch (err: any) {
     console.error('Error saving document to cloud:', err);
     return {
@@ -230,7 +241,18 @@ export const fetchPublicDocument = async (
       const { data, error } = await supabase.rpc('get_public_document', { p_token: shareToken });
 
       if (!error && data) {
-        return { doc: data as QuotationDocument, source: 'cloud' };
+        const serverDoc = data as QuotationDocument;
+        // It came from the server, so it is on the server. The stored
+        // document_data does not carry cloudSyncedAt (the stamp is applied after
+        // the payload is built), and without this the client portal would always
+        // fall back to the raster PDF.
+        return {
+          doc: {
+            ...serverDoc,
+            cloudSyncedAt: serverDoc.cloudSyncedAt || new Date().toISOString(),
+          },
+          source: 'cloud',
+        };
       }
       if (error) {
         console.warn('Public document RPC failed, checking local storage:', error.message);
