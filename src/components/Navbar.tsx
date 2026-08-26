@@ -74,8 +74,10 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [copiedLink, setCopiedLink] = useState(false);
   const [isShareOpen, setIsShareOpen] = useState(false);
   const [isMoreOpen, setIsMoreOpen] = useState(false);
+  const [isPdfMenuOpen, setIsPdfMenuOpen] = useState(false);
   const shareRef = useRef<HTMLDivElement>(null);
   const moreRef = useRef<HTMLDivElement>(null);
+  const pdfMenuRef = useRef<HTMLDivElement>(null);
   const preset = INDUSTRY_PRESETS[doc.industry] || INDUSTRY_PRESETS.creative_agency;
 
   const issues = auditDocument(doc);
@@ -89,6 +91,9 @@ export const Navbar: React.FC<NavbarProps> = ({
       }
       if (moreRef.current && !moreRef.current.contains(e.target as Node)) {
         setIsMoreOpen(false);
+      }
+      if (pdfMenuRef.current && !pdfMenuRef.current.contains(e.target as Node)) {
+        setIsPdfMenuOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -293,17 +298,92 @@ export const Navbar: React.FC<NavbarProps> = ({
             )}
           </div>
 
-          {/* === PRIMARY: PDF Export === */}
-          <button
-            type="button"
-            onClick={onExportPdf}
-            disabled={isExporting}
-            className="flex items-center space-x-1.5 px-3 py-1.5 sm:px-4 sm:py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 text-xs font-extrabold rounded-xl shadow-lg shadow-amber-500/20 transition-all disabled:opacity-50 cursor-pointer"
-            title="Download crisp A4 PDF"
-          >
-            <Download className="w-3.5 h-3.5 stroke-[2.5]" />
-            <span>{isExporting ? '...' : 'PDF'}</span>
-          </button>
+          {/* === PRIMARY: PDF & Print Export Menu === */}
+          <div ref={pdfMenuRef} className="relative">
+            <div className="inline-flex rounded-xl shadow-lg shadow-amber-500/20 bg-gradient-to-r from-amber-500 to-amber-600">
+              <button
+                type="button"
+                onClick={() => { onPrint(); }}
+                className="flex items-center space-x-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 text-slate-950 text-xs font-extrabold hover:opacity-95 transition-all cursor-pointer"
+                title="Save as Crisp Vector PDF"
+              >
+                <Download className="w-3.5 h-3.5 stroke-[2.5]" />
+                <span className="hidden sm:inline">Save PDF</span>
+                <span className="sm:hidden">PDF</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsPdfMenuOpen(!isPdfMenuOpen)}
+                className="px-1.5 py-1.5 sm:py-2 text-slate-950 border-l border-amber-600/50 hover:bg-amber-400/40 rounded-r-xl transition-colors cursor-pointer"
+                title="PDF Export Options"
+              >
+                <ChevronDown className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            {isPdfMenuOpen && (
+              <div className="absolute right-0 top-full mt-2 w-72 glass rounded-2xl p-2 shadow-2xl shadow-black/50 border border-slate-700/60 z-50 modal-enter text-xs">
+                <div className="px-3 py-2 border-b border-slate-800">
+                  <p className="font-bold text-slate-200 text-[11px] font-['Outfit'] uppercase tracking-wider">
+                    Export Options
+                  </p>
+                  <p className="text-[10px] text-slate-400">Choose your preferred PDF format</p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => { onPrint(); setIsPdfMenuOpen(false); }}
+                  className="w-full flex items-start space-x-2.5 p-2.5 rounded-xl hover:bg-slate-800/70 transition-colors text-left cursor-pointer group mt-1"
+                >
+                  <div className="p-1.5 rounded-lg bg-amber-500/15 text-amber-300 border border-amber-500/30 group-hover:bg-amber-500 group-hover:text-slate-950 transition-colors shrink-0">
+                    <Sparkles className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="flex items-center space-x-1.5">
+                      <span className="font-bold text-slate-100">Save as PDF (Crisp Text)</span>
+                      <span className="text-[9px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-1.5 py-0.2 rounded font-semibold">
+                        Vector
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-slate-400 mt-0.5 leading-snug">
+                      True vector PDF: selectable text, ultra-sharp fonts, ~100 KB file size.
+                    </p>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => { onExportPdf(); setIsPdfMenuOpen(false); }}
+                  disabled={isExporting}
+                  className="w-full flex items-start space-x-2.5 p-2.5 rounded-xl hover:bg-slate-800/70 transition-colors text-left cursor-pointer group disabled:opacity-50"
+                >
+                  <div className="p-1.5 rounded-lg bg-slate-800 text-slate-300 border border-slate-700 group-hover:bg-slate-700 group-hover:text-white transition-colors shrink-0">
+                    <Download className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="flex items-center space-x-1.5">
+                      <span className="font-bold text-slate-200">Download PDF (Image)</span>
+                      <span className="text-[9px] bg-slate-800 text-slate-400 border border-slate-700 px-1.5 py-0.2 rounded">
+                        Raster
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-slate-400 mt-0.5 leading-snug">
+                      Direct canvas download snapshot (standard export).
+                    </p>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => { onPrint(); setIsPdfMenuOpen(false); }}
+                  className="w-full flex items-center space-x-2.5 px-2.5 py-2 rounded-xl text-slate-300 hover:bg-slate-800/60 transition-colors text-left cursor-pointer"
+                >
+                  <Printer className="w-4 h-4 text-slate-400 shrink-0 ml-1" />
+                  <span className="text-xs">Print / Physical Paper</span>
+                </button>
+              </div>
+            )}
+          </div>
 
           {/* === MORE DROPDOWN (Document Management & Mobile Settings) === */}
           <div ref={moreRef} className="relative">

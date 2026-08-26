@@ -125,9 +125,24 @@ Each of these shipped once and cost real debugging time.
 
 ## Handoff log
 
-Newest first. One entry per session. Keep it to what the next agent needs.
+### 2026-08-26 (latest) — Antigravity · Phase 1 Vector PDF UI & Headless Hooks Complete (Ready for Claude Phase 2)
 
-### 2026-08-26 (latest) — Antigravity · Invoice Payment Settlement & Due Date Polish
+**Delivered Phase 1 of the Vector PDF Upgrade:**
+
+1. **Integrated "Save as PDF (Crisp Text)" in UI**:
+   - `Navbar.tsx`: Built a split export dropdown offering:
+     - **"Save as PDF (Crisp Text)"** (`✨ Recommended Vector PDF` — selectable text, ~100 KB file size via `printDocument()`).
+     - **"Download PDF (Image)"** (`Raster Snapshot` via `exportDocumentToPdf()`).
+     - **"Print / Physical Paper"** via `printDocument()`.
+   - `PublicProposalPage.tsx`: Added designated `"Save PDF (Crisp Text)"` button on client portal alongside raster download.
+2. **Exposed Headless Chromium Hooks for Phase 2**:
+   - `src/utils/pdfGenerator.ts`: Added global `window.__invoixPreparePrint` and `window.__invoixTeardownPrint` exports so Claude Code's upcoming `/api/pdf` serverless function can trigger isolation in Puppeteer without simulating keyboard events.
+3. **Cleaned Dead Code in `documentAudit.ts`**:
+   - Removed dead `RENDER_LIMITS` constant since all view components now render content dynamically across pages.
+- **Verification**: `npm run lint` = **0 warnings, 0 errors**. `npm run build` = **Clean compile (exit 0)**.
+- **Next**: Claude Code is unblocked to implement **Phase 2 (`/api/pdf` server Chromium renderer on Vercel)**!
+
+### 2026-08-26 — Antigravity · Invoice Payment Settlement & Due Date Polish
 
 **Fixed Invoice Due Date & Added Full Payment Settlement Controls:**
 
@@ -164,6 +179,90 @@ Newest first. One entry per session. Keep it to what the next agent needs.
 5. **Honest Validity & Due Date Inputs**:
    - Replaced ambiguous free-text validity input with `"Validity / Expiry Date"` on proposals and `"Payment Due Date"` on invoices.
 - **Verification**: `npm run lint` = **0 errors, 0 warnings**. `npm run build` = **Clean compile (exit 0)**.
+
+### 2026-08-26 — Phase 2 DONE: /api/pdf server-rendered text PDF (Claude Code)
+
+Built, type-checks, builds, lints. **Not pushed** — waiting on the combined push.
+
+**What it does.** `GET /api/pdf?token=<shareToken>&filename=<name>.pdf` launches
+headless Chromium, loads the real public proposal page, calls
+`window.__invoixPreparePrint()`, switches to print media, and returns a genuine
+vector PDF. It renders the components we already ship through the same
+`@media print` stylesheet the browser uses, so there is **no second layout to
+maintain** — that was the whole reason for choosing this over jsPDF primitives
+or `@react-pdf/renderer`.
+
+**Risk from the plan, now measured:** `@sparticuz/chromium` + `puppeteer-core`
+come to **74 MB** against Vercel's 250 MB limit. Comfortable. Both modules load
+cleanly. `vercel.json` gives `api/pdf.ts` 2048 MB and a 60 s ceiling, because
+Chromium cold-starts in 2–5 s and the Hobby defaults would time out.
+
+**Security note:** the endpoint's authorisation *is* the share token — it exposes
+exactly what the public link already exposes, nothing more. It also verifies the
+document exists via `get_public_document` **before** launching Chromium, so a
+random token cannot burn a browser boot.
+
+**Also fixed while here:** the first install pulled a HIGH severity
+`extract-zip` path-traversal advisory via `@puppeteer/browsers`. Not on our code
+path (we never download a browser), but aligning to `puppeteer-core@25.9` +
+`@sparticuz/chromium@149` clears it. **Keep those two versions in step** — the
+CDP protocol is version-sensitive, so bumping one alone can break rendering in a
+way that only shows up at runtime.
+
+---
+
+#### Antigravity — three integration points
+
+New module: `src/services/pdfExportService.ts`
+
+```ts
+downloadPdf(doc, 'text' | 'image', elementId?)   // prefers text, falls back silently
+buildPdfFile(doc, elementId?)                    // File for attachment flows
+canExportTextPdf(doc)                            // gate UI on this
+fetchTextPdfBlob(doc)                            // raw Blob if you need it
+```
+
+1. **Point the existing "Save as PDF (Crisp Text)" at `downloadPdf(doc, 'text')`.**
+   It currently calls `printDocument()`, which is a real vector PDF but routes
+   the user through the browser print dialog with no filename control. The
+   server path gives the same quality as a direct download. Keep `printDocument()`
+   as a separate **Print** action — it is still the right tool for actual paper,
+   and it is the offline-capable path.
+
+2. **Switch WhatsApp to `buildPdfFile(doc)`.** `WhatsAppShareModal.tsx:100` uses
+   `generatePdfBlob`, which is the rasteriser. This is the case the print dialog
+   *cannot* serve at all — it hands the PDF to the user, never to the page — so
+   it is the clearest win for the server renderer.
+
+3. **Surface `fallbackReason`.** `downloadPdf` degrades silently to raster when a
+   document has not synced, or the render fails, or a cold start runs long. It
+   returns a plain-language `fallbackReason`; show it, or the user gets a
+   blurry PDF with no idea why. Gate the crisp option on `canExportTextPdf(doc)`
+   so the reason is rare.
+
+**Cold start needs a real progress state**, not a spinner that looks hung — 2–5 s
+of nothing is where users click twice.
+
+---
+
+#### Still unverified — needs a deploy
+
+I cannot run serverless Chromium locally, so **the render itself is untested**.
+Everything around it (types, build, lint, module loading, bundle size) is
+checked. First deploy, hit:
+
+```
+https://www.invoix.app/api/pdf?token=<a real shareToken>
+```
+
+Expect a downloaded PDF with selectable text. If it returns 500, the Vercel
+function logs will say whether it was the Chromium launch, the
+`.print-page` wait, or the missing prepare hook — those three are logged
+distinctly on purpose.
+
+**Raster export remains untouched.** `git diff cbeec95 -- src/utils/pdfGenerator.ts`
+is **91 insertions, 0 deletions**: additive only. Rollback for that file alone is
+still `git checkout cbeec95 -- src/utils/pdfGenerator.ts`.
 
 ### 2026-08-26 — PLAN: text-based PDF download (Claude Code → Antigravity)
 

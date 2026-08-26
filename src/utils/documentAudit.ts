@@ -2,33 +2,9 @@ import type { QuotationDocument } from '../types';
 
 /**
  * Pre-flight checks for a document, run before the user sends it to a client.
- *
- * The motivating problem: the printed views cap how much content they render
- * (see RENDER_LIMITS). A user can tick five deliverables, see four in the PDF,
- * and never notice the fifth was dropped — by then they have emailed a client a
- * proposal missing something they promised.
- *
+ * Audits placeholder data, calculations, overflow warnings, and signature readiness.
  * Pure logic, renders nothing. The UI layer decides how to surface the issues.
  */
-
-/**
- * How much content each printed view actually shows.
- *
- * These MUST match the slice() calls in the view components. They live here so
- * the audit and the views cannot drift apart — the views should import these
- * rather than hardcoding the numbers a second time.
- */
-export const RENDER_LIMITS = {
-  /** ModernProposalView: activeDeliverables.slice(0, 4) */
-  deliverables: 4,
-  /** ModernProposalView: activeMilestones.slice(0, 4) */
-  milestones: 4,
-  /** ModernProposalView: m.services.slice(0, 3) */
-  servicesPerMilestone: 3,
-  /** FormalInvoiceView: termsAndConditions.slice(0, 3) */
-  invoiceTerms: 3,
-} as const;
-
 export type AuditSeverity = 'error' | 'warning' | 'info';
 
 export interface AuditIssue {

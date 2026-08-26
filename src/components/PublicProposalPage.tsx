@@ -7,7 +7,7 @@ import {
 } from '../services/documentService';
 import { generateContractSignatureHash, generateCertificateId } from '../utils/cryptoAudit';
 import { formatCurrency } from '../utils/formatters';
-import { exportDocumentToPdf } from '../utils/pdfGenerator';
+import { exportDocumentToPdf, printDocument } from '../utils/pdfGenerator';
 import { InvoiceDocumentView } from './InvoiceDocumentView';
 import confetti from 'canvas-confetti';
 import {
@@ -23,6 +23,7 @@ import {
   Eye,
   Share2,
   CreditCard,
+  Sparkles,
   Copy,
   Upload,
   Type as TypeIcon,
@@ -477,15 +478,27 @@ export const PublicProposalPage: React.FC<PublicProposalPageProps> = ({ document
             </span>
           </div>
 
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-2.5">
+            <button
+              type="button"
+              onClick={() => printDocument()}
+              className="px-3.5 py-1.5 bg-gradient-to-r from-amber-500/20 to-amber-600/20 hover:from-amber-500/30 hover:to-amber-600/30 text-amber-300 text-xs font-semibold rounded-xl border border-amber-500/40 flex items-center space-x-1.5 transition-all cursor-pointer shadow-sm shadow-amber-500/10"
+              title="Save as crisp vector PDF (selectable text, ~100 KB)"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+              <span className="hidden sm:inline">Save PDF (Crisp Text)</span>
+              <span className="sm:hidden">Crisp PDF</span>
+            </button>
+
             <button
               type="button"
               onClick={handleDownloadPdf}
               disabled={isExporting}
-              className="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl border border-slate-700 flex items-center space-x-1.5 transition-all disabled:opacity-50 cursor-pointer"
+              className="px-3 py-1.5 bg-slate-800/80 hover:bg-slate-700 text-slate-300 text-xs font-medium rounded-xl border border-slate-700/80 flex items-center space-x-1.5 transition-all disabled:opacity-50 cursor-pointer"
+              title="Download raster image PDF snapshot"
             >
               <Download className="w-3.5 h-3.5" />
-              <span>{isExporting ? 'Generating...' : 'Download PDF'}</span>
+              <span>{isExporting ? 'Generating...' : 'Download'}</span>
             </button>
 
             {isApproved ? (

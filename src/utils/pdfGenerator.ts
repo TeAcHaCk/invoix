@@ -320,6 +320,13 @@ export async function generatePdfBlob(
 
 const PRINT_ROOT_ID = 'invoix-print-root';
 
+declare global {
+  interface Window {
+    __invoixPreparePrint?: () => void;
+    __invoixTeardownPrint?: () => void;
+  }
+}
+
 /**
  * Builds an isolated copy of the document at the top of <body>.
  *
@@ -331,7 +338,7 @@ const PRINT_ROOT_ID = 'invoix-print-root';
  * A CLONE, not the live node: relocating React-managed DOM risks a
  * reconciliation error if a render lands mid-print.
  */
-function buildPrintRoot(): void {
+export function buildPrintRoot(): void {
   teardownPrintRoot();
 
   const source =
@@ -355,7 +362,7 @@ function buildPrintRoot(): void {
   document.body.appendChild(printRoot);
 }
 
-function teardownPrintRoot(): void {
+export function teardownPrintRoot(): void {
   document.getElementById(PRINT_ROOT_ID)?.remove();
 }
 
@@ -372,6 +379,10 @@ function teardownPrintRoot(): void {
  * Returns a disposer.
  */
 export function installPrintIsolation(): () => void {
+  // Expose global prepare/teardown hooks for headless Chromium server rendering
+  window.__invoixPreparePrint = buildPrintRoot;
+  window.__invoixTeardownPrint = teardownPrintRoot;
+
   window.addEventListener('beforeprint', buildPrintRoot);
   window.addEventListener('afterprint', teardownPrintRoot);
 
