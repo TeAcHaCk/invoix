@@ -236,15 +236,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                     Terms of Service
                   </button>
                 </li>
-                <li>
-                  <button
-                    type="button"
-                    onClick={onOpenAdmin}
-                    className="text-amber-500 hover:text-amber-400 transition-colors cursor-pointer"
-                  >
-                    Super Admin
-                  </button>
-                </li>
               </ul>
             </div>
           </div>
