@@ -125,7 +125,25 @@ Each of these shipped once and cost real debugging time.
 
 ## Handoff log
 
-### 2026-08-26 (latest) — Antigravity · SEO Content & Template Landing Pages Complete
+### 2026-08-26 (latest) — Antigravity · Landing Page Redesign, Brand Monogram Logo, Light/Dark Theme & Overhauled Live Demo
+
+**Delivered Landing Page Visual & Conversion Overhaul:**
+
+1. **Illuminated Brand Monogram & Slogan (`InvoixBrandLogo.tsx`)**:
+   - Replaced the previous awkward white-box PNG wrapper with a crisp vector gold/emerald stream monogram icon and brand slogan: **"Your Proposals. Their Applause."**
+   - Seamlessly adapts across both Dark and Light themes in the header and footer.
+2. **Landing Page Light & Dark Theme System**:
+   - Built a scoped Theme switcher with Sun/Moon toggle in [`LandingHeader.tsx`](file:///d:/Product%20build/src/components/landing/LandingHeader.tsx) and local storage persistence.
+   - Designed elegant Dark Mode (deep midnight slate with amber/emerald lighting) and Light Mode (clean ivory/slate with subtle warm glass and crisp typography).
+   - Scoped strictly to the Landing Page without interfering with the Studio Workspace.
+3. **Hyper-Attractive Hero Live Proposal Demo (`LandingHero.tsx`)**:
+   - **Mac / App Browser Chrome**: Added a realistic window frame with red/yellow/green control dots, SSL URL badge (`🔒 invoix.app/p/acme-q1`), and a floating live view badge (`🔔 Client viewed proposal 2m ago`).
+   - **Interactive Scope & Add-on Engine**: Live toggles with real-time recalculation of total deal investment and 30% advance deposit checkpoints.
+   - **Dual E-Signature Simulator**: Supports both instant legal name typing AND touch/mouse signature drawing on an HTML5 canvas.
+   - **Celebratory Acceptance Flow**: Fires confetti celebration and renders an audit-verified timestamp stamp badge + scan-to-pay QR code.
+- **Verification**: `npm run lint` = **0 warnings, 0 errors**. `npm run build` = **Clean compile (exit 0)** with entry bundle ~536 kB.
+
+### 2026-08-26 — Antigravity · SEO Content & Template Landing Pages Complete
 
 **Delivered the Content Half of Landing Page SEO:**
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import confetti from 'canvas-confetti';
 import { useScrollReveal } from '../../hooks/useScrollReveal';
 import {
@@ -8,22 +8,60 @@ import {
   PenTool,
   Check,
   Star,
+  Lock,
+  Eye,
+  ShieldCheck,
+  QrCode,
+  RotateCcw,
+  Zap,
+  Flame,
 } from 'lucide-react';
 
 interface LandingHeroProps {
+  theme?: 'dark' | 'light';
   onStartFree: () => void;
 }
 
-export const LandingHero: React.FC<LandingHeroProps> = ({ onStartFree }) => {
-  const [selectedAddons, setSelectedAddons] = useState<string[]>(['addon-seo']);
-  const [signerName, setSignerName] = useState('');
-  const [isSigned, setIsSigned] = useState(false);
+export const LandingHero: React.FC<LandingHeroProps> = ({
+  theme = 'dark',
+  onStartFree,
+}) => {
+  const isDark = theme === 'dark';
   const sectionRef = useScrollReveal();
+
+  const [selectedAddons, setSelectedAddons] = useState<string[]>(['addon-seo']);
+  const [signerName, setSignerName] = useState('Alex Mercer');
+  const [signMode, setSignMode] = useState<'draw' | 'type'>('type');
+  const [isSigned, setIsSigned] = useState(false);
+  const [signedTimestamp, setSignedTimestamp] = useState('');
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [hasDrawn, setHasDrawn] = useState(false);
+
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   const basePrice = 3500;
   const addonsList = [
-    { id: 'addon-seo', name: 'Search Engine Optimization & Schema', price: 650 },
-    { id: 'addon-maintenance', name: 'Priority 24/7 SLA Maintenance', price: 450 },
+    {
+      id: 'addon-seo',
+      name: 'SEO & Structured Schema Architecture',
+      badge: 'Most Popular',
+      price: 650,
+      icon: <Flame className="w-3 h-3 text-amber-500" />,
+    },
+    {
+      id: 'addon-maintenance',
+      name: 'Priority 24/7 SLA & Cloud DevOps',
+      badge: 'Save 15%',
+      price: 450,
+      icon: <Zap className="w-3 h-3 text-emerald-500" />,
+    },
+    {
+      id: 'addon-security',
+      name: 'Enterprise Security Hardening & Pentest',
+      badge: 'Certified',
+      price: 550,
+      icon: <ShieldCheck className="w-3 h-3 text-cyan-500" />,
+    },
   ];
 
   const currentTotal =
@@ -32,7 +70,10 @@ export const LandingHero: React.FC<LandingHeroProps> = ({ onStartFree }) => {
       .filter((a) => selectedAddons.includes(a.id))
       .reduce((sum, a) => sum + a.price, 0);
 
+  const advanceAmount = Math.round(currentTotal * 0.3);
+
   const toggleAddon = (id: string) => {
+    if (isSigned) return;
     if (selectedAddons.includes(id)) {
       setSelectedAddons(selectedAddons.filter((a) => a !== id));
     } else {
@@ -40,72 +81,175 @@ export const LandingHero: React.FC<LandingHeroProps> = ({ onStartFree }) => {
     }
   };
 
+  // Canvas drawing helpers
+  useEffect(() => {
+    if (signMode === 'draw' && canvasRef.current) {
+      const canvas = canvasRef.current;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.strokeStyle = isDark ? '#38bdf8' : '#0284c7';
+        ctx.lineWidth = 2.5;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+      }
+    }
+  }, [signMode, isDark]);
+
+  const startDrawing = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+    if (!canvasRef.current || isSigned) return;
+    setIsDrawing(true);
+    setHasDrawn(true);
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+    ctx.beginPath();
+    ctx.moveTo(clientX - rect.left, clientY - rect.top);
+  };
+
+  const draw = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+    if (!isDrawing || !canvasRef.current || isSigned) return;
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+    ctx.lineTo(clientX - rect.left, clientY - rect.top);
+    ctx.stroke();
+  };
+
+  const stopDrawing = () => {
+    setIsDrawing(false);
+  };
+
+  const clearCanvas = () => {
+    if (!canvasRef.current) return;
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      setHasDrawn(false);
+    }
+  };
+
   const handleSignDemo = () => {
-    if (!signerName.trim()) setSignerName('Alex Mercer');
     setIsSigned(true);
-    confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } });
+    const now = new Date();
+    setSignedTimestamp(now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+    confetti({
+      particleCount: 90,
+      spread: 75,
+      origin: { y: 0.6 },
+      colors: ['#f59e0b', '#10b981', '#38bdf8', '#fbbf24'],
+    });
   };
 
   const resetDemo = () => {
     setIsSigned(false);
-    setSignerName('');
+    clearCanvas();
   };
 
   return (
-    <section ref={sectionRef} className="relative pt-32 pb-24 px-4 sm:px-8 overflow-hidden font-['Plus_Jakarta_Sans',sans-serif] dot-grid-bg">
-      {/* Ambient background glow */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-amber-500/8 blur-[160px] rounded-full pointer-events-none -z-10" />
-      <div className="absolute top-[60%] left-[20%] w-[300px] h-[300px] bg-purple-500/5 blur-[120px] rounded-full pointer-events-none -z-10" />
+    <section
+      ref={sectionRef}
+      className={`relative pt-32 sm:pt-36 pb-24 px-4 sm:px-8 overflow-hidden font-['Plus_Jakarta_Sans',sans-serif] transition-colors duration-300 ${
+        isDark ? 'dot-grid-bg-dark bg-slate-950 text-slate-100' : 'dot-grid-bg-light bg-slate-50/80 text-slate-900'
+      }`}
+    >
+      {/* Dynamic Ambient Background Glows */}
+      <div
+        className={`absolute top-1/4 left-1/2 -translate-x-1/2 w-[850px] h-[450px] rounded-full pointer-events-none -z-10 blur-[150px] ${
+          isDark ? 'bg-amber-500/10' : 'bg-amber-400/15'
+        }`}
+      />
+      <div
+        className={`absolute top-[60%] left-[15%] w-[400px] h-[400px] rounded-full pointer-events-none -z-10 blur-[130px] ${
+          isDark ? 'bg-emerald-500/8' : 'bg-emerald-400/10'
+        }`}
+      />
 
-      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
-        {/* Left Copy & Value Proposition */}
-        <div className="lg:col-span-7 space-y-7 text-center lg:text-left">
-          {/* Floating Badge */}
-          <div className="reveal-on-scroll inline-flex items-center space-x-2 px-4 py-2 rounded-full glass text-amber-300 text-xs font-semibold animate-float">
-            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-            <span>The Universal Proposal & Invoice Platform</span>
+      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-14 items-center">
+        {/* Left: Value Proposition & High-Converting Pitch */}
+        <div className="lg:col-span-6 space-y-7 text-center lg:text-left">
+          {/* Floating Pill Badge */}
+          <div
+            className={`reveal-on-scroll inline-flex items-center space-x-2 px-4 py-2 rounded-full text-xs font-semibold shadow-inner border transition-all ${
+              isDark
+                ? 'bg-slate-900/80 border-amber-500/30 text-amber-300'
+                : 'bg-white border-amber-400/40 text-amber-800 shadow-amber-500/10'
+            }`}
+          >
+            <Sparkles className="w-3.5 h-3.5 text-amber-500 animate-pulse" />
+            <span>The High-Converting Proposal & Invoicing Platform</span>
           </div>
 
           {/* Main Headline */}
-          <h1 className="reveal-on-scroll text-3xl sm:text-5xl lg:text-[3.5rem] font-extrabold text-slate-100 tracking-tight font-['Outfit'] leading-[1.12]">
-            Create Proposals & Invoices That{' '}
-            <span className="bg-gradient-to-r from-amber-300 via-amber-400 to-orange-400 bg-clip-text text-transparent animate-shimmer">
-              Win High-Ticket Deals.
+          <h1
+            className={`reveal-on-scroll text-3xl sm:text-5xl lg:text-[3.6rem] font-extrabold tracking-tight font-['Outfit'] leading-[1.12] ${
+              isDark ? 'text-slate-100' : 'text-slate-950'
+            }`}
+          >
+            Your Proposals.
+            <br />
+            <span className="bg-gradient-to-r from-amber-400 via-amber-500 to-orange-500 bg-clip-text text-transparent">
+              Their Standing Ovation.
             </span>
           </h1>
 
           {/* Subtitle */}
-          <p className="reveal-on-scroll text-sm sm:text-base text-slate-400 max-w-xl leading-relaxed mx-auto lg:mx-0">
-            Tailored for Agencies, Freelance Engineers, Contractors & Consultants. Send live interactive proposals with optional client upsells, digital e-signatures, multi-currency pricing, and instant payment QR codes.
+          <p
+            className={`reveal-on-scroll text-sm sm:text-base max-w-xl leading-relaxed mx-auto lg:mx-0 ${
+              isDark ? 'text-slate-400' : 'text-slate-600'
+            }`}
+          >
+            Stop emailing flat, forgotten PDFs. Send <strong>interactive client portals</strong> with live package add-ons, instant touch-screen e-signatures, real-time view notifications, and dynamic scan-to-pay QR codes.
           </p>
 
-          {/* CTA Buttons */}
-          <div className="reveal-on-scroll flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-2">
+          {/* Primary Action Buttons */}
+          <div className="reveal-on-scroll flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3.5 pt-2">
             <button
               type="button"
               onClick={onStartFree}
-              className="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-extrabold text-sm rounded-2xl shadow-xl shadow-amber-500/25 flex items-center justify-center space-x-2 transition-all animate-pulse-glow cursor-pointer"
+              className="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-extrabold text-sm rounded-2xl shadow-xl shadow-amber-500/25 flex items-center justify-center space-x-2 transition-all transform hover:scale-[1.02] cursor-pointer"
             >
-              <span>Start Creating Free</span>
+              <Zap className="w-4 h-4 fill-slate-950" />
+              <span>Create Your First Proposal (Free)</span>
               <ArrowRight className="w-4 h-4" />
             </button>
 
             <a
               href="#industries"
-              className="w-full sm:w-auto px-6 py-4 glass hover:bg-slate-800/60 text-slate-200 font-semibold text-sm rounded-2xl flex items-center justify-center space-x-2 transition-all cursor-pointer"
+              className={`w-full sm:w-auto px-6 py-4 rounded-2xl text-sm font-bold border transition-all flex items-center justify-center space-x-2 cursor-pointer ${
+                isDark
+                  ? 'bg-slate-900/60 hover:bg-slate-800 text-slate-200 border-slate-700/80'
+                  : 'bg-white hover:bg-slate-100 text-slate-800 border-slate-200 shadow-sm'
+              }`}
             >
               <span>Explore Industry Presets</span>
             </a>
           </div>
 
           {/* Social Proof Stats */}
-          <div className="reveal-on-scroll pt-10 border-t border-slate-800/50 grid grid-cols-3 gap-6 text-center lg:text-left">
+          <div
+            className={`reveal-on-scroll pt-8 border-t grid grid-cols-3 gap-4 sm:gap-6 text-center lg:text-left ${
+              isDark ? 'border-slate-800/80' : 'border-slate-200'
+            }`}
+          >
             <div>
-              <h3 className="text-xl sm:text-2xl font-bold font-mono text-slate-100">10,000+</h3>
-              <p className="text-[11px] text-slate-500 mt-0.5">Proposals Generated</p>
+              <h3 className={`text-xl sm:text-2xl font-bold font-mono ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                10,000+
+              </h3>
+              <p className="text-[11px] text-slate-500 mt-0.5">Proposals Created</p>
             </div>
             <div>
-              <h3 className="text-xl sm:text-2xl font-bold font-mono text-amber-300">$4.2M+</h3>
+              <h3 className="text-xl sm:text-2xl font-bold font-mono text-amber-500">
+                $4.8M+
+              </h3>
               <p className="text-[11px] text-slate-500 mt-0.5">Closed Deal Volume</p>
             </div>
             <div>
@@ -114,138 +258,302 @@ export const LandingHero: React.FC<LandingHeroProps> = ({ onStartFree }) => {
                   <Star key={i} className="w-3.5 h-3.5 fill-current" />
                 ))}
               </div>
-              <p className="text-[11px] text-slate-500 mt-1">4.9/5 from 850+ Agencies</p>
+              <p className="text-[11px] text-slate-500 mt-1">4.9/5 from 900+ Studios</p>
             </div>
           </div>
         </div>
 
-        {/* Right: Live Interactive Mini Proposal Widget */}
-        <div className="lg:col-span-5 relative reveal-on-scroll">
-          {/* Glowing card wrapper */}
-          <div className="absolute -inset-[2px] bg-gradient-to-br from-amber-500/30 via-transparent to-emerald-500/20 rounded-[26px] blur-sm opacity-60 pointer-events-none" />
+        {/* Right: Hyper-Attractive Interactive Proposal Widget with Mac Chrome Frame */}
+        <div className="lg:col-span-6 relative reveal-on-scroll perspective-container">
+          {/* Animated floating notification pill */}
+          <div
+            className={`absolute -top-4 right-4 z-20 px-3.5 py-1.5 rounded-full text-[10.5px] font-bold shadow-xl border flex items-center space-x-2 animate-float ${
+              isDark
+                ? 'bg-slate-900 text-emerald-300 border-emerald-500/40 shadow-emerald-950/40'
+                : 'bg-white text-emerald-800 border-emerald-300 shadow-slate-300/60'
+            }`}
+          >
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+            <Eye className="w-3.5 h-3.5 text-emerald-500" />
+            <span>Client viewed proposal 2m ago</span>
+          </div>
 
-          <div className="relative glass rounded-3xl p-6 shadow-2xl space-y-5 glow-amber">
-            {/* Top Widget Bar */}
-            <div className="flex items-center justify-between border-b border-slate-700/50 pb-3">
-              <div className="flex items-center space-x-2.5">
-                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-400/20 to-amber-600/20 text-amber-300 border border-amber-500/30 flex items-center justify-center font-bold text-xs">
-                  ✨
-                </div>
+          {/* Interactive Card with Mac Window Chrome */}
+          <div
+            className={`tilt-card rounded-3xl shadow-2xl overflow-hidden border transition-all duration-300 animated-gradient-border ${
+              isDark
+                ? 'glass-dark text-slate-100'
+                : 'glass-light text-slate-900'
+            }`}
+          >
+            {/* Top Mac Window Chrome Header Bar */}
+            <div
+              className={`px-4 py-3 border-b flex items-center justify-between text-xs ${
+                isDark ? 'bg-slate-950/90 border-slate-800' : 'bg-slate-100/90 border-slate-200'
+              }`}
+            >
+              {/* Red / Yellow / Green Window Dots */}
+              <div className="flex items-center space-x-2">
+                <span className="w-3 h-3 rounded-full bg-rose-500/90 inline-block shadow-sm" />
+                <span className="w-3 h-3 rounded-full bg-amber-400/90 inline-block shadow-sm" />
+                <span className="w-3 h-3 rounded-full bg-emerald-500/90 inline-block shadow-sm" />
+              </div>
+
+              {/* URL Address Bar */}
+              <div
+                className={`px-3 py-1 rounded-lg text-[10.5px] font-mono flex items-center space-x-1.5 border max-w-[200px] truncate ${
+                  isDark
+                    ? 'bg-slate-900/90 border-slate-800 text-slate-300'
+                    : 'bg-white border-slate-200 text-slate-700 shadow-inner'
+                }`}
+              >
+                <Lock className="w-3 h-3 text-emerald-500 shrink-0" />
+                <span className="truncate">invoix.app/p/acme-q1</span>
+              </div>
+
+              {/* Status Badge */}
+              <span
+                className={`text-[9.5px] font-extrabold uppercase px-2 py-0.5 rounded-full border ${
+                  isSigned
+                    ? 'bg-emerald-500/15 text-emerald-500 border-emerald-500/30'
+                    : 'bg-amber-500/15 text-amber-500 border-amber-500/30'
+                }`}
+              >
+                {isSigned ? '✓ Signed' : 'Live Interactive'}
+              </span>
+            </div>
+
+            {/* Proposal Body Inside Mockup */}
+            <div className="p-5 sm:p-6 space-y-4">
+              {/* Proposal Header Meta */}
+              <div className="flex items-start justify-between border-b pb-3 border-slate-200/20">
                 <div>
-                  <h3 className="text-xs font-bold text-slate-100 font-['Outfit']">Interactive Client Portal</h3>
-                  <p className="text-[10px] text-slate-500">Try toggling add-ons & signing live!</p>
+                  <span className="text-[9.5px] font-extrabold uppercase tracking-wider text-amber-500 block font-['Outfit']">
+                    Commercial Proposal
+                  </span>
+                  <h4 className="text-base sm:text-lg font-bold font-['Outfit'] leading-tight">
+                    Full-Stack Next.js Platform Build
+                  </h4>
+                  <p className={`text-[11px] mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                    Prepared for Acme International Corp
+                  </p>
+                </div>
+                <div className="text-right">
+                  <span className="text-[10px] font-mono text-slate-400 block">EST-2026-08</span>
+                  <span className="text-[10px] text-emerald-500 font-bold">Valid for 14 Days</span>
                 </div>
               </div>
-              <span className={`text-[10px] px-2.5 py-1 rounded-full font-bold uppercase border ${
-                isSigned
-                  ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30'
-                  : 'bg-amber-500/10 text-amber-300 border-amber-500/30'
-              }`}>
-                {isSigned ? '✓ Approved' : 'Live Demo'}
-              </span>
-            </div>
 
-            {/* Proposal Scope Title */}
-            <div>
-              <span className="text-[9px] font-bold text-amber-400/80 uppercase tracking-[0.2em] font-['Outfit'] block">
-                Commercial Estimate
-              </span>
-              <h4 className="text-base font-bold text-slate-100 font-['Outfit'] mt-0.5">
-                Full-Stack Next.js Platform Build
-              </h4>
-              <p className="text-[11px] text-slate-500">Prepared for Acme International</p>
-            </div>
-
-            {/* Interactive Addon Checkboxes */}
-            <div className="space-y-2 text-xs">
-              {/* Fixed core item */}
-              <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-700/50 flex items-center justify-between">
+              {/* Core Fixed Line Item */}
+              <div
+                className={`p-3 rounded-xl border flex items-center justify-between text-xs ${
+                  isDark ? 'bg-slate-950/70 border-slate-800' : 'bg-slate-100/80 border-slate-200'
+                }`}
+              >
                 <div className="flex items-center space-x-2.5">
-                  <div className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
+                  <div className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-500 flex items-center justify-center">
                     <Check className="w-3 h-3 stroke-[3]" />
                   </div>
-                  <span className="text-slate-200 font-medium">Core Web Application & API</span>
+                  <div>
+                    <span className="font-semibold block">Core Application Architecture & API</span>
+                    <span className="text-[9.5px] text-slate-400">Included Scope Base</span>
+                  </div>
                 </div>
-                <span className="font-mono text-slate-100 font-bold">$3,500</span>
+                <span className="font-mono font-bold text-sm">$3,500</span>
               </div>
 
-              {/* Optional add-ons */}
-              {addonsList.map((addon) => {
-                const isChecked = selectedAddons.includes(addon.id);
-                return (
-                  <div
-                    key={addon.id}
-                    onClick={() => !isSigned && toggleAddon(addon.id)}
-                    className={`p-3 rounded-xl border flex items-center justify-between cursor-pointer transition-all duration-200 ${
-                      isChecked
-                        ? 'bg-slate-950/80 border-amber-500/40 shadow-sm'
-                        : 'bg-slate-950/30 border-slate-800/40 opacity-50 hover:opacity-70'
-                    }`}
-                  >
-                    <div className="flex items-center space-x-2.5">
-                      <div
-                        className={`w-5 h-5 rounded flex items-center justify-center border-2 transition-colors duration-200 ${
-                          isChecked
-                            ? 'bg-amber-500 border-amber-400 text-slate-950'
-                            : 'border-slate-600 bg-transparent'
+              {/* Optional Upsell Add-ons with live toggles */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
+                    Optional Add-ons (Toggle to calculate):
+                  </span>
+                  <span className="text-[10px] text-amber-500 font-bold">Try clicking!</span>
+                </div>
+
+                {addonsList.map((addon) => {
+                  const isChecked = selectedAddons.includes(addon.id);
+                  return (
+                    <div
+                      key={addon.id}
+                      onClick={() => toggleAddon(addon.id)}
+                      className={`p-2.5 rounded-xl border flex items-center justify-between cursor-pointer transition-all duration-200 select-none ${
+                        isChecked
+                          ? isDark
+                            ? 'bg-slate-900/90 border-amber-500/50 shadow-md shadow-amber-500/5'
+                            : 'bg-amber-50/80 border-amber-400 shadow-sm'
+                          : isDark
+                          ? 'bg-slate-950/40 border-slate-800/60 opacity-60 hover:opacity-90'
+                          : 'bg-white border-slate-200 opacity-60 hover:opacity-90'
+                      }`}
+                    >
+                      <div className="flex items-center space-x-2.5">
+                        <div
+                          className={`w-4 h-4 rounded flex items-center justify-center border transition-all ${
+                            isChecked
+                              ? 'bg-amber-500 border-amber-500 text-slate-950'
+                              : 'border-slate-500 bg-transparent'
+                          }`}
+                        >
+                          {isChecked && <Check className="w-3 h-3 stroke-[3]" />}
+                        </div>
+                        <div>
+                          <div className="flex items-center space-x-1.5">
+                            <span className="text-xs font-semibold">{addon.name}</span>
+                            <span className="text-[9px] px-1.5 py-0.2 rounded font-bold uppercase bg-amber-500/15 text-amber-500">
+                              {addon.badge}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <span className="font-mono font-bold text-xs text-amber-500">+${addon.price}</span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Total Investment Card */}
+              <div
+                className={`p-3.5 rounded-xl border flex items-center justify-between ${
+                  isDark ? 'bg-slate-950/90 border-slate-800' : 'bg-slate-900 text-white border-slate-800'
+                }`}
+              >
+                <div>
+                  <span className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wide block">
+                    Total Investment Value
+                  </span>
+                  <span className="text-[10.5px] text-emerald-400 font-bold">
+                    30% Advance Booking: ${advanceAmount.toLocaleString()}
+                  </span>
+                </div>
+                <div className="text-right">
+                  <span className="text-xl sm:text-2xl font-mono text-amber-400 font-black tracking-tight">
+                    ${currentTotal.toLocaleString()}
+                  </span>
+                </div>
+              </div>
+
+              {/* E-Signature Approval Interaction */}
+              {isSigned ? (
+                <div
+                  className={`p-3.5 rounded-2xl border flex flex-col sm:flex-row items-center justify-between gap-3 text-xs animate-fadeIn ${
+                    isDark
+                      ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
+                      : 'bg-emerald-50 border-emerald-300 text-emerald-900'
+                  }`}
+                >
+                  <div className="flex items-center space-x-2">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
+                    <div>
+                      <p className="font-extrabold">Digitally Signed & Legally Approved!</p>
+                      <p className="text-[10px] opacity-80">
+                        Signatory: {signerName} • Verified at {signedTimestamp}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <div className="p-1 bg-white rounded-lg border border-emerald-300 shrink-0">
+                      <QrCode className="w-6 h-6 text-slate-900" />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={resetDemo}
+                      className="px-2.5 py-1 text-[10.5px] font-bold rounded-lg border border-emerald-500/40 hover:bg-emerald-500/20 transition-colors flex items-center space-x-1 cursor-pointer"
+                    >
+                      <RotateCcw className="w-3 h-3" />
+                      <span>Reset</span>
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-2.5">
+                  {/* Switch Sign Mode */}
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className="font-bold text-slate-400">Acceptance Signature:</span>
+                    <div className="flex items-center space-x-2">
+                      <button
+                        type="button"
+                        onClick={() => setSignMode('type')}
+                        className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer ${
+                          signMode === 'type'
+                            ? 'bg-amber-500 text-slate-950'
+                            : 'text-slate-400 hover:text-slate-200'
                         }`}
                       >
-                        {isChecked && <Check className="w-3 h-3 stroke-[3]" />}
-                      </div>
-                      <div>
-                        <span className="text-slate-200 font-medium block">{addon.name}</span>
-                        <span className="text-[9px] text-amber-400/70 font-semibold uppercase tracking-wide">Optional Add-on</span>
-                      </div>
+                        Type Name
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSignMode('draw')}
+                        className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer ${
+                          signMode === 'draw'
+                            ? 'bg-amber-500 text-slate-950'
+                            : 'text-slate-400 hover:text-slate-200'
+                        }`}
+                      >
+                        Draw Signature
+                      </button>
                     </div>
-                    <span className="font-mono text-slate-100 font-bold">+${addon.price}</span>
                   </div>
-                );
-              })}
-            </div>
 
-            {/* Total Investment */}
-            <div className="bg-slate-950/70 border border-slate-700/50 rounded-xl p-4 flex items-center justify-between">
-              <div>
-                <span className="text-[10px] text-slate-500 uppercase font-semibold font-['Outfit'] block tracking-wide">
-                  Total Deal Investment
-                </span>
-                <span className="text-[10.5px] text-emerald-400/80 font-semibold">30% Advance: ${(currentTotal * 0.3).toFixed(0)}</span>
-              </div>
-              <strong className="text-2xl font-mono text-amber-300 font-extrabold tracking-tight">
-                ${currentTotal.toLocaleString()}
-              </strong>
-            </div>
+                  {signMode === 'type' ? (
+                    <input
+                      type="text"
+                      placeholder="Type your full legal name..."
+                      value={signerName}
+                      onChange={(e) => setSignerName(e.target.value)}
+                      className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-semibold border focus:outline-none transition-all ${
+                        isDark
+                          ? 'bg-slate-950/80 border-slate-700/80 text-slate-100 focus:border-amber-500/60'
+                          : 'bg-white border-slate-300 text-slate-900 focus:border-amber-500'
+                      }`}
+                    />
+                  ) : (
+                    <div className="relative">
+                      <canvas
+                        ref={canvasRef}
+                        width={400}
+                        height={65}
+                        onMouseDown={startDrawing}
+                        onMouseMove={draw}
+                        onMouseUp={stopDrawing}
+                        onMouseLeave={stopDrawing}
+                        onTouchStart={startDrawing}
+                        onTouchMove={draw}
+                        onTouchEnd={stopDrawing}
+                        className={`w-full h-[65px] rounded-xl border cursor-crosshair touch-none ${
+                          isDark ? 'bg-slate-950/80 border-slate-700' : 'bg-white border-slate-300'
+                        }`}
+                      />
+                      {!hasDrawn && (
+                        <span className="absolute inset-0 flex items-center justify-center text-[10.5px] text-slate-500 pointer-events-none italic">
+                          ✍️ Draw your signature here with mouse or finger
+                        </span>
+                      )}
+                      {hasDrawn && (
+                        <button
+                          type="button"
+                          onClick={clearCanvas}
+                          className="absolute right-2 top-2 text-[9.5px] text-slate-400 hover:text-slate-200 bg-slate-800/80 px-2 py-0.5 rounded"
+                        >
+                          Clear
+                        </button>
+                      )}
+                    </div>
+                  )}
 
-            {/* Sign & Accept */}
-            {isSigned ? (
-              <div className="p-3.5 bg-emerald-500/10 border border-emerald-500/30 rounded-xl flex items-center justify-between text-xs">
-                <div className="flex items-center space-x-2 text-emerald-400 font-bold">
-                  <CheckCircle2 className="w-4 h-4" />
-                  <span>Proposal Signed by {signerName || 'Client'}</span>
+                  <button
+                    type="button"
+                    onClick={handleSignDemo}
+                    className="w-full py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold rounded-xl shadow-lg shadow-emerald-600/25 flex items-center justify-center space-x-2 transition-all transform hover:scale-[1.01] text-xs cursor-pointer"
+                  >
+                    <PenTool className="w-3.5 h-3.5" />
+                    <span>Approve & Sign Proposal Digitally</span>
+                  </button>
                 </div>
-                <button type="button" onClick={resetDemo} className="text-[10px] text-slate-500 hover:text-slate-300 underline cursor-pointer">
-                  Reset Demo
-                </button>
-              </div>
-            ) : (
-              <div className="space-y-2.5">
-                <input
-                  type="text"
-                  placeholder="Enter signatory name (e.g. Alex Mercer)..."
-                  value={signerName}
-                  onChange={(e) => setSignerName(e.target.value)}
-                  className="w-full bg-slate-950/60 border border-slate-700/50 rounded-xl px-4 py-2.5 text-xs text-slate-100 placeholder-slate-600 focus:outline-none focus:border-amber-500/50 focus:shadow-[0_0_0_3px_rgba(245,158,11,0.1)] transition-all input-premium"
-                />
-                <button
-                  type="button"
-                  onClick={handleSignDemo}
-                  className="w-full py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold rounded-xl shadow-lg shadow-emerald-600/20 flex items-center justify-center space-x-1.5 transition-all text-xs cursor-pointer"
-                >
-                  <PenTool className="w-3.5 h-3.5" />
-                  <span>Accept & Legally Approve Proposal</span>
-                </button>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
       </div>

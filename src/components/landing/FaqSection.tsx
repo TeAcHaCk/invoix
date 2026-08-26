@@ -2,7 +2,14 @@ import React, { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { useScrollReveal } from '../../hooks/useScrollReveal';
 
-export const FaqSection: React.FC = () => {
+interface FaqSectionProps {
+  theme?: 'dark' | 'light';
+}
+
+export const FaqSection: React.FC<FaqSectionProps> = ({
+  theme = 'dark',
+}) => {
+  const isDark = theme === 'dark';
   const [openIndex, setOpenIndex] = useState<number | null>(0);
   const sectionRef = useScrollReveal();
 
@@ -38,17 +45,27 @@ export const FaqSection: React.FC = () => {
   };
 
   return (
-    <section id="faq" ref={sectionRef} className="py-28 px-4 sm:px-8 font-['Plus_Jakarta_Sans',sans-serif]">
+    <section
+      id="faq"
+      ref={sectionRef}
+      className={`py-28 px-4 sm:px-8 font-['Plus_Jakarta_Sans',sans-serif] transition-colors duration-300 ${
+        isDark ? 'bg-slate-950/80 text-slate-100' : 'bg-slate-50 text-slate-900'
+      }`}
+    >
       <div className="max-w-3xl mx-auto space-y-12">
         {/* Header */}
         <div className="text-center space-y-4 reveal-on-scroll">
-          <span className="text-xs font-bold text-amber-400 uppercase tracking-[0.2em] font-['Outfit']">
+          <span className="text-xs font-bold text-amber-500 uppercase tracking-[0.2em] font-['Outfit']">
             Got Questions?
           </span>
-          <h2 className="text-2xl sm:text-4xl font-extrabold text-slate-100 font-['Outfit']">
+          <h2
+            className={`text-2xl sm:text-4xl font-extrabold font-['Outfit'] ${
+              isDark ? 'text-slate-100' : 'text-slate-950'
+            }`}
+          >
             Frequently Asked Questions
           </h2>
-          <p className="text-sm text-slate-400">
+          <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
             Everything you need to know about the platform, signatures, and payments.
           </p>
         </div>
@@ -60,29 +77,37 @@ export const FaqSection: React.FC = () => {
             return (
               <div
                 key={i}
-                className={`glass rounded-2xl overflow-hidden transition-all duration-300 ${
-                  isOpen ? 'border-l-2 border-l-amber-500' : 'border-l-2 border-l-transparent'
-                }`}
+                className={`rounded-2xl overflow-hidden transition-all duration-300 border ${
+                  isDark
+                    ? 'glass-dark border-slate-800/80'
+                    : 'bg-white border-slate-200 shadow-sm'
+                } ${isOpen ? 'border-l-4 border-l-amber-500' : 'border-l-4 border-l-transparent'}`}
               >
                 <button
                   type="button"
                   onClick={() => toggleFaq(i)}
                   className="w-full p-5 sm:p-6 text-left flex items-center justify-between space-x-4 cursor-pointer"
                 >
-                  <span className={`text-xs sm:text-sm font-bold font-['Outfit'] transition-colors duration-200 ${
-                    isOpen ? 'text-amber-200' : 'text-slate-200'
-                  }`}>
+                  <span
+                    className={`text-xs sm:text-sm font-bold font-['Outfit'] transition-colors duration-200 ${
+                      isOpen
+                        ? 'text-amber-500'
+                        : isDark
+                        ? 'text-slate-200'
+                        : 'text-slate-800'
+                    }`}
+                  >
                     {faq.q}
                   </span>
                   <ChevronDown
-                    className={`w-4 h-4 text-amber-400 transition-transform duration-300 shrink-0 ${
+                    className={`w-4 h-4 text-amber-500 transition-transform duration-300 shrink-0 ${
                       isOpen ? 'rotate-180' : ''
                     }`}
                   />
                 </button>
 
                 <div className={`accordion-content ${isOpen ? 'open' : ''}`}>
-                  <div className="px-5 sm:px-6 pb-5 sm:pb-6 text-xs text-slate-400 leading-relaxed">
+                  <div className={`px-5 sm:px-6 pb-5 sm:pb-6 text-xs leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
                     {faq.a}
                   </div>
                 </div>
