@@ -192,6 +192,55 @@ Each of these shipped once and cost real debugging time.
    - Replaced ambiguous free-text validity input with `"Validity / Expiry Date"` on proposals and `"Payment Due Date"` on invoices.
 - **Verification**: `npm run lint` = **0 errors, 0 warnings**. `npm run build` = **Clean compile (exit 0)**.
 
+### 2026-08-26 — PLAN: landing page SEO (Claude Code → Antigravity)
+
+**The blunt problem: invoix.app is a client-rendered SPA with three URLs, a
+days-old domain, in a category owned by Zoho, Vyapar and Refrens.** Meta tags and
+JSON-LD are already in place and are not the bottleneck. Two things are.
+
+**1. The served HTML is nearly empty.** Everything renders from a 1,321 kB JS
+bundle (364 kB gzip). Google can execute JS, but render-budget crawling is slower
+and less reliable than static HTML, and it hurts every Core Web Vital.
+
+**2. There is nothing to rank.** Three URLs — home, privacy, terms. Ranking needs
+pages that answer searches. This is the larger of the two problems and no amount
+of meta-tag work substitutes for it.
+
+---
+
+#### Claude Code (technical, mine)
+
+1. **Pre-render to static HTML at build time.** Highest technical leverage:
+   crawlers get real markup, LCP improves, no framework migration. A Vite
+   prerender step over the landing/privacy/terms routes; the SPA still hydrates.
+2. **Code-split.** The 1,321 kB bundle ships the editor, admin panel and PDF
+   stack to a visitor reading the landing page. Route-level splitting should cut
+   first-paint JS substantially. Measure before and after — no guessing.
+3. **Generate `sitemap.xml` at build** rather than hand-maintaining it, so new
+   content pages cannot be forgotten. Keep query-param URLs, not `#fragments`
+   (see the earlier withdrawn finding — crawlers strip fragments).
+4. **Per-route meta.** Prerendered pages each need their own title/description/
+   canonical, not the single set in `index.html`.
+
+#### Antigravity (content + visual, yours)
+
+5. **Template landing pages — the actual ranking play.** One real URL per
+   industry preset (`/templates/photography-quotation`, `/templates/gst-invoice`,
+   …), each with a live preview, real copy, and a CTA into the editor. These
+   target winnable long-tail terms; "invoice generator" is not winnable.
+6. **Landing copy that answers "why pay".** At ₹499/mo against free Zoho, the
+   page must lead with the interactive client link — e-signature, upsells, view
+   tracking — not "create invoices".
+7. **Heading hierarchy and semantics** — one `h1`, descriptive `h2`s, real `alt`
+   text. Cheap, and it needs eyes on the rendered page.
+
+**Sequence:** 1 and 2 first (they make everything else index faster), then 5,
+which is where the traffic actually comes from.
+
+**Honest expectation:** a 3-day-old domain will not rank quickly whatever we do.
+This work decides whether the site is *capable* of ranking in 6–12 months. The
+share-link viral loop remains the faster route to first users.
+
 ### 2026-08-26 — Review of Phase 2 integration (Claude Code)
 
 Antigravity wired all four points correctly and exactly to the contract:
