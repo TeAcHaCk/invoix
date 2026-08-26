@@ -19,7 +19,7 @@ export const TermsOfServicePage: React.FC<TermsOfServicePageProps> = ({
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center space-x-3 cursor-pointer" onClick={onBack}>
             <div className="p-1 rounded-xl bg-white/95 shadow-lg flex items-center justify-center">
-              <img src="/invoix-logo.png" alt="Invoix Logo" className="h-7 max-w-[120px] object-contain" />
+              <img src="/invoix-logo-light.png" alt="Invoix" className="h-7 w-auto object-contain" />
             </div>
             <div>
               <div className="flex items-center space-x-1.5">

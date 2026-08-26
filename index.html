@@ -118,12 +118,24 @@
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800&family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,400&family=DM+Sans:ital,opsz,wght@0,9..40,400..800;1,9..40,400..800&family=Inter:wght@300;400;500;600;700;800&family=Lora:ital,wght@0,400..700;1,400..700&family=Manrope:wght@400;500;600;700;800&family=Merriweather:ital,wght@0,300;0,400;0,700;1,300;1,400&family=Montserrat:ital,wght@0,300..800;1,300..800&family=Outfit:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Plus+Jakarta+Sans:ital,wght@0,400..800;1,400..800&family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Raleway:ital,wght@0,300..800;1,300..800&family=Space+Grotesk:wght@400;500;600;700&family=Syne:wght@500;600;700;800&display=swap" rel="stylesheet">
   </head>
   <body class="bg-slate-950 text-slate-100 antialiased selection:bg-amber-500/30 selection:text-amber-200">
-    <div id="root">
-      <header style="display:none">
-        <h1>Invoix — Create Stunning Quotations & Invoices in Seconds</h1>
-        <p>The universal proposal and invoice platform for freelancers, agencies, contractors, and consultants.</p>
-      </header>
-    </div>
+    <div id="root"></div>
+    <!--
+      Real fallback for crawlers and users without JavaScript.
+
+      This replaces a <header style="display:none"> that contained an <h1>.
+      Hidden text is discounted by search engines and reads as keyword stuffing,
+      and it produced a SECOND h1 alongside the one in LandingHero. A <noscript>
+      block is honest: it renders only when there is genuinely nothing else.
+    -->
+    <noscript>
+      <h1>Invoix — Create Stunning Quotations &amp; Invoices in Seconds</h1>
+      <p>
+        The universal proposal and invoice platform for freelancers, agencies,
+        contractors, and consultants. Send interactive proposals with digital
+        e-signatures, optional upsells, GST and VAT support, and payment QR codes.
+      </p>
+      <p>Please enable JavaScript to use the Invoix editor.</p>
+    </noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

@@ -27,10 +27,25 @@ export const TemplateLandingPage: React.FC<TemplateLandingPageProps> = ({
   onNavigateHome,
   onNavigatePricing,
 }) => {
-  const data: TemplateLandingPageData =
-    TEMPLATE_LANDING_PAGES[slug] || TEMPLATE_LANDING_PAGES['photography-quotation'];
+  /*
+    An unknown slug used to fall back to the photography page, so
+    ?template=anything returned a full 200 page of identical content. That is a
+    soft-404 generator: crawlers can mint unlimited URLs all serving the same
+    copy, competing with the real template pages for the same terms.
+
+    Undefined here is deliberate — the effect below sends the visitor home.
+  */
+  const data: TemplateLandingPageData | undefined = TEMPLATE_LANDING_PAGES[slug];
 
   useEffect(() => {
+    if (!data) {
+      window.history.replaceState(null, '', '/');
+      onNavigateHome();
+    }
+  }, [data, onNavigateHome]);
+
+  useEffect(() => {
+    if (!data) return;
     // Dynamic SEO Title & Meta Description update
     document.title = data.metaTitle;
     const metaDesc = document.querySelector('meta[name="description"]');
@@ -39,6 +54,16 @@ export const TemplateLandingPage: React.FC<TemplateLandingPageProps> = ({
     }
     window.scrollTo({ top: 0, behavior: 'instant' });
   }, [data]);
+
+  /*
+    Must come AFTER both hooks so hook order stays stable, but before the JSX:
+    effects run post-render, so without this the render would dereference an
+    undefined `data` and throw before the redirect above ever fires.
+
+    Note this was not caught by the type checker — tsconfig.app.json does not
+    enable `strict`, so strictNullChecks is off across the app.
+  */
+  if (!data) return null;
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-['Plus_Jakarta_Sans',sans-serif] selection:bg-amber-500 selection:text-slate-950">

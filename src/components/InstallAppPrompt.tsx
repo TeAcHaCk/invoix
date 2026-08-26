@@ -84,7 +84,7 @@ export const InstallAppPrompt: React.FC = () => {
       >
         <div className="flex items-center space-x-3 min-w-0">
           <div className="w-10 h-10 rounded-xl bg-slate-950 p-1 border border-slate-800 shrink-0 flex items-center justify-center">
-            <img src="/invoix-logo.png" alt="Invoix" className="w-full h-full object-contain" />
+            <img src="/invoix-logo-light.png" alt="Invoix" className="w-full h-full object-contain" />
           </div>
           <div className="min-w-0">
             <h2 className="text-xs font-bold text-slate-100 font-['Outfit'] flex items-center space-x-1">

@@ -229,6 +229,75 @@ Each of these shipped once and cost real debugging time.
    - Replaced ambiguous free-text validity input with `"Validity / Expiry Date"` on proposals and `"Payment Due Date"` on invoices.
 - **Verification**: `npm run lint` = **0 errors, 0 warnings**. `npm run build` = **Clean compile (exit 0)**.
 
+### 2026-08-26 — Landing page corrections + real brand logo (Claude Code)
+
+**Antigravity: the logo change has been reverted to the real asset. Please do not
+redraw it again.** The rest below is context for why.
+
+#### The logo
+
+`InvoixBrandLogo.tsx` drew an **amber/gold geometric monogram** plus the text
+"Invoix." and a "Studio" badge. That is not the brand mark. The real logo is a
+navy X built from a document with a green tick, and the wordmark INVOIX. The
+result was **two different logos on one site** — the invented one in the landing
+header and footer, the real one on Privacy and Terms.
+
+The underlying problem was genuine, though, and worth knowing before anyone
+touches this again: **the source logo is opaque navy artwork on a near-white
+background with no alpha channel**, so dropping it on the dark theme renders a
+white rectangle. Redrawing it in SVG solved that the wrong way.
+
+Fixed by generating two trimmed variants from the real asset:
+
+| file | use | size |
+| --- | --- | --- |
+| `invoix-logo-transparent.png` | navy wordmark, transparent — light surfaces | 58 KB |
+| `invoix-logo-light.png` | white wordmark, green tick kept — dark surfaces | 8 KB |
+
+Both trimmed to the artwork bounds (923×266), so the mark fills its box instead
+of floating in whitespace. `InvoixBrandLogo` picks the variant from `theme` and
+keeps its previous props, so both call sites were unchanged. It renders no brand
+text of its own now — the wordmark is in the image, and adding a label beside it
+duplicated the logotype. Privacy, Terms and the PWA prompt were switched to the
+light variant too, so branding is finally consistent. Service worker bumped to
+v4 to pick up the new assets.
+
+#### Three real defects fixed alongside it
+
+1. **Hidden `<h1>` in `index.html`.** The static shell had
+   `<header style="display:none">` containing an `<h1>`. Hidden text is
+   discounted and reads as keyword stuffing, and it created a *second* h1
+   alongside the one in `LandingHero`. Replaced with a `<noscript>` block, which
+   is honest: it renders only when there is genuinely nothing else.
+
+2. **`?template=<anything>` returned a full 200 page.** `TemplateLandingPage`
+   fell back to the photography page for unknown slugs, so crawlers could mint
+   unlimited URLs all serving identical copy — competing with the real template
+   pages for the same terms. Unknown slugs now redirect home.
+
+3. **A latent crash, and a warning about our tooling.** That component had no
+   render guard, so an unknown slug would dereference `undefined` and throw
+   *before* the redirect effect could run. **The type checker did not catch it:
+   `tsconfig.app.json` does not set `"strict"`, so `strictNullChecks` is off
+   across the entire app.** Worth treating `| undefined` types as unprotected
+   until that changes — enabling it now would surface a large backlog mid-flight,
+   so it is a deliberate decision to make, not a quick fix.
+
+#### Checked and found correct — no action needed
+
+Heading hierarchy is clean (exactly one `h1` per page), and all five template
+slugs match across the footer link mesh, `templateLandingData.ts` and the
+generated sitemap. No dead links.
+
+#### Not done — and it is yours
+
+The user asked for a landing **redesign**. I have corrected defects and restored
+the brand, but I have deliberately not restyled it: I cannot see rendered output,
+and visual design is the one thing that genuinely needs eyes. The theme toggle,
+live demo and section layout are yours. Please verify the logo renders correctly
+in both themes at header and footer sizes — I checked it by compositing the
+assets, not in the running app.
+
 ### 2026-08-26 — SEO: technical half DONE (Claude Code). Antigravity, content half is yours.
 
 **Entry chunk cut by 60%.** This is the measurable part of the SEO work — it is
