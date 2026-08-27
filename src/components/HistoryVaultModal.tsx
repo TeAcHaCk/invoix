@@ -24,8 +24,10 @@ import {
   Zap,
   Lock,
   Check,
+  Loader2,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { fetchUserDocuments } from '../services/documentService';
 import { isPaidPlan, FREE_PLAN_MAX_DOCUMENTS } from '../utils/planLimits';
 import { forkDocumentIdentity } from '../services/documentService';
 
@@ -71,9 +73,11 @@ export const HistoryVaultModal: React.FC<HistoryVaultModalProps> = ({
   currentDocumentId,
   onOpenUpgrade,
 }) => {
-  const { profile } = useAuth();
+  const { profile, user } = useAuth();
   const isPaid = isPaidPlan(profile);
+  // Seed from local so the list paints instantly, then reconcile with the cloud.
   const [documents, setDocuments] = useState<QuotationDocument[]>(() => getVaultDocuments());
+  const [isSyncing, setIsSyncing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStatusFilter, setSelectedStatusFilter] = useState<'ALL' | 'APPROVED' | 'VIEWED' | 'DRAFT'>('ALL');
   const [selectedIndustryFilter, setSelectedIndustryFilter] = useState<string>('ALL');
@@ -81,12 +85,30 @@ export const HistoryVaultModal: React.FC<HistoryVaultModalProps> = ({
   const [copiedHash, setCopiedHash] = useState(false);
   const prevIsOpenRef = React.useRef(isOpen);
 
+  /*
+    The vault previously read ONLY getVaultDocuments() — this browser's
+    localStorage — so a document saved on one device was invisible on every
+    other, even while signed in and syncing correctly. The cloud read path
+    (fetchUserDocuments, which merges cloud rows with unsynced local ones)
+    existed but was never called from anywhere.
+  */
+  const refreshDocuments = React.useCallback(async () => {
+    setDocuments(getVaultDocuments());
+    if (!user?.id) return;
+    setIsSyncing(true);
+    try {
+      setDocuments(await fetchUserDocuments(user.id));
+    } finally {
+      setIsSyncing(false);
+    }
+  }, [user?.id]);
+
   useEffect(() => {
     if (isOpen && !prevIsOpenRef.current) {
-      setDocuments(getVaultDocuments());
+      void refreshDocuments();
     }
     prevIsOpenRef.current = isOpen;
-  }, [isOpen]);
+  }, [isOpen, refreshDocuments]);
 
   if (!isOpen) return null;
 
@@ -136,7 +158,7 @@ export const HistoryVaultModal: React.FC<HistoryVaultModalProps> = ({
     }
     const duplicated = createDuplicatedDocument(doc);
     saveDocumentToVault(duplicated);
-    setDocuments(getVaultDocuments());
+    void refreshDocuments();
   };
 
   const handleExportBackupJson = () => {
@@ -161,7 +183,7 @@ export const HistoryVaultModal: React.FC<HistoryVaultModalProps> = ({
               return;
             }
             imported.forEach((docItem) => saveDocumentToVault(docItem));
-            setDocuments(getVaultDocuments());
+            void refreshDocuments();
             alert(`Successfully restored ${imported.length} documents into vault!`);
           }
         } catch {
@@ -186,6 +208,14 @@ export const HistoryVaultModal: React.FC<HistoryVaultModalProps> = ({
                 <h2 className="text-sm font-bold text-slate-100 font-['Outfit']">
                   Document Vault & Intelligence
                 </h2>
+                {/* Tells the user their other devices are being checked, rather
+                    than showing a short local-only list as if it were complete. */}
+                {isSyncing && (
+                  <span className="text-[9px] text-emerald-300 flex items-center gap-1 font-semibold">
+                    <Loader2 className="w-2.5 h-2.5 animate-spin" />
+                    <span>Syncing…</span>
+                  </span>
+                )}
                 {isPaid ? (
                   <span className="text-[9px] bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded-full uppercase font-mono font-bold flex items-center gap-1">
                     <Crown className="w-2.5 h-2.5" />

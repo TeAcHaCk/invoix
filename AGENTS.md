@@ -274,6 +274,69 @@ Each of these shipped once and cost real debugging time.
    - Replaced ambiguous free-text validity input with `"Validity / Expiry Date"` on proposals and `"Payment Due Date"` on invoices.
 - **Verification**: `npm run lint` = **0 errors, 0 warnings**. `npm run build` = **Clean compile (exit 0)**.
 
+### 2026-08-27 — Cross-device sync was broken. RUN THE MIGRATION.
+
+User signed in on two devices and found saved work missing on the second. They
+were right, and it undercut the "Cloud Active" badge entirely. Two separate
+causes.
+
+#### 1. The Document Vault only ever read this device's localStorage — FIXED
+
+`HistoryVaultModal` called `getVaultDocuments()` (localStorage) and nothing else.
+Documents **were** being written to Supabase correctly the whole time; the read
+side simply never happened. `fetchUserDocuments()` — which merges cloud rows with
+unsynced local ones — existed in `documentService.ts` and **was never called from
+anywhere in the app.**
+
+Fixed: the vault seeds from local so the list paints instantly, then reconciles
+with `fetchUserDocuments(user.id)`, with a "Syncing…" indicator so a short local
+list is not mistaken for the complete one. Local mutations re-reconcile rather
+than dropping back to local-only.
+
+Worth noting how this hid: every save reported success and genuinely did sync, so
+nothing looked broken from the sending device.
+
+#### 2. Custom templates never left the browser — BACKEND DONE, UI IS YOURS
+
+`customTemplateStorage.ts` is pure localStorage — **zero Supabase references**. A
+template designed on a laptop did not exist on a phone, and clearing browser data
+destroyed it permanently. For a paying user, a saved brand template is the last
+thing they expect to be device-local.
+
+**→ Run `supabase_migration_custom_templates.sql`.** Creates
+`public.custom_templates` with owner-only RLS. Unlike `documents` it has **no
+public surface at all** — no share link, nothing granted to `anon`. Templates are
+private by nature and should stay that way.
+
+**Antigravity — `FormEditor.tsx` needs rewiring.** It imports the local-only
+functions directly at lines 23–25 and calls them at 93, 122–123, 135–136. Point
+them at `src/services/templateService.ts`:
+
+```ts
+fetchCustomTemplates(userId)              // merges cloud + local, cloud wins
+saveCustomTemplate(template, userId)      // -> { success, isCloud, error }
+deleteCustomTemplate(templateId, userId)  // removes both, or it resurrects
+pushLocalTemplatesToCloud(userId)         // one-time backfill, call on sign-in
+```
+
+Three things to get right:
+- **The functions are now async** and take `userId`. The current calls are
+  synchronous.
+- **Surface `isCloud: false`.** The service always saves locally first so the
+  editor never blocks on the network, and returns a plain-language `error`
+  explaining the template is on this device only. Swallowing that recreates the
+  exact bug the user just hit — silent local-only storage.
+- **Call `pushLocalTemplatesToCloud(userId)` after sign-in.** Everything built
+  while templates were local-only stays invisible on other devices otherwise.
+  It is keyed on template id, so it is safe to call every time.
+
+#### The pattern behind both
+
+A write path that succeeds while the matching read path is missing or local-only
+looks completely healthy from the device that did the writing. **When adding
+cloud persistence, wire the read at the same time and test on a second device** —
+neither of us would have caught either of these from one browser.
+
 ### 2026-08-27 — Cross-tenant document exposure. RUN THE MIGRATION.
 
 Triggered by repeating console errors: `409 duplicate key value violates unique
