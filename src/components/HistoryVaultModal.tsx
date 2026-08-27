@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { isPaidPlan, FREE_PLAN_MAX_DOCUMENTS } from '../utils/planLimits';
+import { forkDocumentIdentity } from '../services/documentService';
 
 interface HistoryVaultModalProps {
   isOpen: boolean;
@@ -37,12 +38,12 @@ interface HistoryVaultModalProps {
 }
 
 function createDuplicatedDocument(doc: QuotationDocument): QuotationDocument {
-  const newId = `doc_${Date.now()}`;
   const year = new Date().getFullYear();
   const rand = Math.floor(100 + Math.random() * 900);
   return {
-    ...doc,
-    id: newId,
+    // forkDocumentIdentity resets id, shareToken and cloudSyncedAt together.
+    // Overriding only `id` left the copy sharing the original's public link.
+    ...forkDocumentIdentity(doc),
     status: 'DRAFT',
     viewCount: 0,
     lastViewedAt: undefined,

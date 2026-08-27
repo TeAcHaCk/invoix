@@ -47,7 +47,9 @@ export const WhatsAppShareModal: React.FC<WhatsAppShareModalProps> = ({
 
   const buildMessage = useCallback(
     (onlineLink?: string | null) => {
-      const publicLink = shareState.url || `${window.location.origin}/?view=${doc.shareToken || doc.id}`;
+      // No `|| doc.id` fallback: ids are no longer accepted as link keys, so a
+      // link built from one would 404. getShareLinkState already gates on sync.
+      const publicLink = shareState.url || '';
 
       let msg = `*${doc.studio.name}*
 _${doc.studio.tagline}_

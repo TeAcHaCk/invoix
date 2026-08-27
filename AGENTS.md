@@ -274,6 +274,73 @@ Each of these shipped once and cost real debugging time.
    - Replaced ambiguous free-text validity input with `"Validity / Expiry Date"` on proposals and `"Payment Due Date"` on invoices.
 - **Verification**: `npm run lint` = **0 errors, 0 warnings**. `npm run build` = **Clean compile (exit 0)**.
 
+### 2026-08-27 — Cross-tenant document exposure. RUN THE MIGRATION.
+
+Triggered by repeating console errors: `409 duplicate key value violates unique
+constraint "idx_documents_share_token"` on every autosave.
+
+**On the console errors themselves — not a leak.** The Supabase project URL and
+anon key are visible in the network tab by design for any client-side Supabase
+app; that is what RLS exists for. The 409 was a *failed write*. But investigating
+it uncovered two things that genuinely were leaks.
+
+#### Leak 1 — the vault's Duplicate action shared public links
+
+`createDuplicatedDocument` spread `...doc` and reset id, status and signatures,
+but **not `shareToken` or `cloudSyncedAt`**. Every copy therefore claimed the
+original's public link.
+
+The 409 was the *lucky* outcome — the unique index rejected the second row. Where
+it did not fail (local-only mode, or pairs predating the index) the consequences
+were real: `findLocalByToken` returned the first match, and `/api/pdf` renders
+purely by token, so **one client could be served another client's proposal**.
+Inherited `cloudSyncedAt` also made a never-synced copy look exportable.
+
+Fixed with `forkDocumentIdentity()` in `documentService.ts` — resets id,
+shareToken and cloudSyncedAt together. **Use it anywhere a document is derived
+from another.** Spreading `...doc` and overriding only the obvious fields is
+exactly what caused this. `findLocalByToken` now refuses to resolve an ambiguous
+token rather than guessing.
+
+#### Leak 2 — document ids were accepted as link keys (the serious one)
+
+`get_public_document` and `sign_document` matched
+`(share_token = p_token OR id = p_token)`. That `OR id` was added so older links
+kept working — but **document ids are `doc_<millisecond timestamp>`**, so it
+bypassed the unguessable share token completely. `api/pdf.ts` accepted the same
+shape.
+
+The attack needs no brute force. Any client legitimately holding ONE proposal
+link knows a valid `doc_<ts>`; documents created near the same moment sit at
+neighbouring timestamps. Walking a few thousand values returns other tenants'
+client names, emails, contract values and signature images. Every document is
+`is_public = TRUE`, so nothing else stood in the way.
+
+Fixed: all three RPCs match `share_token` only, `api/pdf.ts` requires
+`/^[a-f0-9]{32}$/`, and every client-side `shareToken || doc.id` fallback is gone
+(`getShareLinkState` now returns `null` for an unsynced document rather than an
+id-based URL that would 404).
+
+**→ `supabase_migration_token_only_access.sql` must be run.** The client fix
+alone does nothing; the hole is in the database functions. Section 4 also
+reissues tokens to any documents already sharing one.
+
+**Cost, stated plainly:** links previously issued from a document id stop
+resolving. On a days-old product that is a handful of links against a
+cross-tenant data leak.
+
+#### Audit of the remaining anon-reachable surface — clean
+
+Only three functions are granted to `anon`: `get_public_document`,
+`record_public_view`, `sign_document`. All now require a 128-bit token. Direct
+table access for `documents` is owner/admin only. The one `WITH CHECK (true)` is
+`document_views` INSERT, which writes no user data beyond a user agent and cannot
+be read back publicly.
+
+**The pattern to watch for:** a resource is only as private as its *least*
+guessable accepted key. Adding a convenience fallback beside a secure key throws
+the security away — that is what both leaks had in common.
+
 ### 2026-08-27 — Audit of Antigravity's landing + security work (Claude Code)
 
 Reviewed `aa3bde4`, `1803fc9`, `404452d`, `855c2f9`, `87027f3`. Build, lint and

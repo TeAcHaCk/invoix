@@ -24,8 +24,15 @@ import {
   methodNotAllowed,
 } from './_lib/server.js';
 
-/** Share tokens are 32 hex chars; legacy links may carry a `doc_<timestamp>` id. */
-const TOKEN_PATTERN = /^[a-z0-9_]{8,64}$/i;
+/**
+ * Share tokens only — 32 hex characters.
+ *
+ * This previously allowed `doc_<timestamp>` ids so legacy links kept working,
+ * which meant /api/pdf?token=doc_1756... rendered any tenant's document. Ids are
+ * timestamps and can be walked from a single known-good link, so accepting them
+ * bypassed the whole point of an unguessable token.
+ */
+const TOKEN_PATTERN = /^[a-f0-9]{32}$/i;
 
 /** Chromium is the slow part; give the page itself a tighter budget. */
 const NAV_TIMEOUT_MS = 25_000;

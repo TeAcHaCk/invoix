@@ -27,6 +27,30 @@ export interface CloudSaveResult {
   synced?: { shareToken?: string; cloudSyncedAt: string };
 }
 
+/**
+ * Strips a document's IDENTITY when forking a copy from it.
+ *
+ * A duplicate must never inherit `shareToken` or `cloudSyncedAt`. Both are
+ * identity, not content:
+ *   - two rows sharing a share_token violate idx_documents_share_token, so every
+ *     autosave of the copy fails with a 409 and the document silently stops
+ *     syncing;
+ *   - worse, while it does share a token the copy is reachable at the ORIGINAL's
+ *     public link. findLocalByToken() returns the first match, and
+ *     /api/pdf renders by token — so one client could be served another
+ *     client's proposal.
+ *
+ * Use this anywhere a new document is derived from an existing one. Spreading
+ * `...doc` and overriding only the obvious fields is what caused exactly that.
+ */
+export const forkDocumentIdentity = (doc: QuotationDocument): QuotationDocument => ({
+  ...doc,
+  // Date.now() alone collides when two copies are made in the same millisecond.
+  id: `doc_${Date.now()}_${createShareToken().slice(0, 6)}`,
+  shareToken: createShareToken(),
+  cloudSyncedAt: undefined,
+});
+
 /** Documents created before share tokens existed get one on first touch. */
 const withShareToken = (doc: QuotationDocument): QuotationDocument =>
   doc.shareToken ? doc : { ...doc, shareToken: createShareToken() };
@@ -34,7 +58,20 @@ const withShareToken = (doc: QuotationDocument): QuotationDocument =>
 /** Finds a locally cached document by share token, falling back to the raw id. */
 const findLocalByToken = (token: string): QuotationDocument | undefined => {
   const localDocs = getVaultDocuments();
-  return localDocs.find((d) => d.shareToken === token) || localDocs.find((d) => d.id === token);
+  const byToken = localDocs.filter((d) => d.shareToken === token);
+
+  if (byToken.length > 1) {
+    // Vaults created before forkDocumentIdentity() existed can hold copies that
+    // share a token. Serving an arbitrary one could hand a client the wrong
+    // document, so refuse rather than guess.
+    console.error(
+      `Ambiguous share token: ${byToken.length} local documents claim "${token}". ` +
+        'Refusing to resolve. Re-save the affected documents to assign fresh links.'
+    );
+    return undefined;
+  }
+
+  return byToken[0] || localDocs.find((d) => d.id === token);
 };
 
 /**
@@ -474,7 +511,12 @@ export const getShareLinkState = (
   doc: QuotationDocument,
   userId?: string
 ): ShareLinkState => {
-  const url = `${window.location.origin}/?view=${doc.shareToken || doc.id}`;
+  /*
+    No `|| doc.id` fallback. Document ids are timestamps, and the public RPCs no
+    longer accept one as a link key — a link built from an id would simply 404.
+    An unsynced document has no usable link, which is what the states below say.
+  */
+  const url = doc.shareToken ? `${window.location.origin}/?view=${doc.shareToken}` : null;
 
   if (!userId) {
     return {
