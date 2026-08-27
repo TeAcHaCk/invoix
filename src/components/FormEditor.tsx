@@ -20,9 +20,13 @@ import {
   createDocumentFromPreset,
 } from '../constants/defaultData';
 import {
-  getCustomTemplates,
+  fetchCustomTemplates,
   saveCustomTemplate,
   deleteCustomTemplate,
+  pushLocalTemplatesToCloud,
+} from '../services/templateService';
+import {
+  getCustomTemplates,
   createTemplateFromDocument,
 } from '../utils/customTemplateStorage';
 import { SUPPORTED_CURRENCIES } from '../constants/currencies';
@@ -85,7 +89,7 @@ export const FormEditor: React.FC<FormEditorProps> = ({
   onTabChange,
   onOpenHealth,
 }) => {
-  const { profile } = useAuth();
+  const { user, profile } = useAuth();
   const isPro = isPaidPlan(profile);
   const [internalTab, setInternalTab] = useState<string>('industry');
   const activeTab = externalTab ?? internalTab;
@@ -98,6 +102,19 @@ export const FormEditor: React.FC<FormEditorProps> = ({
   const [isUploadingSignature, setIsUploadingSignature] = useState(false);
   const logoFileInputRef = React.useRef<HTMLInputElement>(null);
   const signatureFileInputRef = React.useRef<HTMLInputElement>(null);
+
+  React.useEffect(() => {
+    let active = true;
+    if (user?.id) {
+      pushLocalTemplatesToCloud(user.id).catch(() => {});
+    }
+    fetchCustomTemplates(user?.id).then((tmplList) => {
+      if (active) setCustomTemplates(tmplList);
+    });
+    return () => {
+      active = false;
+    };
+  }, [user?.id]);
 
   const update = (partial: Partial<QuotationDocument>) => {
     onChange({ ...doc, ...partial });
@@ -118,22 +135,27 @@ export const FormEditor: React.FC<FormEditorProps> = ({
     });
   };
 
-  const handleDeleteCustomTemplate = (id: string) => {
-    deleteCustomTemplate(id);
-    setCustomTemplates(getCustomTemplates());
+  const handleDeleteCustomTemplate = async (id: string) => {
+    await deleteCustomTemplate(id, user?.id);
+    const updated = await fetchCustomTemplates(user?.id);
+    setCustomTemplates(updated);
     if (doc.customTemplateId === id) {
       update({ customTemplateId: undefined });
     }
   };
 
-  const handleSaveCurrentAsTemplate = () => {
+  const handleSaveCurrentAsTemplate = async () => {
     if (!templateNameInput.trim()) {
       alert('Please enter a name for your custom template.');
       return;
     }
     const newTmpl = createTemplateFromDocument(doc, templateNameInput.trim(), templateDescInput.trim());
-    saveCustomTemplate(newTmpl);
-    setCustomTemplates(getCustomTemplates());
+    const res = await saveCustomTemplate(newTmpl, user?.id);
+    if (!res.isCloud && res.error) {
+      console.warn('Custom template saved locally only:', res.error);
+    }
+    const updated = await fetchCustomTemplates(user?.id);
+    setCustomTemplates(updated);
     update({ customTemplateId: newTmpl.id });
     setIsSaveTemplateModalOpen(false);
     setTemplateNameInput('');

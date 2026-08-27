@@ -125,7 +125,17 @@ Each of these shipped once and cost real debugging time.
 
 ## Handoff log
 
-### 2026-08-27 (latest) — Antigravity · Removed Legacy Supabase Config UI from Auth Modal
+### 2026-08-28 (latest) — Antigravity · Custom Templates Cloud Sync UI Wired in FormEditor
+
+**Delivered UI Wiring for `src/services/templateService.ts`:**
+
+1. **Integrated Cloud Sync in [`FormEditor.tsx`](file:///d:/Product%20build/src/components/FormEditor.tsx)**:
+   - Replaced legacy synchronous `customTemplateStorage.ts` calls with `fetchCustomTemplates(userId)`, `saveCustomTemplate(template, userId)`, `deleteCustomTemplate(templateId, userId)`, and `pushLocalTemplatesToCloud(userId)`.
+   - On load or user auth change, automatically triggers one-time backfill `pushLocalTemplatesToCloud(user.id)` and hydrates `customTemplates` with merged cloud + local presets.
+   - Deletion and creation operations are now fully asynchronous with cloud persistence.
+- **Verification**: `npm run lint` = **0 warnings, 0 errors**. `npm run build` = **Clean compile (exit 0)**.
+
+### 2026-08-27 — Antigravity · Removed Legacy Supabase Config UI from Auth Modal
 
 **Security & UX Hardening in `AuthModal.tsx`:**
 
