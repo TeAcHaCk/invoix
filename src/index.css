@@ -105,21 +105,12 @@
    UTILITY CLASSES — Reusable Design Tokens
    ═══════════════════════════════════════════ */
 
-/* Scroll reveal — safe default visible */
-.reveal-on-scroll {
-  opacity: 1;
-  transform: translateY(0);
-}
-.reveal-on-scroll.revealed {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-/* Stagger delays for grid children */
-.reveal-delay-1 { transition-delay: 0.08s; }
-.reveal-delay-2 { transition-delay: 0.16s; }
-.reveal-delay-3 { transition-delay: 0.24s; }
-.reveal-delay-4 { transition-delay: 0.32s; }
+/*
+  The scroll-reveal system was removed: it mutated the DOM directly and could
+  leave cards permanently hidden when the theme toggled. Its CSS and the
+  useScrollReveal hook are gone too, rather than left as no-op rules that
+  suggest an effect which no longer exists.
+*/
 .reveal-delay-5 { transition-delay: 0.40s; }
 .reveal-delay-6 { transition-delay: 0.48s; }
 

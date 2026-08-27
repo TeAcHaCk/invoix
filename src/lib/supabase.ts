@@ -1,5 +1,11 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
+/*
+  Legacy key from the bring-your-own-Supabase era. Still READ as a fallback so
+  anyone who configured a project before keeps working, but nothing writes it any
+  more — the config UI was removed from AuthModal. Env vars take priority, so in
+  production this branch is never reached.
+*/
 const STORAGE_KEY = 'fbf_supabase_config_v1';
 
 export interface SupabaseConfig {
@@ -27,24 +33,6 @@ export function getStoredSupabaseConfig(): SupabaseConfig | null {
     console.error('Error reading Supabase configuration:', e);
   }
   return null;
-}
-
-export function saveStoredSupabaseConfig(config: SupabaseConfig): void {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
-    window.location.reload(); // Re-initialize client with new credentials
-  } catch (e) {
-    console.error('Error saving Supabase configuration:', e);
-  }
-}
-
-export function clearStoredSupabaseConfig(): void {
-  try {
-    localStorage.removeItem(STORAGE_KEY);
-    window.location.reload();
-  } catch (e) {
-    console.error('Error clearing Supabase configuration:', e);
-  }
 }
 
 let supabaseInstance: SupabaseClient | null = null;

@@ -14,6 +14,8 @@ import {
   ArrowLeft,
   Database,
   Crown,
+  ShieldAlert,
+  Loader2,
 } from 'lucide-react';
 
 type AdminTab = 'overview' | 'users' | 'documents' | 'billing' | 'settings';
@@ -23,7 +25,7 @@ interface AdminLayoutProps {
 }
 
 export const AdminLayout: React.FC<AdminLayoutProps> = ({ onBackToStudio }) => {
-  const { isCloudConnected } = useAuth();
+  const { isCloudConnected, isAdmin, isLoading, user } = useAuth();
   const [activeTab, setActiveTab] = useState<AdminTab>('overview');
 
   const navItems = [
@@ -33,6 +35,52 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onBackToStudio }) => {
     { id: 'billing' as AdminTab, label: 'Billing & Promos', icon: <CreditCard className="w-4 h-4" /> },
     { id: 'settings' as AdminTab, label: 'Pricing & Settings', icon: <Settings className="w-4 h-4" /> },
   ];
+
+  /*
+    Real access gate.
+
+    Hiding the "Super Admin" link only removed the signpost — /#admin still
+    rendered this whole panel for anyone who typed the URL. Platform data was
+    never at risk (RLS and admin_set_user_plan enforce is_admin() server-side),
+    but the UI leaked the shape of the admin surface and contradicted the claim
+    that the panel is reachable only by admins.
+
+    Waiting on isLoading matters: profile arrives asynchronously, so gating
+    before it resolves would bounce a genuine admin on every refresh.
+  */
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col items-center justify-center font-['Plus_Jakarta_Sans',sans-serif]">
+        <Loader2 className="w-7 h-7 text-amber-400 animate-spin mb-3" />
+        <p className="text-sm font-semibold text-slate-300">Checking access…</p>
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
+    return (
+      <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-6 font-['Plus_Jakarta_Sans',sans-serif]">
+        <div className="max-w-sm w-full bg-slate-900 border border-slate-800 rounded-2xl p-6 text-center space-y-3 shadow-2xl">
+          <div className="w-12 h-12 rounded-full bg-amber-500/10 text-amber-400 flex items-center justify-center mx-auto">
+            <ShieldAlert className="w-6 h-6" />
+          </div>
+          <h1 className="text-base font-bold text-slate-100 font-['Outfit']">Admin access required</h1>
+          <p className="text-xs text-slate-400 leading-relaxed">
+            {user
+              ? 'This account does not have administrator permissions.'
+              : 'Sign in with an administrator account to open this panel.'}
+          </p>
+          <button
+            type="button"
+            onClick={onBackToStudio}
+            className="mt-1 px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold rounded-xl transition-colors cursor-pointer"
+          >
+            Back to Studio
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-['Plus_Jakarta_Sans',sans-serif] flex flex-col dot-grid-bg">

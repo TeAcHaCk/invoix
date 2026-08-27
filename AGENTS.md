@@ -274,6 +274,58 @@ Each of these shipped once and cost real debugging time.
    - Replaced ambiguous free-text validity input with `"Validity / Expiry Date"` on proposals and `"Payment Due Date"` on invoices.
 - **Verification**: `npm run lint` = **0 errors, 0 warnings**. `npm run build` = **Clean compile (exit 0)**.
 
+### 2026-08-27 — Audit of Antigravity's landing + security work (Claude Code)
+
+Reviewed `aa3bde4`, `1803fc9`, `404452d`, `855c2f9`, `87027f3`. Build, lint and
+both type-checks clean. Most of it is good; one claim did not hold.
+
+#### Correct, verified, left alone
+- **`87027f3` (Supabase config UI purge) is safe.** I checked the mechanism, not
+  just the UI: `getStoredSupabaseConfig()` reads env vars **first** and only
+  falls back to localStorage, so with `VITE_SUPABASE_URL` set in production the
+  stored path is unreachable. No risk of a user being stranded on a stale
+  project with no UI to clear it.
+- **`855c2f9` (scroll reveal removal) was done properly.** The obvious trap here
+  was leaving `.reveal-on-scroll { opacity: 0 }` in place with the revealing JS
+  gone, which hides content permanently. It was correctly reset to `opacity: 1`,
+  and no component still carries the class.
+- The remaining invented "IX" monogram in `TemplateLandingPage` was swapped to
+  the real `InvoixBrandLogo`. My soft-404 guard there survived intact.
+
+#### The one that did not hold — now fixed
+
+**`1803fc9`'s message says "admin panel is accessible only upon admin sign-in".
+That was not true.** It removed the footer *link*; the route was never gated.
+`AdminLayout` read only `isCloudConnected` and never checked `isAdmin`, so
+`/#admin` rendered the entire admin panel for anyone who typed the URL.
+
+Platform data was never exposed — RLS and `admin_set_user_plan` enforce
+`is_admin()` server-side — so this was UI disclosure, not a breach. But it leaked
+the shape of the admin surface, and the code contradicted the commit.
+
+Fixed with a real gate in `AdminLayout`: a loading state while the profile
+resolves, then an access-denied panel for non-admins. **The `isLoading` wait
+matters** — `profile` arrives asynchronously, so gating before it resolves would
+bounce a genuine admin on every refresh.
+
+**Worth carrying forward: hiding an entry point is not access control.** If a
+route should be restricted, the route has to say so.
+
+#### Dead code removed (harmless, but it misleads)
+- `src/hooks/useScrollReveal.ts` — 0 callers after `855c2f9`
+- `.reveal-on-scroll` / `.reveal-delay-*` CSS — no-op rules implying an effect
+  that no longer exists
+- `saveStoredSupabaseConfig` / `clearStoredSupabaseConfig` — orphaned by
+  `87027f3`. `getStoredSupabaseConfig` stays: it is still read as a fallback.
+
+#### Still open, and it is a decision rather than a fix
+
+`tsconfig.app.json` does not enable `"strict"`, so `strictNullChecks` is off
+across the app. That is how the `TemplateLandingPage` undefined-dereference got
+past the type checker last round. Turning it on will surface a backlog, so it
+needs to be scheduled deliberately — but until then, treat every `| undefined`
+as unguarded.
+
 ### 2026-08-26 — Landing page corrections + real brand logo (Claude Code)
 
 **Antigravity: the logo change has been reverted to the real asset. Please do not
