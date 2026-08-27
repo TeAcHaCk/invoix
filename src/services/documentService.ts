@@ -226,6 +226,49 @@ export const saveDocument = async (
   }
 };
 
+/**
+ * Reissues share tokens to local documents that share one.
+ *
+ * Copies made before forkDocumentIdentity() existed inherited the original's
+ * shareToken. Those rows can never sync — every upsert fails on
+ * idx_documents_share_token with a 409 — and while they exist a share link is
+ * ambiguous. Fixing the duplicate path stops NEW ones appearing; this repairs
+ * the ones already sitting in people's vaults.
+ *
+ * The oldest document keeps its token, so links already sent stay valid.
+ * Returns how many were repaired.
+ */
+export const repairDuplicateShareTokens = (): number => {
+  const docs = getVaultDocuments();
+  const seen = new Set<string>();
+  let repaired = 0;
+
+  // Oldest first, so the original keeps the token and copies are reissued.
+  const ordered = [...docs].sort((a, b) =>
+    (a.updatedAt || '').localeCompare(b.updatedAt || '')
+  );
+
+  for (const doc of ordered) {
+    if (!doc.shareToken) continue;
+    if (seen.has(doc.shareToken)) {
+      saveDocumentToVault({
+        ...doc,
+        shareToken: createShareToken(),
+        // It never reached the cloud under the old token, so it is not synced.
+        cloudSyncedAt: undefined,
+      });
+      repaired++;
+    } else {
+      seen.add(doc.shareToken);
+    }
+  }
+
+  if (repaired > 0) {
+    console.warn(`Reissued share links for ${repaired} duplicated document(s).`);
+  }
+  return repaired;
+};
+
 export const fetchUserDocuments = async (userId?: string): Promise<QuotationDocument[]> => {
   const localDocs = getVaultDocuments();
 

@@ -284,6 +284,52 @@ Each of these shipped once and cost real debugging time.
    - Replaced ambiguous free-text validity input with `"Validity / Expiry Date"` on proposals and `"Payment Due Date"` on invoices.
 - **Verification**: `npm run lint` = **0 errors, 0 warnings**. `npm run build` = **Clean compile (exit 0)**.
 
+### 2026-08-27 — Deleted documents were never actually deleted
+
+User reported the vault still showing 18 documents after deleting several.
+
+**My cloud-read fix from earlier today did not cause this — it exposed it.**
+`handleDelete` called `deleteDocumentFromVault(id)`, which is localStorage only.
+The Supabase row survived every "delete". While the vault also read only
+localStorage, deletion *looked* like it worked. The moment the vault started
+reading the cloud, everything the user had ever "deleted" came back — because
+none of it had ever been deleted.
+
+**The count was the least of it.** A deleted document kept its row with
+`is_public = TRUE`, so **its share link went on resolving**. A user who deleted a
+proposal to revoke a client's access had not revoked anything.
+
+This is the same shape as the vault bug: `deleteDocument(id, userId)` in
+`documentService` deletes both local and cloud, and was never called from
+anywhere. Third instance now of a cloud-aware function existing but unwired.
+
+**All three local-only writes in `HistoryVaultModal` fixed:**
+
+| line | was | now |
+| --- | --- | --- |
+| delete | `deleteDocumentFromVault` | optimistic local remove, then `deleteDocument(id, user.id)` |
+| duplicate | `saveDocumentToVault` | `saveDocument(dup, user.id, isPaid)` |
+| restore/import | `saveDocumentToVault` per doc | `saveDocument(...)` per doc, awaited |
+
+Duplicate and Restore had the same defect quietly: a duplicated or restored
+document existed only on the device that made it.
+
+**Also added `repairDuplicateShareTokens()`**, run on vault refresh. Copies made
+before `forkDocumentIdentity()` existed inherited the original's token and can
+*never* sync — every upsert 409s on `idx_documents_share_token`. Fixing the
+duplicate path stops new ones; this repairs the ones already in people's vaults.
+Oldest document keeps its token, so links already sent stay valid.
+
+#### The recurring pattern — worth both of us internalising
+
+Three times now: `fetchUserDocuments`, `deleteDocument`, and the template service.
+A cloud-aware function is written, the UI keeps calling the local-only one, and
+**nothing looks wrong from the device doing the work.**
+
+When adding a cloud counterpart to a local operation, grep for the local
+function's remaining callers in the same commit. If any are left, the feature is
+not done — it is just invisible.
+
 ### 2026-08-27 — Cross-device sync was broken. RUN THE MIGRATION.
 
 User signed in on two devices and found saved work missing on the second. They

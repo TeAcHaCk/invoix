@@ -3,7 +3,6 @@ import type { QuotationDocument } from '../types';
 import {
   getVaultDocuments,
   deleteDocumentFromVault,
-  saveDocumentToVault,
 } from '../utils/vaultStorage';
 import { formatCurrency } from '../utils/formatters';
 import { SUPPORTED_CURRENCIES } from '../constants/currencies';
@@ -27,7 +26,12 @@ import {
   Loader2,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { fetchUserDocuments } from '../services/documentService';
+import {
+  fetchUserDocuments,
+  deleteDocument,
+  saveDocument,
+  repairDuplicateShareTokens,
+} from '../services/documentService';
 import { isPaidPlan, FREE_PLAN_MAX_DOCUMENTS } from '../utils/planLimits';
 import { forkDocumentIdentity } from '../services/documentService';
 
@@ -93,6 +97,9 @@ export const HistoryVaultModal: React.FC<HistoryVaultModalProps> = ({
     existed but was never called from anywhere.
   */
   const refreshDocuments = React.useCallback(async () => {
+    // Heal copies that inherited another document's share token before
+    // forkDocumentIdentity() existed; they can never sync until reissued.
+    repairDuplicateShareTokens();
     setDocuments(getVaultDocuments());
     if (!user?.id) return;
     setIsSyncing(true);
@@ -138,12 +145,21 @@ export const HistoryVaultModal: React.FC<HistoryVaultModalProps> = ({
   const countViewed = documents.filter((d) => (d.status === 'VIEWED' || (d.viewCount && d.viewCount > 0)) && !d.signatory?.clientSignedName).length;
   const countDrafts = documents.length - countApproved - countViewed;
 
-  const handleDelete = (id: string, e: React.MouseEvent) => {
+  /*
+    Deletes from the cloud as well as this device.
+
+    This used to call deleteDocumentFromVault() alone — localStorage only. The
+    row survived in Supabase, so the document reappeared the moment the vault
+    synced, and more seriously its share link kept resolving for any client
+    holding it. The document was never actually deleted, anywhere.
+  */
+  const handleDelete = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (window.confirm('Are you sure you want to delete this document from your vault?')) {
-      const updated = deleteDocumentFromVault(id);
-      setDocuments(updated);
-    }
+    if (!window.confirm('Are you sure you want to delete this document from your vault?')) return;
+
+    setDocuments(deleteDocumentFromVault(id)); // instant feedback
+    await deleteDocument(id, user?.id);        // then the authoritative delete
+    void refreshDocuments();
   };
 
   const handleDuplicate = (doc: QuotationDocument, e: React.MouseEvent) => {
@@ -157,8 +173,8 @@ export const HistoryVaultModal: React.FC<HistoryVaultModalProps> = ({
       return;
     }
     const duplicated = createDuplicatedDocument(doc);
-    saveDocumentToVault(duplicated);
-    void refreshDocuments();
+    // saveDocument (not saveDocumentToVault) so the copy exists on every device.
+    void saveDocument(duplicated, user?.id, isPaid).then(() => refreshDocuments());
   };
 
   const handleExportBackupJson = () => {
@@ -182,9 +198,15 @@ export const HistoryVaultModal: React.FC<HistoryVaultModalProps> = ({
               alert(`Free plan holds up to ${FREE_PLAN_MAX_DOCUMENTS} documents. Upgrade to Pro for unlimited storage.`);
               return;
             }
-            imported.forEach((docItem) => saveDocumentToVault(docItem));
-            void refreshDocuments();
-            alert(`Successfully restored ${imported.length} documents into vault!`);
+            // Restored documents must reach the cloud too, or a "restore" only
+            // repopulates the device that happened to run it.
+            void (async () => {
+              for (const docItem of imported) {
+                await saveDocument(docItem, user?.id, isPaid);
+              }
+              await refreshDocuments();
+              alert(`Successfully restored ${imported.length} documents into vault!`);
+            })();
           }
         } catch {
           alert('Invalid JSON backup file.');
