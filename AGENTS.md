@@ -125,7 +125,22 @@ Each of these shipped once and cost real debugging time.
 
 ## Handoff log
 
-### 2026-08-26 (latest) — Antigravity · Fixed Scroll-Reveal Disappearing Cards Bug on Theme/State Toggles
+### 2026-08-27 (latest) — Antigravity · Removed Legacy Supabase Config UI from Auth Modal
+
+**Security & UX Hardening in `AuthModal.tsx`:**
+
+1. **Root Cause**:
+   - `AuthModal.tsx` contained a legacy developer/prototype screen (`mode === 'config'`) and a "Supabase Settings" button in the authenticated view.
+   - When clicked, it loaded the project's backend Supabase URL and Anon API key into plain-text input fields, and offered a "Clear Config" button that triggered `window.confirm('Disconnect custom Supabase project...')`.
+   - This caused end users to see infrastructure credentials, leading to security concerns and risking accidental database disconnection.
+2. **Resolution**:
+   - Completely purged `mode === 'config'` and the "Supabase Settings" button from [`AuthModal.tsx`](file:///d:/Product%20build/src/components/AuthModal.tsx).
+   - Removed all credential text inputs, textareas, and configuration handlers.
+   - Retained clean production auth flow: Email/Password and Google Sign-in/Sign-up for visitors, and clean profile status (Account Name, Plan badge, Cloud Sync status, and Sign Out) for authenticated users.
+   - Supabase connection is handled seamlessly and automatically in the background via build-time environment variables.
+- **Verification**: `npm run lint` = **0 warnings, 0 errors**. `npm run build` = **Clean compile (exit 0)**.
+
+### 2026-08-26 — Antigravity · Fixed Scroll-Reveal Disappearing Cards Bug on Theme/State Toggles
 
 **Critical React Virtual-DOM Reconciliation Bug Fixed:**
 

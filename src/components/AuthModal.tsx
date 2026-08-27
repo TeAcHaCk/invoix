@@ -1,11 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import {
-  getStoredSupabaseConfig,
-  saveStoredSupabaseConfig,
-  clearStoredSupabaseConfig,
-} from '../lib/supabase';
-import {
   X,
   Lock,
   Mail,
@@ -17,6 +12,7 @@ import {
   Sparkles,
   ArrowRight,
   LogOut,
+  Crown,
 } from 'lucide-react';
 
 interface AuthModalProps {
@@ -28,25 +24,19 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
   const {
     user,
     profile,
-    isCloudConnected,
     signInWithEmail,
     signUpWithEmail,
     signInWithGoogle,
     signOut,
   } = useAuth();
 
-  const [mode, setMode] = useState<'signin' | 'signup' | 'config'>('signin');
+  const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [businessName, setBusinessName] = useState('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Cloud Config State
-  const currentConfig = getStoredSupabaseConfig();
-  const [supabaseUrl, setSupabaseUrl] = useState(currentConfig?.url || '');
-  const [supabaseAnonKey, setSupabaseAnonKey] = useState(currentConfig?.anonKey || '');
 
   if (!isOpen) return null;
 
@@ -63,40 +53,21 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
           setErrorMessage(error.message);
         } else {
           setSuccessMessage('Signed in successfully!');
-          setTimeout(() => onClose(), 1000);
+          setTimeout(() => onClose(), 800);
         }
       } else if (mode === 'signup') {
         const { error } = await signUpWithEmail(email, password, businessName);
         if (error) {
           setErrorMessage(error.message);
         } else {
-          setSuccessMessage('Account created! Please check your email for confirmation if required.');
-          setTimeout(() => onClose(), 1500);
+          setSuccessMessage('Account created successfully! You can now sign in.');
+          setTimeout(() => onClose(), 1200);
         }
       }
     } catch (err: any) {
       setErrorMessage(err?.message || 'Authentication failed');
     } finally {
       setIsSubmitting(false);
-    }
-  };
-
-  const handleSaveConfig = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!supabaseUrl.trim() || !supabaseAnonKey.trim()) {
-      setErrorMessage('Please provide both Supabase Project URL and Anon API Key.');
-      return;
-    }
-
-    saveStoredSupabaseConfig({
-      url: supabaseUrl.trim(),
-      anonKey: supabaseAnonKey.trim(),
-    });
-  };
-
-  const handleDisconnectCloud = () => {
-    if (window.confirm('Disconnect custom Supabase project and return to local mode?')) {
-      clearStoredSupabaseConfig();
     }
   };
 
@@ -111,10 +82,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
             </div>
             <div>
               <h2 className="text-sm font-bold text-slate-100 font-['Outfit']">
-                {user ? 'Account & Cloud Sync' : 'Studio Cloud Access'}
+                {user ? 'Account & Profile' : mode === 'signup' ? 'Create Invoix Account' : 'Sign In to Invoix'}
               </h2>
               <p className="text-[11px] text-slate-400">
-                {isCloudConnected ? 'Supabase PostgreSQL Connected' : 'Local Storage Mode (Offline Ready)'}
+                {user ? user.email : 'Secure cloud backup & real-time proposal tracking'}
               </p>
             </div>
           </div>
@@ -122,7 +93,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 text-slate-400 hover:text-slate-200 rounded-lg hover:bg-slate-800 transition-colors"
+            className="p-1.5 text-slate-400 hover:text-slate-200 rounded-lg hover:bg-slate-800 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -132,123 +103,42 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
         {user ? (
           <div className="p-6 space-y-4 text-xs">
             <div className="bg-slate-950/80 border border-slate-800 rounded-xl p-4 flex items-center space-x-3">
-              <div className="w-10 h-10 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 flex items-center justify-center font-bold text-base">
+              <div className="w-11 h-11 rounded-full bg-gradient-to-br from-amber-400/20 to-amber-600/30 text-amber-300 border border-amber-500/40 flex items-center justify-center font-bold text-lg font-['Outfit']">
                 {user.email?.[0].toUpperCase() || 'U'}
               </div>
               <div className="flex-1">
                 <div className="flex items-center space-x-2">
-                  <p className="font-bold text-sm text-slate-100">{profile?.business_name || 'Studio Owner'}</p>
-                  <span className="text-[9px] bg-amber-500 text-slate-950 px-1.5 py-0.2 rounded font-bold uppercase">
+                  <p className="font-bold text-sm text-slate-100 font-['Outfit']">{profile?.business_name || 'Studio Owner'}</p>
+                  <span className="text-[9px] bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 px-2 py-0.5 rounded-full font-extrabold uppercase tracking-wider flex items-center gap-1">
+                    <Crown className="w-2.5 h-2.5" />
                     {profile?.plan || 'Free'} Plan
                   </span>
                 </div>
-                <p className="text-slate-400 text-[11px]">{user.email}</p>
+                <p className="text-slate-400 text-[11px] mt-0.5">{user.email}</p>
               </div>
             </div>
 
-            <div className="bg-slate-950/50 border border-slate-800 rounded-xl p-3.5 space-y-2">
-              <p className="text-[11px] font-semibold text-slate-300 flex items-center space-x-1.5">
+            <div className="bg-slate-950/50 border border-slate-800 rounded-xl p-3.5 space-y-1.5">
+              <p className="text-[11px] font-semibold text-slate-200 flex items-center space-x-1.5 font-['Outfit']">
                 <Database className="w-3.5 h-3.5 text-emerald-400" />
                 <span>Cloud Synchronization Active</span>
               </p>
               <p className="text-[10.5px] text-slate-400 leading-relaxed">
-                All your quotations, client proposals, and invoices are automatically backed up to Supabase PostgreSQL and synced across devices.
+                All your quotations, client proposals, and invoices are securely stored in your personal cloud vault and synced across your devices.
               </p>
             </div>
 
-            <div className="pt-2 flex justify-between">
-              <button
-                type="button"
-                onClick={() => setMode('config')}
-                className="text-[11px] text-slate-400 hover:text-amber-300 flex items-center space-x-1"
-              >
-                <Database className="w-3.5 h-3.5" />
-                <span>Supabase Settings</span>
-              </button>
-
+            <div className="pt-2 flex justify-end">
               <button
                 type="button"
                 onClick={() => signOut()}
-                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-red-400 rounded-xl font-semibold flex items-center space-x-1.5 transition-colors"
+                className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-red-400 border border-slate-800 hover:border-red-500/30 rounded-xl font-semibold flex items-center space-x-1.5 transition-colors cursor-pointer"
               >
                 <LogOut className="w-3.5 h-3.5" />
                 <span>Sign Out</span>
               </button>
             </div>
           </div>
-        ) : mode === 'config' ? (
-          /* Supabase Configuration Tab */
-          <form onSubmit={handleSaveConfig} className="p-6 space-y-4 text-xs">
-            <div className="flex items-center justify-between">
-              <h3 className="font-bold text-slate-200 text-xs font-['Outfit'] flex items-center space-x-1.5">
-                <Database className="w-3.5 h-3.5 text-amber-400" />
-                <span>Connect Your Supabase Project</span>
-              </h3>
-              <button
-                type="button"
-                onClick={() => setMode('signin')}
-                className="text-[11px] text-amber-400 hover:underline"
-              >
-                ← Back to Login
-              </button>
-            </div>
-
-            <p className="text-[11px] text-slate-400 leading-relaxed">
-              Enter your Supabase Project URL and Anon Public Key (found in Supabase Dashboard → Settings → API).
-            </p>
-
-            {errorMessage && (
-              <div className="p-3 bg-red-500/10 border border-red-500/30 text-red-300 rounded-xl flex items-start space-x-2 text-[11px]">
-                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-                <span>{errorMessage}</span>
-              </div>
-            )}
-
-            <div>
-              <label className="text-[11px] font-semibold text-slate-300 block mb-1">
-                Project URL (VITE_SUPABASE_URL)
-              </label>
-              <input
-                type="text"
-                placeholder="https://xyzcompany.supabase.co"
-                value={supabaseUrl}
-                onChange={(e) => setSupabaseUrl(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-slate-100 font-mono text-[11px] focus:outline-none focus:border-amber-500"
-              />
-            </div>
-
-            <div>
-              <label className="text-[11px] font-semibold text-slate-300 block mb-1">
-                Anon Public API Key (VITE_SUPABASE_ANON_KEY)
-              </label>
-              <textarea
-                rows={2}
-                placeholder="eyJhbGciOiJIUzI1NiIsIn..."
-                value={supabaseAnonKey}
-                onChange={(e) => setSupabaseAnonKey(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-slate-100 font-mono text-[10px] focus:outline-none focus:border-amber-500"
-              />
-            </div>
-
-            <div className="pt-2 flex items-center justify-between">
-              {currentConfig && (
-                <button
-                  type="button"
-                  onClick={handleDisconnectCloud}
-                  className="text-[11px] text-slate-500 hover:text-red-400"
-                >
-                  Clear Config
-                </button>
-              )}
-              <button
-                type="submit"
-                className="ml-auto px-5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl shadow-lg shadow-amber-500/20 flex items-center space-x-1.5 transition-all"
-              >
-                <span>Save & Connect</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          </form>
         ) : (
           /* Sign In / Sign Up Form */
           <div className="p-6 space-y-4 text-xs">
@@ -260,7 +150,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                   setMode('signin');
                   setErrorMessage(null);
                 }}
-                className={`flex-1 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                   mode === 'signin'
                     ? 'bg-amber-500 text-slate-950 shadow-md font-bold'
                     : 'text-slate-400 hover:text-slate-200'
@@ -274,7 +164,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                   setMode('signup');
                   setErrorMessage(null);
                 }}
-                className={`flex-1 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                   mode === 'signup'
                     ? 'bg-amber-500 text-slate-950 shadow-md font-bold'
                     : 'text-slate-400 hover:text-slate-200'
@@ -302,7 +192,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
             <form onSubmit={handleSubmit} className="space-y-3">
               {mode === 'signup' && (
                 <div>
-                  <label className="text-[11px] font-semibold text-slate-300 block mb-1">
+                  <label className="text-[11px] font-semibold text-slate-300 block mb-1 font-['Outfit']">
                     Business / Studio Name
                   </label>
                   <div className="relative">
@@ -319,7 +209,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
               )}
 
               <div>
-                <label className="text-[11px] font-semibold text-slate-300 block mb-1">Email Address</label>
+                <label className="text-[11px] font-semibold text-slate-300 block mb-1 font-['Outfit']">
+                  Email Address
+                </label>
                 <div className="relative">
                   <Mail className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
                   <input
@@ -334,7 +226,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
               </div>
 
               <div>
-                <label className="text-[11px] font-semibold text-slate-300 block mb-1">Password</label>
+                <label className="text-[11px] font-semibold text-slate-300 block mb-1 font-['Outfit']">
+                  Password
+                </label>
                 <div className="relative">
                   <Lock className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
                   <input
@@ -351,31 +245,30 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold rounded-xl shadow-lg shadow-amber-500/20 flex items-center justify-center space-x-2 transition-all disabled:opacity-50 mt-4"
+                className="w-full py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold rounded-xl shadow-lg shadow-amber-500/20 flex items-center justify-center space-x-1.5 transition-all cursor-pointer disabled:opacity-50"
               >
                 {isSubmitting ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
                   <>
                     <span>{mode === 'signin' ? 'Sign In to Workspace' : 'Create Free Account'}</span>
-                    <ArrowRight className="w-4 h-4" />
+                    <ArrowRight className="w-3.5 h-3.5" />
                   </>
                 )}
               </button>
 
-              <div className="relative my-3 text-center">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-slate-800"></div>
-                </div>
-                <span className="relative bg-slate-900 px-2 text-[10px] text-slate-500 uppercase font-mono">
+              <div className="relative flex py-2 items-center">
+                <div className="flex-grow border-t border-slate-800"></div>
+                <span className="flex-shrink mx-3 text-[10px] text-slate-500 uppercase font-mono">
                   Or continue with
                 </span>
+                <div className="flex-grow border-t border-slate-800"></div>
               </div>
 
               <button
                 type="button"
                 onClick={() => signInWithGoogle()}
-                className="w-full py-2 bg-slate-950 hover:bg-slate-800 text-slate-200 border border-slate-700 rounded-xl font-semibold flex items-center justify-center space-x-2 transition-all text-xs"
+                className="w-full py-2.5 bg-slate-950 hover:bg-slate-900 text-slate-200 border border-slate-700 rounded-xl font-semibold flex items-center justify-center space-x-2 transition-all text-xs cursor-pointer"
               >
                 <svg className="w-4 h-4" viewBox="0 0 24 24">
                   <path
