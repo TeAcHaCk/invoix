@@ -35,6 +35,7 @@ import { WatermarkControls } from './WatermarkControls';
 import { AdBanner } from './AdBanner';
 import { processLogoFile } from '../utils/imageTrim';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 import { isPaidPlan } from '../utils/planLimits';
 import { uploadIfDataUrl, deleteAsset, isStoredAssetUrl } from '../services/storageService';
 import {
@@ -90,6 +91,7 @@ export const FormEditor: React.FC<FormEditorProps> = ({
   onOpenHealth,
 }) => {
   const { user, profile } = useAuth();
+  const { toast, confirm } = useToast();
   const isPro = isPaidPlan(profile);
   const [internalTab, setInternalTab] = useState<string>('industry');
   const activeTab = externalTab ?? internalTab;
@@ -146,7 +148,7 @@ export const FormEditor: React.FC<FormEditorProps> = ({
 
   const handleSaveCurrentAsTemplate = async () => {
     if (!templateNameInput.trim()) {
-      alert('Please enter a name for your custom template.');
+      toast.warning('Please enter a name for your custom template.');
       return;
     }
     const newTmpl = createTemplateFromDocument(doc, templateNameInput.trim(), templateDescInput.trim());
@@ -160,6 +162,7 @@ export const FormEditor: React.FC<FormEditorProps> = ({
     setIsSaveTemplateModalOpen(false);
     setTemplateNameInput('');
     setTemplateDescInput('');
+    toast.success(`Saved "${newTmpl.name}" to custom templates!`);
   };
 
   const currentVisibility: SectionVisibilityConfig = {
@@ -197,12 +200,14 @@ export const FormEditor: React.FC<FormEditorProps> = ({
     });
   };
 
-  const handleSelectIndustryPreset = (industry: IndustryCategory) => {
-    if (
-      window.confirm(
-        `Load default template for "${industry.replace('_', ' ').toUpperCase()}"? This will populate sample scope, deliverables, and terms.`
-      )
-    ) {
+  const handleSelectIndustryPreset = async (industry: IndustryCategory) => {
+    const ok = await confirm({
+      title: 'Switch Industry Preset',
+      message: `Load default template for "${industry.replace('_', ' ').toUpperCase()}"? This will populate sample scope, deliverables, and terms.`,
+      confirmText: 'Load Preset',
+      variant: 'warning',
+    });
+    if (ok) {
       const newDoc = createDocumentFromPreset(industry, doc.type);
       // Preserve current studio custom logo & colors if any
       if (doc.studio.logoUrl) {
@@ -215,6 +220,7 @@ export const FormEditor: React.FC<FormEditorProps> = ({
         newDoc.fontFamily = doc.fontFamily;
       }
       onChange(newDoc);
+      toast.success(`Loaded ${industry.replace('_', ' ')} template`);
     }
   };
 
@@ -240,8 +246,9 @@ export const FormEditor: React.FC<FormEditorProps> = ({
           };
           saveStudioProfileToStorage(updatedStudio);
           update({ studio: updatedStudio });
+          toast.success('Logo updated successfully!');
         } else if (res.error) {
-          alert(res.error);
+          toast.error(res.error);
         }
       } finally {
         setIsUploadingLogo(false);
@@ -551,8 +558,9 @@ export const FormEditor: React.FC<FormEditorProps> = ({
 
           const storedUrl = await uploadIfDataUrl(res.dataUrl, 'signature', profile?.id);
           handleSignatoryChange('signatureDataUrl', storedUrl || res.dataUrl);
+          toast.success('Signature uploaded successfully!');
         } else if (res.error) {
-          alert(res.error);
+          toast.error(res.error);
         }
       } finally {
         setIsUploadingSignature(false);

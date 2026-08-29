@@ -2,20 +2,24 @@ import React, { useState } from 'react';
 import { X, Check, Crown, Zap, ShieldCheck, ArrowRight, Loader2 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 import { initiateRazorpayPayment } from '../services/paymentService';
 
 interface UpgradePlanModalProps {
   isOpen: boolean;
   onClose: () => void;
   defaultPlan?: 'pro' | 'agency';
+  onOpenAuth?: () => void;
 }
 
 export const UpgradePlanModal: React.FC<UpgradePlanModalProps> = ({
   isOpen,
   onClose,
   defaultPlan = 'pro',
+  onOpenAuth,
 }) => {
   const { user, profile, refreshProfile } = useAuth();
+  const { toast } = useToast();
   const [selectedPlan, setSelectedPlan] = useState<'pro' | 'agency'>(defaultPlan);
   const [currency, setCurrency] = useState<'INR' | 'USD'>('INR');
   const [isAnnual, setIsAnnual] = useState(true);
@@ -36,7 +40,11 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps> = ({
 
   const handleCheckout = async (planId: 'pro' | 'agency') => {
     if (!user) {
-      alert('Please log in or create an account first to upgrade your plan.');
+      toast.warning('Please log in or create an account first to upgrade your plan.');
+      if (onOpenAuth) {
+        onClose();
+        onOpenAuth();
+      }
       return;
     }
 
@@ -61,12 +69,13 @@ export const UpgradePlanModal: React.FC<UpgradePlanModalProps> = ({
           }
         }
         triggerConfetti();
-        alert(`🎉 Payment Successful! Your account has been upgraded to ${planName}.`);
+        toast.success(`🎉 Payment Successful! Your account has been upgraded to ${planName}.`, 6000);
         onClose();
       },
       onError: (err) => {
         setIsProcessing(false);
         console.error('Checkout error:', err);
+        toast.error((err as any)?.message || 'Payment could not be completed.');
       },
     });
     setIsProcessing(false);

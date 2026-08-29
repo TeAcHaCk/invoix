@@ -26,6 +26,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 import {
   fetchUserDocuments,
   deleteDocument,
@@ -78,6 +79,7 @@ export const HistoryVaultModal: React.FC<HistoryVaultModalProps> = ({
   onOpenUpgrade,
 }) => {
   const { profile, user } = useAuth();
+  const { toast, confirm } = useToast();
   const isPaid = isPaidPlan(profile);
   // Seed from local so the list paints instantly, then reconcile with the cloud.
   const [documents, setDocuments] = useState<QuotationDocument[]>(() => getVaultDocuments());
@@ -155,11 +157,18 @@ export const HistoryVaultModal: React.FC<HistoryVaultModalProps> = ({
   */
   const handleDelete = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!window.confirm('Are you sure you want to delete this document from your vault?')) return;
+    const ok = await confirm({
+      title: 'Delete Document',
+      message: 'Are you sure you want to permanently delete this document from your vault?',
+      confirmText: 'Delete',
+      variant: 'danger',
+    });
+    if (!ok) return;
 
     setDocuments(deleteDocumentFromVault(id)); // instant feedback
     await deleteDocument(id, user?.id);        // then the authoritative delete
     void refreshDocuments();
+    toast.success('Document deleted from vault');
   };
 
   const handleDuplicate = (doc: QuotationDocument, e: React.MouseEvent) => {
@@ -168,13 +177,16 @@ export const HistoryVaultModal: React.FC<HistoryVaultModalProps> = ({
       if (onOpenUpgrade) {
         onOpenUpgrade('pro');
       } else {
-        alert('Free plan limit reached (3 proposals). Upgrade to Pro for unlimited proposals.');
+        toast.warning('Free plan limit reached (3 proposals). Upgrade to Pro for unlimited proposals.');
       }
       return;
     }
     const duplicated = createDuplicatedDocument(doc);
     // saveDocument (not saveDocumentToVault) so the copy exists on every device.
-    void saveDocument(duplicated, user?.id, isPaid).then(() => refreshDocuments());
+    void saveDocument(duplicated, user?.id, isPaid).then(() => {
+      refreshDocuments();
+      toast.success('Document duplicated successfully');
+    });
   };
 
   const handleExportBackupJson = () => {
@@ -183,6 +195,7 @@ export const HistoryVaultModal: React.FC<HistoryVaultModalProps> = ({
     dlAnchor.setAttribute('href', dataStr);
     dlAnchor.setAttribute('download', `quotation_vault_backup_${new Date().toISOString().slice(0, 10)}.json`);
     dlAnchor.click();
+    toast.success('Backup exported as JSON');
   };
 
   const handleImportBackupJson = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -195,7 +208,7 @@ export const HistoryVaultModal: React.FC<HistoryVaultModalProps> = ({
           if (Array.isArray(imported)) {
             if (!isPaid && (documents.length + imported.length) > FREE_PLAN_MAX_DOCUMENTS) {
               if (onOpenUpgrade) onOpenUpgrade('pro');
-              alert(`Free plan holds up to ${FREE_PLAN_MAX_DOCUMENTS} documents. Upgrade to Pro for unlimited storage.`);
+              toast.warning(`Free plan holds up to ${FREE_PLAN_MAX_DOCUMENTS} documents. Upgrade to Pro for unlimited storage.`);
               return;
             }
             // Restored documents must reach the cloud too, or a "restore" only
@@ -205,11 +218,11 @@ export const HistoryVaultModal: React.FC<HistoryVaultModalProps> = ({
                 await saveDocument(docItem, user?.id, isPaid);
               }
               await refreshDocuments();
-              alert(`Successfully restored ${imported.length} documents into vault!`);
+              toast.success(`Successfully restored ${imported.length} documents into vault!`);
             })();
           }
         } catch {
-          alert('Invalid JSON backup file.');
+          toast.error('Invalid JSON backup file.');
         }
       };
       reader.readAsText(file);

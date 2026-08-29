@@ -4,6 +4,7 @@ import {
   updateUserPlanOrRole,
 } from '../../services/adminService';
 import type { UserProfile } from '../../context/AuthContext';
+import { useToast } from '../../context/ToastContext';
 import {
   Search,
   Ban,
@@ -13,6 +14,7 @@ import {
 } from 'lucide-react';
 
 export const AdminUsersTab: React.FC = () => {
+  const { toast, confirm } = useToast();
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPlanFilter, setSelectedPlanFilter] = useState<'all' | 'free' | 'pro' | 'agency' | 'admin'>('all');
@@ -73,17 +75,22 @@ export const AdminUsersTab: React.FC = () => {
 
   const handleToggleSuspend = async (user: UserProfile) => {
     const nextState = !user.is_suspended;
-    if (
-      window.confirm(
-        `Are you sure you want to ${nextState ? 'SUSPEND' : 'RE-ACTIVATE'} ${user.email}?`
-      )
-    ) {
+    const ok = await confirm({
+      title: `${nextState ? 'Suspend' : 'Reactivate'} User`,
+      message: `Are you sure you want to ${nextState ? 'SUSPEND' : 'RE-ACTIVATE'} ${user.email}?`,
+      confirmText: nextState ? 'Suspend User' : 'Reactivate User',
+      variant: nextState ? 'danger' : 'warning',
+    });
+    if (ok) {
       setUpdatingUserId(user.id);
       const success = await updateUserPlanOrRole(user.id, { is_suspended: nextState });
       if (success) {
         setUsers((prev) =>
           prev.map((u) => (u.id === user.id ? { ...u, is_suspended: nextState } : u))
         );
+        toast.success(`User ${user.email} ${nextState ? 'suspended' : 'reactivated'}`);
+      } else {
+        toast.error(`Failed to update user status`);
       }
       setUpdatingUserId(null);
     }

@@ -4,6 +4,7 @@ import { Eye, EyeOff, Sliders, RotateCw, Image as ImageIcon, Type, Sparkles, Upl
 import { useAuth } from '../context/AuthContext';
 import { canDisableWatermark } from '../utils/planLimits';
 import { uploadAsset, deleteAsset, isStoredAssetUrl } from '../services/storageService';
+import { useToast } from '../context/ToastContext';
 
 interface WatermarkControlsProps {
   config: WatermarkConfig;
@@ -14,6 +15,7 @@ interface WatermarkControlsProps {
 export const WatermarkControls: React.FC<WatermarkControlsProps> = ({ config, onChange, onOpenUpgrade }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { profile } = useAuth();
+  const { toast } = useToast();
   const isPaid = canDisableWatermark(profile);
   const [isUploading, setIsUploading] = useState(false);
 
@@ -26,7 +28,7 @@ export const WatermarkControls: React.FC<WatermarkControlsProps> = ({ config, on
       if (onOpenUpgrade) {
         onOpenUpgrade('pro');
       } else {
-        alert('Watermark removal is exclusive to Invoix Pro subscribers.');
+        toast.info('Watermark removal is exclusive to Invoix Pro subscribers.');
       }
       return;
     }
@@ -129,7 +131,7 @@ export const WatermarkControls: React.FC<WatermarkControlsProps> = ({ config, on
 
           <button
             type="button"
-            onClick={() => onOpenUpgrade ? onOpenUpgrade('pro') : alert('Upgrade to Pro')}
+            onClick={() => onOpenUpgrade ? onOpenUpgrade('pro') : toast.info('Upgrade to Invoix Pro to remove watermarks.')}
             className="w-full py-2 px-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 text-xs font-bold rounded-xl flex items-center justify-center space-x-2 shadow-md shadow-amber-500/20 transition-all cursor-pointer"
           >
             <Sparkles className="w-3.5 h-3.5 fill-slate-950" />

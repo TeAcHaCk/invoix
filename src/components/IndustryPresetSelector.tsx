@@ -2,6 +2,7 @@ import React from 'react';
 import type { IndustryCategory, CustomTemplatePreset } from '../types';
 import { INDUSTRY_PRESETS } from '../constants/industryPresets';
 import { Sparkles, Check, Plus, Trash2, LayoutTemplate } from 'lucide-react';
+import { useToast } from '../context/ToastContext';
 
 interface IndustryPresetSelectorProps {
   currentIndustry: IndustryCategory;
@@ -22,6 +23,7 @@ export const IndustryPresetSelector: React.FC<IndustryPresetSelectorProps> = ({
   onDeleteCustomTemplate,
   onOpenCreateTemplate,
 }) => {
+  const { confirm, toast } = useToast();
   const presetsList = Object.values(INDUSTRY_PRESETS);
 
   return (
@@ -143,10 +145,17 @@ export const IndustryPresetSelector: React.FC<IndustryPresetSelectorProps> = ({
                     {onDeleteCustomTemplate && (
                       <button
                         type="button"
-                        onClick={(e) => {
+                        onClick={async (e) => {
                           e.stopPropagation();
-                          if (window.confirm(`Delete template "${tmpl.name}"?`)) {
+                          const ok = await confirm({
+                            title: 'Delete Custom Template',
+                            message: `Are you sure you want to delete "${tmpl.name}"?`,
+                            confirmText: 'Delete',
+                            variant: 'danger',
+                          });
+                          if (ok) {
                             onDeleteCustomTemplate(tmpl.id);
+                            toast.success(`Template "${tmpl.name}" deleted`);
                           }
                         }}
                         className="p-1 text-slate-400 hover:text-red-400 rounded hover:bg-slate-800 transition-colors"

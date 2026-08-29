@@ -15,6 +15,7 @@ import {
   createDocumentFromPreset,
 } from '../constants/defaultData';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 import { Navbar } from './Navbar';
 import { FormEditor } from './FormEditor';
 import { InvoiceDocumentView } from './InvoiceDocumentView';
@@ -50,6 +51,7 @@ interface StudioWorkspaceProps {
 
 export default function StudioWorkspace({ initialIndustry, onNavigateToAdmin, onNavigateToHome }: StudioWorkspaceProps) {
   const { user, profile } = useAuth();
+  const { confirm } = useToast();
 
   const [document, setDocument] = useState<QuotationDocument>(() => {
     if (initialIndustry) {
@@ -291,8 +293,14 @@ export default function StudioWorkspace({ initialIndustry, onNavigateToAdmin, on
     showToast('Studio branding updated!');
   };
 
-  const handleNewDocument = () => {
-    if (window.confirm('Create a new blank document? (Unsaved changes in draft will be reset)')) {
+  const handleNewDocument = async () => {
+    const ok = await confirm({
+      title: 'New Blank Document',
+      message: 'Create a new blank document? Any unsaved changes in your current draft will be reset.',
+      confirmText: 'Create New',
+      variant: 'warning',
+    });
+    if (ok) {
       const fresh = getDefaultDocument();
       setDocument(fresh);
       localStorage.setItem('fbf_current_document_v4', JSON.stringify(fresh));
@@ -300,8 +308,14 @@ export default function StudioWorkspace({ initialIndustry, onNavigateToAdmin, on
     }
   };
 
-  const handleResetSample = () => {
-    if (window.confirm('Reset this workspace to sample industry data?')) {
+  const handleResetSample = async () => {
+    const ok = await confirm({
+      title: 'Reset to Sample Data',
+      message: 'Reset this workspace to sample industry data? Any current edits will be replaced.',
+      confirmText: 'Reset Workspace',
+      variant: 'warning',
+    });
+    if (ok) {
       const fresh = getDefaultDocument();
       setDocument(fresh);
       localStorage.setItem('fbf_current_document_v4', JSON.stringify(fresh));
@@ -568,6 +582,7 @@ export default function StudioWorkspace({ initialIndustry, onNavigateToAdmin, on
         isOpen={isUpgradeOpen}
         onClose={() => setIsUpgradeOpen(false)}
         defaultPlan={upgradePlan}
+        onOpenAuth={() => setIsAuthOpen(true)}
       />
 
       <DocumentHealthModal

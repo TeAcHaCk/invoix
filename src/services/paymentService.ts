@@ -112,8 +112,7 @@ export const initiateRazorpayPayment = async ({
 }: RazorpayCheckoutParams): Promise<void> => {
   const fail = (message: string, cause?: unknown) => {
     console.error('Checkout:', message, cause ?? '');
-    if (onError) onError(cause ?? new Error(message));
-    alert(message);
+    if (onError) onError(cause instanceof Error ? cause : new Error(message));
   };
 
   const token = await getAccessToken();
@@ -215,8 +214,7 @@ export const initiateRazorpayPayment = async ({
     const razorpayInstance = new (window as any).Razorpay(options);
     razorpayInstance.on('payment.failed', function (response: any) {
       console.error('Razorpay Payment Failed:', response.error);
-      if (onError) onError(response.error);
-      alert(`Payment failed: ${response.error.description || response.error.reason}`);
+      if (onError) onError(new Error(response.error?.description || response.error?.reason || 'Payment failed'));
     });
     razorpayInstance.open();
   } catch (err) {

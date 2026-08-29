@@ -3,6 +3,7 @@ import type { StudioProfile } from '../types';
 import { Building2, X, Upload, Check, CreditCard, Loader2 } from 'lucide-react';
 import { processLogoFile } from '../utils/imageTrim';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 import { uploadIfDataUrl, deleteAsset, isStoredAssetUrl } from '../services/storageService';
 
 interface StudioSettingsModalProps {
@@ -19,6 +20,7 @@ export const StudioSettingsModal: React.FC<StudioSettingsModalProps> = ({
   onSave,
 }) => {
   const { profile } = useAuth();
+  const { toast } = useToast();
   const [formData, setFormData] = useState<StudioProfile>(studio);
   const [isUploading, setIsUploading] = useState(false);
   const logoInputRef = useRef<HTMLInputElement>(null);
@@ -53,8 +55,9 @@ export const StudioSettingsModal: React.FC<StudioSettingsModalProps> = ({
             ...prev,
             logoUrl: storedUrl || res.dataUrl!,
           }));
+          toast.success('Logo updated successfully!');
         } else if (res.error) {
-          alert(res.error);
+          toast.error(res.error);
         }
       } finally {
         setIsUploading(false);

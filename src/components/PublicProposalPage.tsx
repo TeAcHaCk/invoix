@@ -9,6 +9,7 @@ import { generateContractSignatureHash, generateCertificateId } from '../utils/c
 import { formatCurrency } from '../utils/formatters';
 import { downloadPdf, type PdfQuality } from '../services/pdfExportService';
 import { InvoiceDocumentView } from './InvoiceDocumentView';
+import { useToast } from '../context/ToastContext';
 import confetti from 'canvas-confetti';
 import {
   CheckCircle2,
@@ -38,6 +39,7 @@ interface PublicProposalPageProps {
 }
 
 export const PublicProposalPage: React.FC<PublicProposalPageProps> = ({ documentId }) => {
+  const { toast } = useToast();
   const [document, setDocument] = useState<QuotationDocument | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -276,13 +278,14 @@ export const PublicProposalPage: React.FC<PublicProposalPageProps> = ({ document
     const file = e.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith('image/')) {
-      alert('Please upload an image file (PNG, JPG, or WEBP).');
+      toast.warning('Please upload an image file (PNG, JPG, or WEBP).');
       return;
     }
     const reader = new FileReader();
     reader.onload = (event) => {
       if (event.target?.result) {
         setUploadedSignatureUrl(event.target.result as string);
+        toast.success('Signature file selected');
       }
     };
     reader.readAsDataURL(file);
@@ -290,7 +293,7 @@ export const PublicProposalPage: React.FC<PublicProposalPageProps> = ({ document
 
   const handleApprove = async () => {
     if (!signerName.trim()) {
-      alert('Please enter your full legal name to approve.');
+      toast.warning('Please enter your full legal name to approve.');
       return;
     }
 
@@ -320,7 +323,7 @@ export const PublicProposalPage: React.FC<PublicProposalPageProps> = ({ document
       }
     } else if (signatureMode === 'upload') {
       if (!uploadedSignatureUrl) {
-        alert('Please select or drop a signature / stamp image file to upload.');
+        toast.warning('Please select or drop a signature / stamp image file to upload.');
         return;
       }
       signatureUrl = uploadedSignatureUrl;

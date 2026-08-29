@@ -127,7 +127,24 @@ Each of these shipped once and cost real debugging time.
 
 ## Handoff log
 
-### 2026-08-29 (latest) — Antigravity · Integrated Vercel Web Analytics
+### 2026-08-29 (latest) — Antigravity · Replaced Native Browser Alerts with In-App Toasts & Confirmations
+
+**UX Hardening Across Entire Application:**
+
+1. **Global `ToastProvider` & Modern Toast Stack (`src/context/ToastContext.tsx`)**:
+   - Created full in-browser toast notification stack with auto-dismissing animated glass cards (success, error, warning, info) and top-right positioning.
+   - Built an interactive, promise-based in-app confirmation modal replacing all ugly native `window.confirm()` dialogs.
+2. **Purged All Native `alert()` and `window.confirm()` Calls**:
+   - **`UpgradePlanModal.tsx`**: Replaced native alert with in-modal auth modal opening and toast warnings.
+   - **`FormEditor.tsx`**: Replaced all template/logo upload/preset alerts and confirms with rich in-app dialogs and toasts.
+   - **`HistoryVaultModal.tsx`**: Vault document deletion, duplicate limit, and JSON restore alerts replaced with toast and confirm modals.
+   - **`StudioWorkspace.tsx`**: Blank document creation and sample reset confirms replaced with in-app dialogs.
+   - **`IndustryPresetSelector.tsx`**: Custom template deletion now uses in-app confirm modal.
+   - **`StudioSettingsModal.tsx`**, **`PublicProposalPage.tsx`**, **`InstallAppPrompt.tsx`**, **`AdminUsersTab.tsx`**, and **`paymentService.ts`**: All native alerts removed.
+- **Verification**: `npm run lint` = **0 warnings, 0 errors**. `npm run build` = **Clean compile (exit 0)**.
+- **Branch Target**: Committed and pushed strictly to `staging`.
+
+### 2026-08-29 — Antigravity · Integrated Vercel Web Analytics
 
 **Delivered Vercel Analytics Integration:**
 

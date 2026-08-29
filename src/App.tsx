@@ -1,6 +1,7 @@
 import { useState, useEffect, lazy, Suspense } from 'react';
 import type { IndustryCategory } from './types';
 import { AuthProvider } from './context/AuthContext';
+import { ToastProvider } from './context/ToastContext';
 import { LandingPage } from './components/landing/LandingPage';
 import { InstallAppPrompt } from './components/InstallAppPrompt';
 import { AuthModal } from './components/AuthModal';
@@ -151,7 +152,8 @@ export function App() {
 
   return (
     <AuthProvider>
-      {currentView.type === 'public_proposal' && currentView.docId ? (
+      <ToastProvider>
+        {currentView.type === 'public_proposal' && currentView.docId ? (
         // The audience here is the USER'S CLIENT, not the user. A crash on this
         // route must not show them a stack trace or a blank page — they cannot
         // act on either, and it reflects on the person who sent the proposal.
@@ -236,6 +238,7 @@ export function App() {
             isOpen={isUpgradeOpen}
             onClose={() => setIsUpgradeOpen(false)}
             defaultPlan={upgradePlan}
+            onOpenAuth={() => setIsAuthOpen(true)}
           />
         </>
       ) : (
@@ -247,8 +250,9 @@ export function App() {
           />
         </Suspense>
       )}
-      <InstallAppPrompt />
-      <Analytics />
+        <InstallAppPrompt />
+        <Analytics />
+      </ToastProvider>
     </AuthProvider>
   );
 }

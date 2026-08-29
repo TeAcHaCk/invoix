@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Download, Smartphone, X, Share, PlusSquare } from 'lucide-react';
+import { useToast } from '../context/ToastContext';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -7,6 +8,7 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 export const InstallAppPrompt: React.FC = () => {
+  const { toast } = useToast();
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isIOS] = useState(() =>
     typeof window !== 'undefined' ? /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase()) : false
@@ -36,6 +38,8 @@ export const InstallAppPrompt: React.FC = () => {
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
+      setIsVisible(true);
+      setIsLeaving(false);
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
@@ -62,7 +66,7 @@ export const InstallAppPrompt: React.FC = () => {
     } else if (isIOS) {
       setShowIOSModal(true);
     } else {
-      alert('To install Invoix, tap the Install icon in your browser address bar or menu.');
+      toast.info('To install Invoix, tap the Install icon in your browser address bar or menu.');
       triggerDismiss();
     }
   };
