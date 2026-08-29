@@ -71,6 +71,8 @@ import {
   EyeOff,
   Upload,
   Loader2,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 
 interface FormEditorProps {
@@ -104,6 +106,46 @@ export const FormEditor: React.FC<FormEditorProps> = ({
   const [isUploadingSignature, setIsUploadingSignature] = useState(false);
   const logoFileInputRef = React.useRef<HTMLInputElement>(null);
   const signatureFileInputRef = React.useRef<HTMLInputElement>(null);
+  const tabsContainerRef = React.useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
+
+  const checkTabScroll = React.useCallback(() => {
+    const el = tabsContainerRef.current;
+    if (!el) return;
+    const hasScrollLeft = el.scrollLeft > 4;
+    const hasScrollRight = el.scrollLeft + el.clientWidth < el.scrollWidth - 4;
+    setCanScrollLeft(hasScrollLeft);
+    setCanScrollRight(hasScrollRight);
+  }, []);
+
+  const scrollTabs = (direction: 'left' | 'right') => {
+    if (tabsContainerRef.current) {
+      tabsContainerRef.current.scrollBy({
+        left: direction === 'left' ? -220 : 220,
+        behavior: 'smooth',
+      });
+    }
+  };
+
+  React.useEffect(() => {
+    checkTabScroll();
+    const el = tabsContainerRef.current;
+    if (!el) return;
+    const handleResize = () => checkTabScroll();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [checkTabScroll]);
+
+  React.useEffect(() => {
+    if (tabsContainerRef.current) {
+      const activeEl = tabsContainerRef.current.querySelector(`[data-tab-id="${activeTab}"]`);
+      if (activeEl) {
+        activeEl.scrollIntoView({ behavior: 'smooth', inline: 'nearest', block: 'nearest' });
+      }
+    }
+    checkTabScroll();
+  }, [activeTab, checkTabScroll]);
 
   React.useEffect(() => {
     let active = true;
@@ -619,47 +661,91 @@ export const FormEditor: React.FC<FormEditorProps> = ({
 
   return (
     <div className="glass rounded-3xl p-4 sm:p-5 flex flex-col h-full shadow-2xl border border-slate-800/80 font-['Plus_Jakarta_Sans',sans-serif] glow-amber">
-      {/* Tab Navigation with glowing active pills */}
-      <div className="flex overflow-x-auto space-x-1.5 pb-3 mb-3.5 border-b border-slate-800/70 no-scrollbar">
-        {tabs.map((tab) => {
-          const isActive = activeTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => setActiveTab(tab.id)}
-              className={`px-3.5 py-2.5 rounded-xl text-xs font-semibold whitespace-nowrap flex items-center space-x-2 transition-all cursor-pointer ${
-                isActive
-                  ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-lg shadow-amber-500/25 font-bold scale-[1.02]'
-                  : 'bg-slate-950/60 text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 border border-slate-800/40'
-              }`}
-            >
-              <span className={isActive ? 'text-slate-950' : 'text-slate-400'}>{tab.icon}</span>
-              <span>{tab.label}</span>
-              {typeof tab.badge === 'number' && (
-                <span
-                  className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
-                    isActive ? 'bg-slate-950 text-amber-300' : 'bg-slate-800 text-slate-400'
-                  }`}
-                >
-                  {tab.badge}
-                </span>
-              )}
-            </button>
-          );
-        })}
-
-        {onOpenHealth && (
+      {/* Tab Navigation with glowing active pills and smooth slide buttons */}
+      <div className="relative mb-3.5 pb-1 border-b border-slate-800/70">
+        {/* Left Arrow Slider Button */}
+        {canScrollLeft && (
           <button
             type="button"
-            onClick={onOpenHealth}
-            className="px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap flex items-center space-x-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 transition-all cursor-pointer ml-auto"
-            title="Pre-flight Document Health Inspector"
+            onClick={() => scrollTabs('left')}
+            className="absolute -left-1.5 top-1/2 -translate-y-1/2 z-20 w-7 h-7 rounded-full bg-slate-900/95 hover:bg-amber-500 text-amber-400 hover:text-slate-950 border border-amber-500/40 shadow-xl shadow-black/80 flex items-center justify-center transition-all cursor-pointer backdrop-blur-md hover:scale-110"
+            title="Slide tabs left"
+            aria-label="Slide tabs left"
           >
-            <ShieldCheck className="w-3.5 h-3.5" />
-            <span>Health Check</span>
+            <ChevronLeft className="w-4 h-4 stroke-[2.5]" />
           </button>
         )}
+
+        {/* Left Gradient Mask */}
+        {canScrollLeft && (
+          <div className="absolute left-0 top-0 bottom-1 w-6 bg-gradient-to-r from-slate-950/90 to-transparent z-10 pointer-events-none rounded-l-xl" />
+        )}
+
+        {/* Right Arrow Slider Button */}
+        {canScrollRight && (
+          <button
+            type="button"
+            onClick={() => scrollTabs('right')}
+            className="absolute -right-1.5 top-1/2 -translate-y-1/2 z-20 w-7 h-7 rounded-full bg-slate-900/95 hover:bg-amber-500 text-amber-400 hover:text-slate-950 border border-amber-500/40 shadow-xl shadow-black/80 flex items-center justify-center transition-all cursor-pointer backdrop-blur-md hover:scale-110 animate-pulse hover:animate-none"
+            title="Slide tabs right to view more options"
+            aria-label="Slide tabs right"
+          >
+            <ChevronRight className="w-4 h-4 stroke-[2.5]" />
+          </button>
+        )}
+
+        {/* Right Gradient Mask */}
+        {canScrollRight && (
+          <div className="absolute right-0 top-0 bottom-1 w-6 bg-gradient-to-l from-slate-950/90 to-transparent z-10 pointer-events-none rounded-r-xl" />
+        )}
+
+        {/* Tabs Scroll Container */}
+        <div
+          ref={tabsContainerRef}
+          onScroll={checkTabScroll}
+          className="flex overflow-x-auto space-x-1.5 pb-2 no-scrollbar scroll-smooth px-1"
+        >
+          {tabs.map((tab) => {
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                data-tab-id={tab.id}
+                type="button"
+                onClick={() => setActiveTab(tab.id)}
+                className={`px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap flex items-center space-x-2 transition-all cursor-pointer shrink-0 ${
+                  isActive
+                    ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-lg shadow-amber-500/25 font-bold scale-[1.02]'
+                    : 'bg-slate-950/60 text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 border border-slate-800/40'
+                }`}
+              >
+                <span className={isActive ? 'text-slate-950' : 'text-slate-400'}>{tab.icon}</span>
+                <span>{tab.label}</span>
+                {typeof tab.badge === 'number' && (
+                  <span
+                    className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                      isActive ? 'bg-slate-950 text-amber-300' : 'bg-slate-800 text-slate-400'
+                    }`}
+                  >
+                    {tab.badge}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+
+          {onOpenHealth && (
+            <button
+              type="button"
+              onClick={onOpenHealth}
+              className="px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap flex items-center space-x-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 transition-all cursor-pointer shrink-0 ml-auto"
+              title="Pre-flight Document Health Inspector"
+            >
+              <ShieldCheck className="w-3.5 h-3.5" />
+              <span>Health Check</span>
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Tab Panels */}
