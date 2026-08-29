@@ -660,9 +660,9 @@ export const FormEditor: React.FC<FormEditorProps> = ({
   ];
 
   return (
-    <div className="glass rounded-3xl p-4 sm:p-5 flex flex-col h-full shadow-2xl border border-slate-800/80 font-['Plus_Jakarta_Sans',sans-serif] glow-amber">
+    <div className="glass rounded-3xl p-4 sm:p-5 flex flex-col h-full min-h-0 shadow-2xl border border-slate-800/80 font-['Plus_Jakarta_Sans',sans-serif] glow-amber overflow-hidden">
       {/* Tab Navigation with glowing active pills and dedicated slide controls */}
-      <div className="flex items-center space-x-1.5 mb-3.5 pb-2 border-b border-slate-800/70">
+      <div className="shrink-0 flex items-center space-x-1.5 mb-3.5 pb-2 border-b border-slate-800/70">
         {/* Left Arrow Button */}
         {canScrollLeft && (
           <button
@@ -740,7 +740,7 @@ export const FormEditor: React.FC<FormEditorProps> = ({
       </div>
 
       {/* Tab Panels */}
-      <div className="flex-1 overflow-y-auto space-y-4 pr-1 text-xs no-scrollbar">
+      <div className="flex-1 min-h-0 overflow-y-auto space-y-4 pr-1 text-xs no-scrollbar">
         {/* ========================================================= */}
         {/* TAB 1: INDUSTRY PRESETS & DOCUMENT STYLE                  */}
         {/* ========================================================= */}

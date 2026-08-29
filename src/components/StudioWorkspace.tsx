@@ -365,12 +365,12 @@ export default function StudioWorkspace({ initialIndustry, onNavigateToAdmin, on
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-['Plus_Jakarta_Sans',sans-serif]">
+    <div className="h-screen max-h-screen overflow-hidden bg-slate-950 text-slate-100 flex flex-col font-['Plus_Jakarta_Sans',sans-serif]">
       {/* Save Failure Banner — stays until dismissed */}
       {saveError && (
         <div
           role="alert"
-          className="sticky top-0 z-50 bg-rose-950 border-b border-rose-500/50 px-4 py-2.5 flex items-start gap-3"
+          className="sticky top-0 z-50 bg-rose-950 border-b border-rose-500/50 px-4 py-2.5 flex items-start gap-3 shrink-0"
         >
           <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
           <p className="flex-1 text-xs text-rose-100 leading-relaxed">{saveError}</p>
@@ -394,31 +394,33 @@ export default function StudioWorkspace({ initialIndustry, onNavigateToAdmin, on
       )}
 
       {/* Top Navbar */}
-      <Navbar
-        document={document}
-        onExportPdf={handleExportPdf}
-        onPrint={handlePrint}
-        onOpenWhatsApp={() => setIsWhatsAppOpen(true)}
-        onOpenClientInteractive={() => setIsInteractiveOpen(true)}
-        onSaveToVault={handleSaveToVault}
-        onOpenVault={() => setIsVaultOpen(true)}
-        onOpenSettings={() => setIsSettingsOpen(true)}
-        onOpenAuth={() => setIsAuthOpen(true)}
-        onOpenAdmin={onNavigateToAdmin}
-        onOpenUpgrade={(plan) => {
-          setUpgradePlan(plan || 'pro');
-          setIsUpgradeOpen(true);
-        }}
-        onOpenHealth={() => setIsHealthOpen(true)}
-        onNavigateToHome={onNavigateToHome}
-        onNewDocument={handleNewDocument}
-        onResetSample={handleResetSample}
-        isExporting={isExporting}
-        onToggleWatermark={handleToggleWatermark}
-      />
+      <div className="shrink-0 z-40">
+        <Navbar
+          document={document}
+          onExportPdf={handleExportPdf}
+          onPrint={handlePrint}
+          onOpenWhatsApp={() => setIsWhatsAppOpen(true)}
+          onOpenClientInteractive={() => setIsInteractiveOpen(true)}
+          onSaveToVault={handleSaveToVault}
+          onOpenVault={() => setIsVaultOpen(true)}
+          onOpenSettings={() => setIsSettingsOpen(true)}
+          onOpenAuth={() => setIsAuthOpen(true)}
+          onOpenAdmin={onNavigateToAdmin}
+          onOpenUpgrade={(plan) => {
+            setUpgradePlan(plan || 'pro');
+            setIsUpgradeOpen(true);
+          }}
+          onOpenHealth={() => setIsHealthOpen(true)}
+          onNavigateToHome={onNavigateToHome}
+          onNewDocument={handleNewDocument}
+          onResetSample={handleResetSample}
+          isExporting={isExporting}
+          onToggleWatermark={handleToggleWatermark}
+        />
+      </div>
 
       {/* Mobile View Toggle Bar */}
-      <div className="lg:hidden flex items-center justify-center p-2 bg-slate-900/90 border-b border-slate-800 sticky top-[57px] z-30 space-x-2">
+      <div className="lg:hidden shrink-0 flex items-center justify-center p-2 bg-slate-900/90 border-b border-slate-800 z-30 space-x-2">
         <button
           type="button"
           onClick={() => setMobileActiveView('editor')}
@@ -446,11 +448,11 @@ export default function StudioWorkspace({ initialIndustry, onNavigateToAdmin, on
       </div>
 
       {/* Main Workspace Split View */}
-      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden relative">
+      <div className="flex-1 min-h-0 flex flex-col lg:flex-row overflow-hidden relative">
         {/* Left Side: Form Editor (Moveable / Resizable Width) */}
         <div
           style={{ width: typeof window !== 'undefined' && window.innerWidth >= 1024 ? `${sidebarWidth}px` : undefined }}
-          className={`w-full shrink-0 border-r border-slate-800/80 bg-slate-950 flex flex-col overflow-y-auto ${
+          className={`w-full shrink-0 border-r border-slate-800/80 bg-slate-950 flex flex-col h-full min-h-0 overflow-hidden ${
             mobileActiveView === 'preview' ? 'hidden lg:flex' : 'flex'
           }`}
         >
@@ -491,7 +493,7 @@ export default function StudioWorkspace({ initialIndustry, onNavigateToAdmin, on
 
         {/* Right Side: Live Document Preview Canvas */}
         <div
-          className={`flex-1 bg-slate-900/60 overflow-y-auto p-4 sm:p-8 flex flex-col items-center justify-start relative ${
+          className={`flex-1 min-w-0 h-full min-h-0 bg-slate-900/60 overflow-y-auto p-4 sm:p-8 flex flex-col items-center justify-start relative ${
             mobileActiveView === 'editor'
               ? 'max-lg:fixed max-lg:-left-[9999px] max-lg:top-0 max-lg:w-[850px] max-lg:h-screen max-lg:overflow-hidden max-lg:opacity-0 max-lg:pointer-events-none'
               : 'flex'
