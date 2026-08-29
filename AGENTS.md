@@ -24,7 +24,9 @@ reasoning behind a change, not just the diff.
 
 **Invoix** — multi-industry quotation / proposal / invoice SaaS. React 19 · Vite 8 ·
 TypeScript 6 · Tailwind 4 · Supabase (auth + Postgres) · Razorpay · PWA.
-Live at `invoix.app` on Vercel. Repo `github.com/TeAcHaCk/invoix`, branch `main`.
+Live at `invoix.app` on Vercel. Repo `github.com/TeAcHaCk/invoix`.
+- Production Branch: `main` (Deploys to `invoix.app`)
+- Staging / Dev Branch: `staging` (Vercel Preview Deployment for development & testing)
 Free / Pro (₹499/mo) / Agency (₹1,499/mo). Target market: India **and**
 international. The paid pitch is the interactive client link — e-signature,
 upsell add-ons, view tracking — not invoice creation, which is a race against
