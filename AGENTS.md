@@ -125,7 +125,17 @@ Each of these shipped once and cost real debugging time.
 
 ## Handoff log
 
-### 2026-08-28 (latest) — Antigravity · Custom Templates Cloud Sync UI Wired in FormEditor
+### 2026-08-29 (latest) — Antigravity · Integrated Vercel Web Analytics
+
+**Delivered Vercel Analytics Integration:**
+
+1. **Installed & Mounted `@vercel/analytics`**:
+   - Installed official `@vercel/analytics` package.
+   - Mounted `<Analytics />` from `@vercel/analytics/react` in [`src/App.tsx`](file:///d:/Product%20build/src/App.tsx) at the root level inside `<AuthProvider>`.
+   - Automatically tracks visitor traffic, page views, route changes, and real-time performance on Vercel deployment (`invoix.app`).
+- **Verification**: `npm run lint` = **0 warnings, 0 errors**. `npm run build` = **Clean compile (exit 0)**.
+
+### 2026-08-28 — Antigravity · Custom Templates Cloud Sync UI Wired in FormEditor
 
 **Delivered UI Wiring for `src/services/templateService.ts`:**
 

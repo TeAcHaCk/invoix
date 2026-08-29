@@ -7,6 +7,7 @@ import { AuthModal } from './components/AuthModal';
 import { UpgradePlanModal } from './components/UpgradePlanModal';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { RouteFallback } from './components/RouteFallback';
+import { Analytics } from '@vercel/analytics/react';
 
 /*
   Route-level code splitting.
@@ -247,6 +248,7 @@ export function App() {
         </Suspense>
       )}
       <InstallAppPrompt />
+      <Analytics />
     </AuthProvider>
   );
 }
