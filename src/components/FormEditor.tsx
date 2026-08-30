@@ -837,9 +837,18 @@ export const FormEditor: React.FC<FormEditorProps> = ({
             </div>
           )}
 
-          <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800 text-amber-400 font-mono text-[9.5px]">
-            {doc.type}
-          </span>
+          <button
+            type="button"
+            onClick={() => {
+              const nextType = doc.type === 'QUOTATION' ? 'INVOICE' : 'QUOTATION';
+              handleBillTypeChange(nextType);
+            }}
+            className="inline-flex items-center space-x-1 px-2 py-0.5 rounded bg-slate-900 hover:bg-slate-800 border border-amber-500/30 hover:border-amber-500/60 text-amber-300 hover:text-amber-200 font-mono text-[9.5px] cursor-pointer transition-colors"
+            title={`Click to switch to ${doc.type === 'QUOTATION' ? 'INVOICE' : 'QUOTATION'} mode`}
+          >
+            <span className="font-bold">{doc.type}</span>
+            <span className="text-[8px] text-slate-400">⇄</span>
+          </button>
         </div>
       </div>
 
@@ -850,6 +859,85 @@ export const FormEditor: React.FC<FormEditorProps> = ({
         {/* ========================================================= */}
         {activeTab === 'industry' && (
           <div className="space-y-4 animate-fadeIn">
+            {/* 1. Document Mode Switcher (Prominently at the top) */}
+            <div className="bg-slate-950/90 border border-amber-500/40 rounded-2xl p-4 space-y-3 shadow-lg shadow-amber-500/5">
+              <label className="text-xs font-bold text-slate-100 uppercase tracking-wider block font-['Outfit'] flex items-center space-x-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                <span>Document Mode</span>
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => handleBillTypeChange('QUOTATION')}
+                  className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                    doc.type === 'QUOTATION'
+                      ? 'bg-amber-500/20 border-amber-500 text-amber-200 shadow-md shadow-amber-500/10 ring-1 ring-amber-500/50'
+                      : 'bg-slate-900/60 border-slate-800/80 text-slate-400 hover:bg-slate-800/60'
+                  }`}
+                >
+                  <p className="font-bold text-xs font-['Outfit'] flex items-center justify-between">
+                    <span>Proposal & Quotation</span>
+                    {doc.type === 'QUOTATION' && <span className="text-[10px] text-amber-400 font-bold">● Active</span>}
+                  </p>
+                  <p className="text-[10px] text-slate-400 mt-1">High-converting multi-page client proposal with scope & milestones</p>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleBillTypeChange('INVOICE')}
+                  className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                    doc.type === 'INVOICE'
+                      ? 'bg-blue-500/20 border-blue-500 text-blue-200 shadow-md shadow-blue-500/10 ring-1 ring-blue-500/50'
+                      : 'bg-slate-900/60 border-slate-800/80 text-slate-400 hover:bg-slate-800/60'
+                  }`}
+                >
+                  <p className="font-bold text-xs font-['Outfit'] flex items-center justify-between">
+                    <span>Tax & Payment Invoice</span>
+                    {doc.type === 'INVOICE' && <span className="text-[10px] text-blue-400 font-bold">● Active</span>}
+                  </p>
+                  <p className="text-[10px] text-slate-400 mt-1">Single-page formal commercial invoice with dynamic payment QR</p>
+                </button>
+              </div>
+            </div>
+
+            {/* 2. Proposal Design Theme Switcher (If Quotation) */}
+            {doc.type === 'QUOTATION' && (
+              <div className="bg-slate-950/70 border border-slate-800/80 rounded-2xl p-4 space-y-3">
+                <label className="text-xs font-bold text-slate-200 uppercase tracking-wider block font-['Outfit'] flex items-center space-x-1.5">
+                  <FileCheck2 className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Proposal Design Theme</span>
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => update({ theme: 'modern' })}
+                    className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                      doc.theme === 'modern'
+                        ? 'bg-amber-500/15 border-amber-500/80 text-amber-200 shadow-md shadow-amber-500/10'
+                        : 'bg-slate-900/60 border-slate-800/80 text-slate-400 hover:bg-slate-800/60'
+                    }`}
+                  >
+                    <p className="font-bold text-xs font-['Outfit']">Modern B2B Corporate</p>
+                    <p className="text-[10px] text-slate-400 mt-1">Clean typography, structured itemized tables & dual sign-off</p>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => update({ theme: 'creative' })}
+                    className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                      doc.theme === 'creative'
+                        ? 'bg-amber-500/15 border-amber-500/80 text-amber-200 shadow-md shadow-amber-500/10'
+                        : 'bg-slate-900/60 border-slate-800/80 text-slate-400 hover:bg-slate-800/60'
+                    }`}
+                  >
+                    <p className="font-bold text-xs font-['Outfit']">Creative & Luxury Studio</p>
+                    <p className="text-[10px] text-slate-400 mt-1">Gold accents, visual phase blocks, and editorial typography</p>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* 3. Industry Preset Selector */}
             <IndustryPresetSelector
               currentIndustry={doc.industry}
               onSelectIndustry={handleSelectIndustryPreset}
@@ -1209,78 +1297,6 @@ export const FormEditor: React.FC<FormEditorProps> = ({
                 ))}
               </select>
             </div>
-
-            {/* Document Type Switcher */}
-            <div className="bg-slate-950/70 border border-slate-800/80 rounded-2xl p-4 space-y-3">
-              <label className="text-xs font-bold text-slate-200 uppercase tracking-wider block font-['Outfit'] flex items-center space-x-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                <span>Document Mode</span>
-              </label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                <button
-                  type="button"
-                  onClick={() => handleBillTypeChange('QUOTATION')}
-                  className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
-                    doc.type === 'QUOTATION'
-                      ? 'bg-amber-500/15 border-amber-500/80 text-amber-200 shadow-md shadow-amber-500/10'
-                      : 'bg-slate-900/60 border-slate-800/80 text-slate-400 hover:bg-slate-800/60'
-                  }`}
-                >
-                  <p className="font-bold text-xs font-['Outfit']">Proposal & Quotation</p>
-                  <p className="text-[10px] text-slate-400 mt-1">High-converting multi-page client proposal with scope & milestones</p>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => handleBillTypeChange('INVOICE')}
-                  className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
-                    doc.type === 'INVOICE'
-                      ? 'bg-blue-500/15 border-blue-500/80 text-blue-200 shadow-md shadow-blue-500/10'
-                      : 'bg-slate-900/60 border-slate-800/80 text-slate-400 hover:bg-slate-800/60'
-                  }`}
-                >
-                  <p className="font-bold text-xs font-['Outfit']">Tax & Payment Invoice</p>
-                  <p className="text-[10px] text-slate-400 mt-1">Single-page formal commercial invoice with dynamic payment QR</p>
-                </button>
-              </div>
-            </div>
-
-            {/* Proposal Theme Switcher */}
-            {doc.type === 'QUOTATION' && (
-              <div className="bg-slate-950/70 border border-slate-800/80 rounded-2xl p-4 space-y-3">
-                <label className="text-xs font-bold text-slate-200 uppercase tracking-wider block font-['Outfit'] flex items-center space-x-1.5">
-                  <FileCheck2 className="w-3.5 h-3.5 text-amber-400" />
-                  <span>Proposal Design Theme</span>
-                </label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                  <button
-                    type="button"
-                    onClick={() => update({ theme: 'modern' })}
-                    className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
-                      doc.theme === 'modern'
-                        ? 'bg-amber-500/15 border-amber-500/80 text-amber-200 shadow-md shadow-amber-500/10'
-                        : 'bg-slate-900/60 border-slate-800/80 text-slate-400 hover:bg-slate-800/60'
-                    }`}
-                  >
-                    <p className="font-bold text-xs font-['Outfit']">Modern B2B Corporate</p>
-                    <p className="text-[10px] text-slate-400 mt-1">Clean typography, structured itemized tables & dual sign-off</p>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => update({ theme: 'creative' })}
-                    className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
-                      doc.theme === 'creative'
-                        ? 'bg-amber-500/15 border-amber-500/80 text-amber-200 shadow-md shadow-amber-500/10'
-                        : 'bg-slate-900/60 border-slate-800/80 text-slate-400 hover:bg-slate-800/60'
-                    }`}
-                  >
-                    <p className="font-bold text-xs font-['Outfit']">Creative & Luxury Studio</p>
-                    <p className="text-[10px] text-slate-400 mt-1">Gold accents, visual phase blocks, and editorial typography</p>
-                  </button>
-                </div>
-              </div>
-            )}
 
             {/* Global Currency Picker */}
             <div className="bg-slate-950/70 border border-slate-800/80 rounded-2xl p-4 space-y-3">
