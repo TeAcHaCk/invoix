@@ -3,6 +3,7 @@ import type { QuotationDocument, ProposalSectionKey } from '../types';
 import { formatCurrency } from '../utils/formatters';
 import { WatermarkLayer } from './WatermarkLayer';
 import { INDUSTRY_PRESETS } from '../constants/industryPresets';
+import { resolveCanvasSpacing } from '../utils/canvasSpacingResolver';
 import {
   CheckCircle2,
   Layers,
@@ -21,6 +22,8 @@ interface ModernProposalViewProps {
 export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document: doc, onSelectSection }) => {
   const preset = INDUSTRY_PRESETS[doc.industry] || INDUSTRY_PRESETS.creative_agency;
   const currency = doc.currency;
+
+  const { sectionGapPx, pagePaddingPx, dividerStyle, isCompact } = resolveCanvasSpacing(doc);
 
   const sectionClass = (_tabId?: string) =>
     onSelectSection
@@ -92,13 +95,6 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
       ? doc.sectionOrder
       : defaultOrder;
 
-  const isCompact =
-    doc.layoutDensity === 'compact' ||
-    (doc.layoutDensity !== 'standard' && (
-      activeMilestones.length > 2 ||
-      (selectedItems.length + optionalAddons.length) > 3 ||
-      activeDeliverables.length > 4
-    ));
   const accentColor = doc.accentColor || '#f59e0b';
   const fontFamily = doc.fontFamily || 'Plus Jakarta Sans';
   const logoWidth = doc.studio.logoWidth || 240;
@@ -264,9 +260,9 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
   const renderPricingSection = () => {
     if (doc.sectionVisibility?.pricingTable === false) return null;
     return (
-      <div key="pricing">
+      <div key="pricing" style={{ marginBottom: `${sectionGapPx}px` }}>
         {renderPricingTableAndTotals()}
-        <div className="grid grid-cols-2 gap-2.5 mb-2">
+        <div className="grid grid-cols-2 gap-2.5">
           {renderPaymentTermsBox()}
         </div>
       </div>
@@ -279,7 +275,8 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
       <div
         key={isContinued ? 'scope-cont' : 'scope'}
         onClick={() => onSelectSection?.('scope', 'scope')}
-        className={`mb-2.5 ${sectionClass('scope')}`}
+        style={{ marginBottom: `${sectionGapPx}px` }}
+        className={sectionClass('scope')}
         title={onSelectSection ? 'Click to edit scope milestones' : undefined}
       >
         {renderEditBadge('Phases')}
@@ -324,7 +321,8 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
       <div
         key="deliverables"
         onClick={() => onSelectSection?.('deliverables', 'deliverables')}
-        className={`mb-2.5 ${sectionClass('deliverables')}`}
+        style={{ marginBottom: `${sectionGapPx}px` }}
+        className={sectionClass('deliverables')}
         title={onSelectSection ? 'Click to edit deliverables' : undefined}
       >
         {renderEditBadge('Deliverables')}
@@ -352,7 +350,8 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
       <div
         key="crew"
         onClick={() => onSelectSection?.('deliverables', 'crew')}
-        className={`mb-3.5 ${sectionClass('deliverables')}`}
+        style={{ marginBottom: `${sectionGapPx}px` }}
+        className={sectionClass('deliverables')}
         title={onSelectSection ? 'Click to edit team members' : undefined}
       >
         {renderEditBadge('Team')}
@@ -380,7 +379,8 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
       <div
         key="whyChooseUs"
         onClick={() => onSelectSection?.('deliverables', 'why-choose-us')}
-        className={`mb-3.5 ${sectionClass('deliverables')}`}
+        style={{ marginBottom: `${sectionGapPx}px` }}
+        className={sectionClass('deliverables')}
         title={onSelectSection ? 'Click to edit guarantees & why choose us' : undefined}
       >
         {renderEditBadge('Guarantees')}
@@ -411,7 +411,8 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
       <div
         key="terms"
         onClick={() => onSelectSection?.('watermark-terms', 'terms')}
-        className={`mb-3.5 ${sectionClass('watermark-terms')}`}
+        style={{ marginBottom: `${sectionGapPx}px` }}
+        className={sectionClass('watermark-terms')}
         title={onSelectSection ? 'Click to edit commercial terms & clauses' : undefined}
       >
         {renderEditBadge('Terms')}
@@ -438,7 +439,8 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
       <div
         key="signatory"
         onClick={() => onSelectSection?.('watermark-terms', 'signatory')}
-        className={`mt-3 pt-2.5 border-t-2 border-slate-900 grid grid-cols-2 gap-8 ${sectionClass('watermark-terms')}`}
+        style={{ marginBottom: `${sectionGapPx}px` }}
+        className={`pt-2.5 border-t-2 border-slate-900 grid grid-cols-2 gap-8 ${sectionClass('watermark-terms')}`}
         title={onSelectSection ? 'Click to edit signatory details & contract sign-off' : undefined}
       >
         {renderEditBadge('Signatures')}
@@ -496,25 +498,44 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
     );
   };
 
-  const renderSectionByKey = (key: ProposalSectionKey) => {
-    switch (key) {
-      case 'scope':
-        return renderScopeSection(activeMilestones, false);
-      case 'deliverables':
-        return renderDeliverablesBox();
-      case 'pricing':
-        return renderPricingSection();
-      case 'crew':
-        return renderCrewSection();
-      case 'whyChooseUs':
-        return renderWhyChooseUsSection();
-      case 'terms':
-        return renderTermsSection();
-      case 'signatory':
-        return renderSignatorySection();
-      default:
-        return null;
-    }
+  const renderSectionByKey = (key: ProposalSectionKey, isLast = false) => {
+    const rendered = (() => {
+      switch (key) {
+        case 'scope':
+          return renderScopeSection(activeMilestones, false);
+        case 'deliverables':
+          return renderDeliverablesBox();
+        case 'pricing':
+          return renderPricingSection();
+        case 'crew':
+          return renderCrewSection();
+        case 'whyChooseUs':
+          return renderWhyChooseUsSection();
+        case 'terms':
+          return renderTermsSection();
+        case 'signatory':
+          return renderSignatorySection();
+        default:
+          return null;
+      }
+    })();
+
+    if (!rendered) return null;
+
+    return (
+      <React.Fragment key={key}>
+        {rendered}
+        {dividerStyle !== 'none' && !isLast && (
+          <div
+            className={`my-2 ${
+              dividerStyle === 'accent'
+                ? 'border-b border-amber-400/60'
+                : 'border-b border-slate-200/80'
+            }`}
+          />
+        )}
+      </React.Fragment>
+    );
   };
 
   const renderPage1Header = () => (
@@ -629,35 +650,36 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
   );
 
   const getSectionEstimatedHeight = (key: ProposalSectionKey): number => {
+    const baseGap = sectionGapPx;
     switch (key) {
       case 'scope': {
         if (doc.sectionVisibility?.scope === false || activeMilestones.length === 0) return 0;
-        return 45 + Math.min(activeMilestones.length, 6) * 44;
+        return 45 + Math.min(activeMilestones.length, 6) * 44 + baseGap;
       }
       case 'pricing': {
         if (doc.sectionVisibility?.pricingTable === false) return 0;
         const itemCount = selectedItems.length + optionalAddons.length;
-        return 120 + itemCount * 24 + 90;
+        return 120 + itemCount * 24 + 90 + baseGap;
       }
       case 'deliverables': {
         if (doc.sectionVisibility?.deliverables === false || activeDeliverables.length === 0) return 0;
-        return 40 + Math.ceil(activeDeliverables.length / 2) * 24;
+        return 40 + Math.ceil(activeDeliverables.length / 2) * 24 + baseGap;
       }
       case 'whyChooseUs': {
         if (doc.sectionVisibility?.whyChooseUs === false || !doc.includeWhyChooseUs || activeWhy.length === 0) return 0;
-        return 40 + Math.ceil(activeWhy.length / 2) * 38;
+        return 40 + Math.ceil(activeWhy.length / 2) * 38 + baseGap;
       }
       case 'crew': {
         if (doc.sectionVisibility?.crew === false || !doc.includeCrewSection || activeTeam.length === 0) return 0;
-        return 40 + activeTeam.length * 36;
+        return 40 + activeTeam.length * 36 + baseGap;
       }
       case 'terms': {
         if (doc.sectionVisibility?.terms === false || !doc.termsAndConditions || doc.termsAndConditions.length === 0) return 0;
-        return 35 + doc.termsAndConditions.length * 20;
+        return 35 + doc.termsAndConditions.length * 20 + baseGap;
       }
       case 'signatory': {
         if (doc.sectionVisibility?.signatory === false || doc.signatory?.enabled === false) return 0;
-        return 140;
+        return 140 + baseGap;
       }
       default:
         return 0;
@@ -668,7 +690,8 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
   const pages: ProposalSectionKey[][] = [];
   let currentPage: ProposalSectionKey[] = [];
   let currentHeight = 0;
-  let maxCapacity = 760; // Page 1 budget
+  // Available budget = 1123px - (2 * pagePaddingPx) - header/footer
+  let maxCapacity = Math.max(620, 1123 - (pagePaddingPx * 2) - 270);
 
   for (const key of currentSectionOrder) {
     const h = getSectionEstimatedHeight(key);
@@ -678,7 +701,7 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
       pages.push(currentPage);
       currentPage = [key];
       currentHeight = h;
-      maxCapacity = 920; // Page 2+ budget
+      maxCapacity = Math.max(760, 1123 - (pagePaddingPx * 2) - 100);
     } else {
       currentPage.push(key);
       currentHeight += h;
@@ -712,7 +735,10 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
             }}
           >
             <WatermarkLayer config={doc.watermark} />
-            <div className={`relative z-10 ${isCompact ? 'p-6 sm:p-7' : 'p-8 sm:p-9'} text-left text-slate-900 flex flex-col justify-between h-full min-h-[1123px]`}>
+            <div
+              className="relative z-10 text-left text-slate-900 flex flex-col justify-between h-full min-h-[1123px]"
+              style={{ padding: `${pagePaddingPx}px` }}
+            >
               <div>
                 {isFirstPage ? (
                   renderPage1Header()
@@ -733,11 +759,9 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
                 )}
 
                 {/* Render Sections on this sheet strictly in user's defined order */}
-                {pageSections.map((sectionKey) => (
-                  <React.Fragment key={sectionKey}>
-                    {renderSectionByKey(sectionKey)}
-                  </React.Fragment>
-                ))}
+                {pageSections.map((sectionKey, sIdx) =>
+                  renderSectionByKey(sectionKey, sIdx === pageSections.length - 1)
+                )}
               </div>
 
               {/* Page Footer */}

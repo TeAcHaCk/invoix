@@ -36,6 +36,7 @@ import { IndustryPresetSelector } from './IndustryPresetSelector';
 import { WatermarkControls } from './WatermarkControls';
 import { AdBanner } from './AdBanner';
 import { processLogoFile } from '../utils/imageTrim';
+import { resolveCanvasSpacing } from '../utils/canvasSpacingResolver';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { isPaidPlan } from '../utils/planLimits';
@@ -96,7 +97,7 @@ export const FormEditor: React.FC<FormEditorProps> = ({
   onOpenHealth,
 }) => {
   const { user, profile } = useAuth();
-  const { toast, confirm } = useToast();
+  const { toast, showToast, confirm } = useToast();
   const isPro = isPaidPlan(profile);
   const [internalTab, setInternalTab] = useState<string>('industry');
   const activeTab = externalTab ?? internalTab;
@@ -918,61 +919,297 @@ export const FormEditor: React.FC<FormEditorProps> = ({
               </div>
             )}
 
-            {/* 3. A4 Page Spacing & Density Switcher */}
-            <div className="bg-slate-950/70 border border-slate-800/80 rounded-2xl p-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-slate-200 uppercase tracking-wider block font-['Outfit'] flex items-center space-x-1.5">
-                  <Sliders className="w-3.5 h-3.5 text-amber-400" />
-                  <span>A4 Page Spacing & Density</span>
-                </label>
-                <span className="text-[10.5px] text-amber-400 font-mono font-bold bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
-                  {doc.layoutDensity === 'compact' ? 'Compact' : doc.layoutDensity === 'standard' ? 'Standard' : '⚡ Smart Auto'}
-                </span>
-              </div>
-              <p className="text-[11px] text-slate-400">
-                Adjust content density to fit quotations and proposals cleanly on 1 or 2 A4 sheets without unexpected page overflow.
-              </p>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                <button
-                  type="button"
-                  onClick={() => update({ layoutDensity: 'auto' })}
-                  className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
-                    !doc.layoutDensity || doc.layoutDensity === 'auto'
-                      ? 'bg-amber-500/20 border-amber-500 text-amber-200 ring-1 ring-amber-500/50 shadow-md shadow-amber-500/10'
-                      : 'bg-slate-900/60 border-slate-800/80 text-slate-400 hover:bg-slate-800/60'
-                  }`}
-                >
-                  <p className="font-bold text-xs font-['Outfit']">⚡ Smart Auto</p>
-                  <p className="text-[10px] text-slate-400 mt-0.5">Adapts margins dynamically to prevent page spills</p>
-                </button>
+            {/* 3. Canvas Spacing & Section Gap Studio */}
+            {(() => {
+              const { sectionGapPx, pagePaddingPx, dividerStyle } = resolveCanvasSpacing(doc);
+              const currentMode = doc.canvasSpacing?.mode || (doc.layoutDensity === 'compact' ? 'tight' : doc.layoutDensity === 'standard' ? 'relaxed' : 'auto');
 
-                <button
-                  type="button"
-                  onClick={() => update({ layoutDensity: 'standard' })}
-                  className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
-                    doc.layoutDensity === 'standard'
-                      ? 'bg-amber-500/20 border-amber-500 text-amber-200 ring-1 ring-amber-500/50 shadow-md shadow-amber-500/10'
-                      : 'bg-slate-900/60 border-slate-800/80 text-slate-400 hover:bg-slate-800/60'
-                  }`}
-                >
-                  <p className="font-bold text-xs font-['Outfit']">📐 Standard</p>
-                  <p className="text-[10px] text-slate-400 mt-0.5">Spacious 40px padding for short quotations</p>
-                </button>
+              return (
+                <div className="bg-slate-950/70 border border-slate-800/80 rounded-2xl p-4 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-slate-200 uppercase tracking-wider block font-['Outfit'] flex items-center space-x-1.5">
+                      <Sliders className="w-3.5 h-3.5 text-amber-400" />
+                      <span>Canvas Spacing & Section Gap Studio</span>
+                    </label>
+                    <span className="text-[10.5px] text-amber-400 font-mono font-bold bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
+                      {currentMode === 'tight'
+                        ? '📦 Tight (10px)'
+                        : currentMode === 'balanced'
+                        ? '⚖️ Balanced (16px)'
+                        : currentMode === 'relaxed'
+                        ? '🌿 Relaxed (24px)'
+                        : currentMode === 'custom'
+                        ? `🎛️ Custom (${sectionGapPx}px)`
+                        : '⚡ Smart Auto'}
+                    </span>
+                  </div>
 
-                <button
-                  type="button"
-                  onClick={() => update({ layoutDensity: 'compact' })}
-                  className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
-                    doc.layoutDensity === 'compact'
-                      ? 'bg-amber-500/20 border-amber-500 text-amber-200 ring-1 ring-amber-500/50 shadow-md shadow-amber-500/10'
-                      : 'bg-slate-900/60 border-slate-800/80 text-slate-400 hover:bg-slate-800/60'
-                  }`}
-                >
-                  <p className="font-bold text-xs font-['Outfit']">📦 Compact</p>
-                  <p className="text-[10px] text-slate-400 mt-0.5">High-density fit for dense multi-item SOWs</p>
-                </button>
-              </div>
-            </div>
+                  <p className="text-[11px] text-slate-400">
+                    Master document vertical rhythm, section margins, and page boundary padding to ensure pristine A4 presentation.
+                  </p>
+
+                  {/* 5 Spacing Mode Buttons */}
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        update({
+                          layoutDensity: 'auto',
+                          canvasSpacing: { mode: 'auto', sectionGapPx: 14, pagePaddingPx: 32, dividerStyle },
+                        });
+                        showToast('Set to Smart Auto Spacing');
+                      }}
+                      className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                        currentMode === 'auto'
+                          ? 'bg-amber-500/20 border-amber-500 text-amber-200 ring-1 ring-amber-500/50 shadow-md shadow-amber-500/10'
+                          : 'bg-slate-900/60 border-slate-800/80 text-slate-400 hover:bg-slate-800/60'
+                      }`}
+                    >
+                      <p className="font-bold text-xs font-['Outfit']">⚡ Auto</p>
+                      <p className="text-[9.5px] text-slate-400 mt-0.5">Adaptive fit</p>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        update({
+                          layoutDensity: 'compact',
+                          canvasSpacing: { mode: 'tight', sectionGapPx: 10, pagePaddingPx: 24, dividerStyle },
+                        });
+                        showToast('Set to Tight (10px) Spacing');
+                      }}
+                      className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                        currentMode === 'tight'
+                          ? 'bg-amber-500/20 border-amber-500 text-amber-200 ring-1 ring-amber-500/50 shadow-md shadow-amber-500/10'
+                          : 'bg-slate-900/60 border-slate-800/80 text-slate-400 hover:bg-slate-800/60'
+                      }`}
+                    >
+                      <p className="font-bold text-xs font-['Outfit']">📦 Tight</p>
+                      <p className="text-[9.5px] text-slate-400 mt-0.5">10px gaps</p>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        update({
+                          layoutDensity: 'standard',
+                          canvasSpacing: { mode: 'balanced', sectionGapPx: 16, pagePaddingPx: 32, dividerStyle },
+                        });
+                        showToast('Set to Balanced (16px) Spacing');
+                      }}
+                      className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                        currentMode === 'balanced'
+                          ? 'bg-amber-500/20 border-amber-500 text-amber-200 ring-1 ring-amber-500/50 shadow-md shadow-amber-500/10'
+                          : 'bg-slate-900/60 border-slate-800/80 text-slate-400 hover:bg-slate-800/60'
+                      }`}
+                    >
+                      <p className="font-bold text-xs font-['Outfit']">⚖️ Balanced</p>
+                      <p className="text-[9.5px] text-slate-400 mt-0.5">16px gaps</p>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        update({
+                          layoutDensity: 'standard',
+                          canvasSpacing: { mode: 'relaxed', sectionGapPx: 24, pagePaddingPx: 40, dividerStyle },
+                        });
+                        showToast('Set to Relaxed (24px) Spacing');
+                      }}
+                      className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                        currentMode === 'relaxed'
+                          ? 'bg-amber-500/20 border-amber-500 text-amber-200 ring-1 ring-amber-500/50 shadow-md shadow-amber-500/10'
+                          : 'bg-slate-900/60 border-slate-800/80 text-slate-400 hover:bg-slate-800/60'
+                      }`}
+                    >
+                      <p className="font-bold text-xs font-['Outfit']">🌿 Relaxed</p>
+                      <p className="text-[9.5px] text-slate-400 mt-0.5">24px gaps</p>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        update({
+                          canvasSpacing: {
+                            mode: 'custom',
+                            sectionGapPx: sectionGapPx || 16,
+                            pagePaddingPx: pagePaddingPx || 32,
+                            dividerStyle,
+                          },
+                        });
+                      }}
+                      className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer col-span-2 sm:col-span-1 ${
+                        currentMode === 'custom'
+                          ? 'bg-amber-500/20 border-amber-500 text-amber-200 ring-1 ring-amber-500/50 shadow-md shadow-amber-500/10'
+                          : 'bg-slate-900/60 border-slate-800/80 text-slate-400 hover:bg-slate-800/60'
+                      }`}
+                    >
+                      <p className="font-bold text-xs font-['Outfit']">🎛️ Custom</p>
+                      <p className="text-[9.5px] text-slate-400 mt-0.5">Fine-tune px</p>
+                    </button>
+                  </div>
+
+                  {/* Granular Sliders & Dividers (Always available for precision control) */}
+                  <div className="bg-slate-900/80 border border-slate-800/90 rounded-xl p-3.5 space-y-3.5">
+                    <div className="flex items-center justify-between border-b border-slate-800/80 pb-2">
+                      <span className="text-[11px] font-bold text-slate-300 uppercase tracking-wider flex items-center space-x-1.5 font-['Outfit']">
+                        <span>Granular Spacing Fine-Tuning</span>
+                      </span>
+                      {currentMode === 'custom' && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            update({
+                              layoutDensity: 'standard',
+                              canvasSpacing: { mode: 'balanced', sectionGapPx: 16, pagePaddingPx: 32, dividerStyle: 'none' },
+                            });
+                            showToast('Reset Spacing to Balanced Defaults');
+                          }}
+                          className="text-[10px] text-amber-400 hover:underline cursor-pointer"
+                        >
+                          Reset to Defaults
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Slider 1: Section Gap */}
+                    <div className="space-y-1.5">
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="text-slate-300 font-medium flex items-center space-x-1.5">
+                          <span>Section Vertical Gap</span>
+                        </span>
+                        <span className="font-mono text-amber-400 font-bold bg-slate-950 px-2 py-0.5 rounded border border-slate-800 text-[11px]">
+                          {sectionGapPx}px
+                        </span>
+                      </div>
+                      <input
+                        type="range"
+                        min="6"
+                        max="36"
+                        step="1"
+                        value={sectionGapPx}
+                        onChange={(e) => {
+                          const val = Number(e.target.value);
+                          update({
+                            canvasSpacing: {
+                              mode: 'custom',
+                              sectionGapPx: val,
+                              pagePaddingPx,
+                              dividerStyle,
+                            },
+                          });
+                        }}
+                        className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-500"
+                      />
+                      <div className="flex justify-between text-[9.5px] text-slate-500">
+                        <span>Tight (6px)</span>
+                        <span>Balanced (16px)</span>
+                        <span>Spacious (36px)</span>
+                      </div>
+                    </div>
+
+                    {/* Slider 2: Page Boundary Padding */}
+                    <div className="space-y-1.5 pt-1">
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="text-slate-300 font-medium flex items-center space-x-1.5">
+                          <span>Page Outer Margin Padding</span>
+                        </span>
+                        <span className="font-mono text-amber-400 font-bold bg-slate-950 px-2 py-0.5 rounded border border-slate-800 text-[11px]">
+                          {pagePaddingPx}px
+                        </span>
+                      </div>
+                      <input
+                        type="range"
+                        min="18"
+                        max="48"
+                        step="2"
+                        value={pagePaddingPx}
+                        onChange={(e) => {
+                          const val = Number(e.target.value);
+                          update({
+                            canvasSpacing: {
+                              mode: 'custom',
+                              sectionGapPx,
+                              pagePaddingPx: val,
+                              dividerStyle,
+                            },
+                          });
+                        }}
+                        className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-500"
+                      />
+                      <div className="flex justify-between text-[9.5px] text-slate-500">
+                        <span>Compact (18px)</span>
+                        <span>Standard (32px)</span>
+                        <span>Wide (48px)</span>
+                      </div>
+                    </div>
+
+                    {/* Section Separator Lines */}
+                    <div className="pt-2 border-t border-slate-800/80 space-y-1.5">
+                      <label className="text-[11px] font-semibold text-slate-300 block">
+                        Section Divider Lines
+                      </label>
+                      <div className="grid grid-cols-3 gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            update({
+                              canvasSpacing: {
+                                ...(doc.canvasSpacing || { mode: 'balanced', sectionGapPx, pagePaddingPx }),
+                                dividerStyle: 'none',
+                              },
+                            });
+                          }}
+                          className={`py-1.5 px-2 rounded-lg text-xs font-medium border text-center transition-all cursor-pointer ${
+                            dividerStyle === 'none'
+                              ? 'bg-amber-500/20 border-amber-500 text-amber-300'
+                              : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:bg-slate-800/60'
+                          }`}
+                        >
+                          🔘 Clean Gap
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            update({
+                              canvasSpacing: {
+                                ...(doc.canvasSpacing || { mode: 'balanced', sectionGapPx, pagePaddingPx }),
+                                dividerStyle: 'subtle',
+                              },
+                            });
+                          }}
+                          className={`py-1.5 px-2 rounded-lg text-xs font-medium border text-center transition-all cursor-pointer ${
+                            dividerStyle === 'subtle'
+                              ? 'bg-amber-500/20 border-amber-500 text-amber-300'
+                              : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:bg-slate-800/60'
+                          }`}
+                        >
+                          ➖ Subtle Line
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            update({
+                              canvasSpacing: {
+                                ...(doc.canvasSpacing || { mode: 'balanced', sectionGapPx, pagePaddingPx }),
+                                dividerStyle: 'accent',
+                              },
+                            });
+                          }}
+                          className={`py-1.5 px-2 rounded-lg text-xs font-medium border text-center transition-all cursor-pointer ${
+                            dividerStyle === 'accent'
+                              ? 'bg-amber-500/20 border-amber-500 text-amber-300'
+                              : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:bg-slate-800/60'
+                          }`}
+                        >
+                          ✨ Gold Accent
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* 4. Industry Preset Selector */}
             <IndustryPresetSelector

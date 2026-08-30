@@ -3,6 +3,7 @@ import type { QuotationDocument, ProposalSectionKey } from '../types';
 import { formatCurrency } from '../utils/formatters';
 import { WatermarkLayer } from './WatermarkLayer';
 import { INDUSTRY_PRESETS } from '../constants/industryPresets';
+import { resolveCanvasSpacing } from '../utils/canvasSpacingResolver';
 import { Users, ShieldCheck } from 'lucide-react';
 
 interface CreativeProposalViewProps {
@@ -13,6 +14,8 @@ interface CreativeProposalViewProps {
 export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ document: doc, onSelectSection }) => {
   const preset = INDUSTRY_PRESETS[doc.industry] || INDUSTRY_PRESETS.photography_events;
   const currency = doc.currency;
+
+  const { sectionGapPx, pagePaddingPx, dividerStyle } = resolveCanvasSpacing(doc);
 
   const sectionClass = (_tabId?: string) =>
     onSelectSection
@@ -80,7 +83,8 @@ export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ docu
   const termsList = doc.termsAndConditions || [];
   const halfLength = Math.ceil(termsList.length / 2);
   const leftTerms = termsList.slice(0, halfLength);
-  const rightTerms = termsList.slice(halfLength);  // Active sections & content distribution
+  const rightTerms = termsList.slice(halfLength);
+
   const allPhases = (doc.eventCoverage || []).filter((p) => p.dayTitle || (p.services || []).length > 0);
   const activeDeliverables = (doc.deliverables || []).filter((d) => d.included);
   const activeCrew = (doc.crewMembers || []).filter((c) => c.enabled);
@@ -101,14 +105,6 @@ export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ docu
       ? doc.sectionOrder
       : defaultOrder;
 
-  const isCompact =
-    doc.layoutDensity === 'compact' ||
-    (doc.layoutDensity !== 'standard' && (
-      allPhases.length > 2 ||
-      (doc.pricingItems?.length || 0) > 3 ||
-      activeDeliverables.length > 4
-    ));
-
   const logoWidth = doc.studio.logoWidth || 320;
   const logoHeight = doc.studio.logoHeight || 130;
   const fontFamily = doc.fontFamily || 'Plus Jakarta Sans';
@@ -119,7 +115,8 @@ export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ docu
       <div
         key={isContinued ? 'scope-cont' : 'scope'}
         onClick={() => onSelectSection?.('scope', 'scope')}
-        className={`my-2.5 ${sectionClass('scope')}`}
+        style={{ marginBottom: `${sectionGapPx}px` }}
+        className={sectionClass('scope')}
         title={onSelectSection ? 'Click to edit event coverage & phases' : undefined}
       >
         {renderEditBadge('Phases')}
@@ -165,7 +162,8 @@ export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ docu
       <div
         key="deliverables"
         onClick={() => onSelectSection?.('deliverables', 'deliverables')}
-        className={`my-2.5 ${sectionClass('deliverables')}`}
+        style={{ marginBottom: `${sectionGapPx}px` }}
+        className={sectionClass('deliverables')}
         title={onSelectSection ? 'Click to edit deliverables' : undefined}
       >
         {renderEditBadge('Deliverables')}
@@ -190,7 +188,8 @@ export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ docu
       <div
         key="pricing"
         onClick={() => onSelectSection?.('pricing', 'pricing')}
-        className={`mt-3 border-2 border-slate-900 rounded-lg overflow-hidden bg-white shadow-sm ${sectionClass('pricing')}`}
+        style={{ marginBottom: `${sectionGapPx}px` }}
+        className={`border-2 border-slate-900 rounded-lg overflow-hidden bg-white shadow-sm ${sectionClass('pricing')}`}
         title={onSelectSection ? 'Click to edit pricing & discount' : undefined}
       >
         {renderEditBadge('Pricing')}
@@ -252,7 +251,8 @@ export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ docu
       <div
         key="crew"
         onClick={() => onSelectSection?.('deliverables', 'crew')}
-        className={`mb-3.5 ${sectionClass('deliverables')}`}
+        style={{ marginBottom: `${sectionGapPx}px` }}
+        className={sectionClass('deliverables')}
         title={onSelectSection ? 'Click to edit team allocation' : undefined}
       >
         {renderEditBadge('Team')}
@@ -289,7 +289,8 @@ export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ docu
       <div
         key="whyChooseUs"
         onClick={() => onSelectSection?.('deliverables', 'why-choose-us')}
-        className={`mb-3.5 ${sectionClass('deliverables')}`}
+        style={{ marginBottom: `${sectionGapPx}px` }}
+        className={sectionClass('deliverables')}
         title={onSelectSection ? 'Click to edit guarantees & value proposition' : undefined}
       >
         {renderEditBadge('Why Us')}
@@ -324,7 +325,8 @@ export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ docu
       <div
         key="terms"
         onClick={() => onSelectSection?.('watermark-terms', 'terms')}
-        className={`mb-3.5 ${sectionClass('watermark-terms')}`}
+        style={{ marginBottom: `${sectionGapPx}px` }}
+        className={sectionClass('watermark-terms')}
         title={onSelectSection ? 'Click to edit terms & conditions' : undefined}
       >
         {renderEditBadge('Terms')}
@@ -359,7 +361,8 @@ export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ docu
       <div
         key="signatory"
         onClick={() => onSelectSection?.('watermark-terms', 'signatory')}
-        className={`mt-3 pt-2.5 border-t-2 border-slate-900 grid grid-cols-2 gap-6 ${sectionClass('watermark-terms')}`}
+        style={{ marginBottom: `${sectionGapPx}px` }}
+        className={`pt-2.5 border-t-2 border-slate-900 grid grid-cols-2 gap-6 ${sectionClass('watermark-terms')}`}
         title={onSelectSection ? 'Click to edit signatory details' : undefined}
       >
         {renderEditBadge('Signatures')}
@@ -410,25 +413,44 @@ export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ docu
     );
   };
 
-  const renderSectionByKey = (key: ProposalSectionKey) => {
-    switch (key) {
-      case 'scope':
-        return renderScopeSection(allPhases, false);
-      case 'deliverables':
-        return renderDeliverablesBox();
-      case 'pricing':
-        return renderInvestmentBox();
-      case 'crew':
-        return renderCrewSection();
-      case 'whyChooseUs':
-        return renderWhyChooseUsSection();
-      case 'terms':
-        return renderTermsSection();
-      case 'signatory':
-        return renderSignatorySection();
-      default:
-        return null;
-    }
+  const renderSectionByKey = (key: ProposalSectionKey, isLast = false) => {
+    const rendered = (() => {
+      switch (key) {
+        case 'scope':
+          return renderScopeSection(allPhases, false);
+        case 'deliverables':
+          return renderDeliverablesBox();
+        case 'pricing':
+          return renderInvestmentBox();
+        case 'crew':
+          return renderCrewSection();
+        case 'whyChooseUs':
+          return renderWhyChooseUsSection();
+        case 'terms':
+          return renderTermsSection();
+        case 'signatory':
+          return renderSignatorySection();
+        default:
+          return null;
+      }
+    })();
+
+    if (!rendered) return null;
+
+    return (
+      <React.Fragment key={key}>
+        {rendered}
+        {dividerStyle !== 'none' && !isLast && (
+          <div
+            className={`my-2 ${
+              dividerStyle === 'accent'
+                ? 'border-b border-amber-400/60'
+                : 'border-b border-slate-200/80'
+            }`}
+          />
+        )}
+      </React.Fragment>
+    );
   };
 
   const renderPage1Header = () => (
@@ -539,34 +561,35 @@ export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ docu
   );
 
   const getSectionEstimatedHeight = (key: ProposalSectionKey): number => {
+    const baseGap = sectionGapPx;
     switch (key) {
       case 'scope': {
         if (doc.sectionVisibility?.scope === false || doc.includeScopeSection === false || allPhases.length === 0) return 0;
-        return 45 + Math.min(allPhases.length, 6) * 44;
+        return 45 + Math.min(allPhases.length, 6) * 44 + baseGap;
       }
       case 'pricing': {
         if (doc.sectionVisibility?.pricingTable === false) return 0;
-        return 165;
+        return 165 + baseGap;
       }
       case 'deliverables': {
         if (doc.sectionVisibility?.deliverables === false || activeDeliverables.length === 0) return 0;
-        return 40 + Math.ceil(activeDeliverables.length / 2) * 24;
+        return 40 + Math.ceil(activeDeliverables.length / 2) * 24 + baseGap;
       }
       case 'whyChooseUs': {
         if (doc.sectionVisibility?.whyChooseUs === false || doc.includeWhyChooseUs === false || activeWhyChoose.length === 0) return 0;
-        return 40 + Math.ceil(activeWhyChoose.length / 2) * 38;
+        return 40 + Math.ceil(activeWhyChoose.length / 2) * 38 + baseGap;
       }
       case 'crew': {
         if (doc.sectionVisibility?.crew === false || doc.includeCrewSection === false || activeCrew.length === 0) return 0;
-        return 40 + activeCrew.length * 36;
+        return 40 + activeCrew.length * 36 + baseGap;
       }
       case 'terms': {
         if (doc.sectionVisibility?.terms === false || termsList.length === 0) return 0;
-        return 35 + Math.ceil(termsList.length / 2) * 24;
+        return 35 + Math.ceil(termsList.length / 2) * 24 + baseGap;
       }
       case 'signatory': {
         if (doc.sectionVisibility?.signatory === false || doc.signatory?.enabled === false) return 0;
-        return 130;
+        return 130 + baseGap;
       }
       default:
         return 0;
@@ -577,7 +600,8 @@ export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ docu
   const pages: ProposalSectionKey[][] = [];
   let currentPage: ProposalSectionKey[] = [];
   let currentHeight = 0;
-  let maxCapacity = 760; // Page 1 budget
+  // Available budget = 1123px - (2 * pagePaddingPx) - header/footer
+  let maxCapacity = Math.max(620, 1123 - (pagePaddingPx * 2) - 270);
 
   for (const key of currentSectionOrder) {
     const h = getSectionEstimatedHeight(key);
@@ -587,7 +611,7 @@ export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ docu
       pages.push(currentPage);
       currentPage = [key];
       currentHeight = h;
-      maxCapacity = 920; // Page 2+ budget
+      maxCapacity = Math.max(760, 1123 - (pagePaddingPx * 2) - 100);
     } else {
       currentPage.push(key);
       currentHeight += h;
@@ -621,7 +645,10 @@ export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ docu
             }}
           >
             <WatermarkLayer config={doc.watermark} />
-            <div className={`relative z-10 ${isCompact ? 'p-6 sm:p-7' : 'p-8 sm:p-9'} text-left text-slate-900 flex flex-col justify-between h-full min-h-[1123px]`}>
+            <div
+              className="relative z-10 text-left text-slate-900 flex flex-col justify-between h-full min-h-[1123px]"
+              style={{ padding: `${pagePaddingPx}px` }}
+            >
               <div>
                 {isFirstPage ? (
                   renderPage1Header()
@@ -642,11 +669,9 @@ export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ docu
                 )}
 
                 {/* Render Sections on this sheet strictly in user's defined order */}
-                {pageSections.map((sectionKey) => (
-                  <React.Fragment key={sectionKey}>
-                    {renderSectionByKey(sectionKey)}
-                  </React.Fragment>
-                ))}
+                {pageSections.map((sectionKey, sIdx) =>
+                  renderSectionByKey(sectionKey, sIdx === pageSections.length - 1)
+                )}
               </div>
 
               {/* Page Footer */}

@@ -221,6 +221,16 @@ export const DEFAULT_PROPOSAL_SECTION_ORDER: ProposalSectionKey[] = [
   'signatory',
 ];
 
+export type SpacingPresetMode = 'auto' | 'tight' | 'balanced' | 'relaxed' | 'custom';
+export type SectionDividerStyle = 'none' | 'subtle' | 'accent';
+
+export interface CanvasSpacingConfig {
+  mode?: SpacingPresetMode;
+  sectionGapPx?: number;   // 6 to 36 px
+  pagePaddingPx?: number;  // 18 to 48 px
+  dividerStyle?: SectionDividerStyle;
+}
+
 export interface CustomTemplatePreset {
   id: string;
   name: string;
@@ -232,6 +242,7 @@ export interface CustomTemplatePreset {
   sectionVisibility: SectionVisibilityConfig;
   sectionTitles?: SectionTitlesConfig;
   sectionOrder?: ProposalSectionKey[];
+  canvasSpacing?: CanvasSpacingConfig;
   createdAt: string;
   updatedAt: string;
   isCustom: true;
@@ -263,6 +274,7 @@ export interface QuotationDocument {
   accentColor?: string; // Custom brand hex color (e.g. #f59e0b)
   fontFamily?: string;  // e.g. 'Outfit', 'Plus Jakarta Sans', 'Inter', 'Playfair Display'
   layoutDensity?: 'auto' | 'standard' | 'compact'; // Spacing control for A4 page fit
+  canvasSpacing?: CanvasSpacingConfig; // Granular canvas spacing, section gaps & page margins
   customTemplateId?: string;
   sectionVisibility?: SectionVisibilityConfig;
   sectionTitles?: SectionTitlesConfig;

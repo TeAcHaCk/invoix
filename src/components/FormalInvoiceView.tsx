@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import type { QuotationDocument } from '../types';
 import { formatCurrency } from '../utils/formatters';
 import { generateQrDataUrl } from '../utils/qrGenerator';
+import { resolveCanvasSpacing } from '../utils/canvasSpacingResolver';
 import { CheckCircle2, AlertCircle, Clock } from 'lucide-react';
 
 interface FormalInvoiceViewProps {
@@ -13,6 +14,8 @@ export const FormalInvoiceView: React.FC<FormalInvoiceViewProps> = ({ document: 
   const currency = doc.currency;
   const logoWidth = doc.studio.logoWidth || 320;
   const logoHeight = doc.studio.logoHeight || 130;
+
+  const { pagePaddingPx } = resolveCanvasSpacing(doc);
 
   const sectionClass = (_tabId?: string) =>
     onSelectSection
@@ -113,17 +116,14 @@ export const FormalInvoiceView: React.FC<FormalInvoiceViewProps> = ({ document: 
   }, [doc.studio.upiId, doc.studio.paymentLink, doc.studio.website, doc.studio.name, doc.details.invoiceNo, balanceDue, grandTotal, currency.code]);
 
   const fontFamily = doc.fontFamily || 'Plus Jakarta Sans';
-  const isCompact =
-    doc.layoutDensity === 'compact' ||
-    (doc.layoutDensity !== 'standard' && (
-      (doc.pricingItems?.length || 0) > 4 ||
-      (doc.termsAndConditions?.length || 0) > 3
-    ));
 
   return (
     <div
-      className={`relative w-full h-full bg-white text-slate-900 text-left ${isCompact ? 'p-6 sm:p-7' : 'p-10'} flex flex-col justify-between select-text min-h-[1123px]`}
-      style={{ fontFamily: `"${fontFamily}", sans-serif` }}
+      className="relative w-full h-full bg-white text-slate-900 text-left flex flex-col justify-between select-text min-h-[1123px]"
+      style={{
+        padding: `${pagePaddingPx}px`,
+        fontFamily: `"${fontFamily}", sans-serif`,
+      }}
     >
       {/* Top Header */}
       <div>

@@ -127,17 +127,25 @@ Each of these shipped once and cost real debugging time.
 
 ## Handoff log
 
-### 2026-08-30 (latest) — Antigravity · True Dynamic Proposal Section Flow & Capacity-Based Multi-Sheet Flow
+### 2026-08-30 (latest) — Antigravity · Unified Canvas Spacing, Section Gap Studio & Visual Rhythm Control
 
-**Delivered 100% Dynamic Section Ordering & Continuous Capacity-Based Page Packing:**
+**Delivered Option 3 Canvas Studio Suite (Floating Toolbar quick switch + Sliders + Section Gap Engine):**
 
-1. **Root Cause of Static / Selective Section Movements in Screenshot**:
-   - Previously, proposals partitioned sections using hardcoded buckets: `page1Keys = currentSectionOrder.filter(k => ['scope', 'deliverables', 'pricing'].includes(k))` and `annexureKeys = currentSectionOrder.filter(k => !['scope', 'deliverables', 'pricing'].includes(k))`.
-   - When the user moved `#3 Why Choose Us` or `#4 Signatures` up in the manager, they were trapped in `annexureKeys` and refused to move onto Page 1, while `#5 Deliverables` was forced onto Page 1 even if moved below signatures.
-2. **Resolution & True Capacity-Based Dynamic Pagination ([`CreativeProposalView.tsx`](file:///d:/Product%20build/src/components/CreativeProposalView.tsx) & [`ModernProposalView.tsx`](file:///d:/Product%20build/src/components/ModernProposalView.tsx))**:
-   - Built a dynamic page generator that iterates strictly across `currentSectionOrder` and evaluates content height capacity (760px for Page 1, 920px for subsequent pages).
-   - **Any section in any order**: If the user sets `[#1 Scope, #2 Pricing, #3 Why Choose Us, #4 Signatures, #5 Deliverables, #6 Terms, #7 Crew]`, the document renders those sections in that **exact sequence**, flowing naturally across pages without rigid categorization.
-   - Preserves uniform headers, footers, and page counters (`Page X of Y`) on every page.
+1. **Root Cause of Section Clashes & Tightness in User Screenshot**:
+   - In [`ModernProposalView.tsx`](file:///d:/Product%20build/src/components/ModernProposalView.tsx) and [`CreativeProposalView.tsx`](file:///d:/Product%20build/src/components/CreativeProposalView.tsx), when `#4 Signatures` preceded `#5 Deliverables`, the signatory container had `0px` bottom margin, causing signature lines ("Managing Director", "Date", "Status: AWAITING APPROVAL") to physically touch the `INCLUDED DELIVERABLES & FINAL ASSETS` header.
+   - Terms of Engagement clauses also lacked sufficient vertical breathing room before the Specialists & Crew block.
+2. **Universal Spacing & Gap Resolver ([`src/utils/canvasSpacingResolver.ts`](file:///d:/Product%20build/src/utils/canvasSpacingResolver.ts))**:
+   - Built a dynamic spacing engine resolving `sectionGapPx` (6px to 36px), `pagePaddingPx` (18px to 48px), and `dividerStyle` (`none` | `subtle` | `accent`).
+   - Replaced ad-hoc margins with universal `style={{ marginBottom: `${sectionGapPx}px` }}` across all 7 proposal sections.
+   - Dynamically factors in `sectionGapPx` into height budgeting (`getSectionEstimatedHeight` & `maxCapacity = 1123 - (pagePaddingPx * 2) - header/footer`) to prevent page overflow regardless of user spacing settings.
+3. **Interactive Canvas Spacing & Section Gap Studio in Tab 1 ([`FormEditor.tsx`](file:///d:/Product%20build/src/components/FormEditor.tsx))**:
+   - 5 Spacing Mode Buttons: `⚡ Auto`, `📦 Tight (10px)`, `⚖️ Balanced (16px)`, `🌿 Relaxed (24px)`, and `🎛️ Custom`.
+   - Live **Section Vertical Gap Slider** (6px to 36px with live px feedback).
+   - Live **Page Outer Margin Padding Slider** (18px to 48px with live px feedback).
+   - **Section Divider Line Selector**: `🔘 Clean Gap`, `➖ Subtle Line`, `✨ Gold Accent Line`.
+4. **Floating Canvas Toolbar Quick Popover Controller ([`StudioWorkspace.tsx`](file:///d:/Product%20build/src/components/StudioWorkspace.tsx))**:
+   - Added a sleek `[ 📏 Spacing: Balanced (16px) ▾ ]` button to the canvas toolbar right beside `Fit A4`.
+   - Clicking opens a live backdrop-blur popover allowing 1-click preset switches and live slider adjustments directly over the canvas.
 - **Verification**: `npm run lint` = **0 warnings, 0 errors**. `npm run build` = **Clean compile (exit 0)**.
 - **Target Branch**: `staging`.
 

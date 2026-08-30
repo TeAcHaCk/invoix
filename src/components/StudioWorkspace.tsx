@@ -29,6 +29,7 @@ import { downloadPdf, type PdfQuality } from '../services/pdfExportService';
 import { printDocument } from '../utils/pdfGenerator';
 import { getVaultDocuments } from '../utils/vaultStorage';
 import { isPaidPlan, FREE_PLAN_MAX_DOCUMENTS } from '../utils/planLimits';
+import { resolveCanvasSpacing } from '../utils/canvasSpacingResolver';
 import confetti from 'canvas-confetti';
 import {
   ZoomIn,
@@ -38,6 +39,8 @@ import {
   Eye,
   CheckCircle2,
   AlertTriangle,
+  Sliders,
+  ChevronDown,
   X,
 } from 'lucide-react';
 
@@ -99,6 +102,22 @@ export default function StudioWorkspace({ initialIndustry, onNavigateToAdmin, on
   // wrong shape for "your work was not stored" — it vanishes before it is read.
   const [saveError, setSaveError] = useState<string | null>(null);
   const draftWarnedRef = useRef(false);
+
+  // Floating Canvas Spacing Popover State
+  const [isSpacingPopoverOpen, setIsSpacingPopoverOpen] = useState<boolean>(false);
+  const spacingPopoverRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (spacingPopoverRef.current && !spacingPopoverRef.current.contains(event.target as Node)) {
+        setIsSpacingPopoverOpen(false);
+      }
+    };
+    if (isSpacingPopoverOpen) {
+      window.document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => window.document.removeEventListener('mousedown', handleClickOutside);
+  }, [isSpacingPopoverOpen]);
 
   // Keyboard Shortcuts for View Modes
   useEffect(() => {
@@ -660,6 +679,188 @@ export default function StudioWorkspace({ initialIndustry, onNavigateToAdmin, on
               <span>Fit A4</span>
             </button>
 
+            {/* Quick Canvas Spacing & Gaps Popover Controller */}
+            {(() => {
+              const resolvedSpacing = resolveCanvasSpacing(document);
+              const currentSpacingMode =
+                document.canvasSpacing?.mode ||
+                (document.layoutDensity === 'compact'
+                  ? 'tight'
+                  : document.layoutDensity === 'standard'
+                  ? 'relaxed'
+                  : 'auto');
+
+              return (
+                <>
+                  <div className="w-px h-4 bg-slate-800" />
+                  <div className="relative" ref={spacingPopoverRef}>
+                    <button
+                      type="button"
+                      onClick={() => setIsSpacingPopoverOpen((prev) => !prev)}
+                      className={`px-2 py-1 text-[10.5px] font-semibold rounded-lg transition-colors cursor-pointer flex items-center space-x-1.5 ${
+                        isSpacingPopoverOpen
+                          ? 'bg-amber-500/20 text-amber-300 ring-1 ring-amber-500/50'
+                          : 'text-slate-400 hover:text-amber-300 hover:bg-slate-800'
+                      }`}
+                      title="Adjust Canvas Spacing & Section Gaps"
+                    >
+                      <Sliders className="w-3 h-3 text-amber-400 shrink-0" />
+                      <span>
+                        {currentSpacingMode === 'tight'
+                          ? 'Tight (10px)'
+                          : currentSpacingMode === 'balanced'
+                          ? 'Balanced (16px)'
+                          : currentSpacingMode === 'relaxed'
+                          ? 'Relaxed (24px)'
+                          : currentSpacingMode === 'custom'
+                          ? `Custom (${resolvedSpacing.sectionGapPx}px)`
+                          : 'Auto Spacing'}
+                      </span>
+                      <ChevronDown className="w-3 h-3 opacity-60 shrink-0" />
+                    </button>
+
+                    {isSpacingPopoverOpen && (
+                      <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 w-72 bg-slate-950/95 border border-slate-800/90 backdrop-blur-xl rounded-2xl shadow-2xl p-3.5 z-50 space-y-3 animate-in fade-in zoom-in-95 duration-150 text-left">
+                        <div className="flex items-center justify-between border-b border-slate-800/80 pb-2">
+                          <span className="text-[11px] font-bold text-slate-200 uppercase tracking-wider font-['Outfit'] flex items-center space-x-1.5">
+                            <Sliders className="w-3.5 h-3.5 text-amber-400" />
+                            <span>Canvas Spacing</span>
+                          </span>
+                          <span className="text-[10px] text-amber-400 font-mono font-bold bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20">
+                            {resolvedSpacing.sectionGapPx}px gap
+                          </span>
+                        </div>
+
+                        {/* 4 Presets Grid */}
+                        <div className="grid grid-cols-2 gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setDocument((prev) => ({
+                                ...prev,
+                                layoutDensity: 'auto',
+                                canvasSpacing: { mode: 'auto', sectionGapPx: 14, pagePaddingPx: 32, dividerStyle: resolvedSpacing.dividerStyle },
+                              }));
+                              showToast('Applied Smart Auto Spacing');
+                            }}
+                            className={`p-2 rounded-xl text-left border transition-all cursor-pointer ${
+                              currentSpacingMode === 'auto'
+                                ? 'bg-amber-500/20 border-amber-500 text-amber-300 font-bold'
+                                : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:bg-slate-800'
+                            }`}
+                          >
+                            <p className="text-xs">⚡ Auto</p>
+                            <p className="text-[9px] text-slate-500 mt-0.5">Adaptive fit</p>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setDocument((prev) => ({
+                                ...prev,
+                                layoutDensity: 'compact',
+                                canvasSpacing: { mode: 'tight', sectionGapPx: 10, pagePaddingPx: 24, dividerStyle: resolvedSpacing.dividerStyle },
+                              }));
+                              showToast('Applied Tight Spacing (10px)');
+                            }}
+                            className={`p-2 rounded-xl text-left border transition-all cursor-pointer ${
+                              currentSpacingMode === 'tight'
+                                ? 'bg-amber-500/20 border-amber-500 text-amber-300 font-bold'
+                                : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:bg-slate-800'
+                            }`}
+                          >
+                            <p className="text-xs">📦 Tight</p>
+                            <p className="text-[9px] text-slate-500 mt-0.5">10px gaps</p>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setDocument((prev) => ({
+                                ...prev,
+                                layoutDensity: 'standard',
+                                canvasSpacing: { mode: 'balanced', sectionGapPx: 16, pagePaddingPx: 32, dividerStyle: resolvedSpacing.dividerStyle },
+                              }));
+                              showToast('Applied Balanced Spacing (16px)');
+                            }}
+                            className={`p-2 rounded-xl text-left border transition-all cursor-pointer ${
+                              currentSpacingMode === 'balanced'
+                                ? 'bg-amber-500/20 border-amber-500 text-amber-300 font-bold'
+                                : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:bg-slate-800'
+                            }`}
+                          >
+                            <p className="text-xs">⚖️ Balanced</p>
+                            <p className="text-[9px] text-slate-500 mt-0.5">16px gaps</p>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setDocument((prev) => ({
+                                ...prev,
+                                layoutDensity: 'standard',
+                                canvasSpacing: { mode: 'relaxed', sectionGapPx: 24, pagePaddingPx: 40, dividerStyle: resolvedSpacing.dividerStyle },
+                              }));
+                              showToast('Applied Relaxed Spacing (24px)');
+                            }}
+                            className={`p-2 rounded-xl text-left border transition-all cursor-pointer ${
+                              currentSpacingMode === 'relaxed'
+                                ? 'bg-amber-500/20 border-amber-500 text-amber-300 font-bold'
+                                : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:bg-slate-800'
+                            }`}
+                          >
+                            <p className="text-xs">🌿 Relaxed</p>
+                            <p className="text-[9px] text-slate-500 mt-0.5">24px gaps</p>
+                          </button>
+                        </div>
+
+                        {/* Section Gap Slider */}
+                        <div className="space-y-1 pt-1 border-t border-slate-800/80">
+                          <div className="flex justify-between items-center text-[10.5px]">
+                            <span className="text-slate-400">Section Gap</span>
+                            <span className="font-mono text-amber-400 font-bold">{resolvedSpacing.sectionGapPx}px</span>
+                          </div>
+                          <input
+                            type="range"
+                            min="6"
+                            max="36"
+                            step="1"
+                            value={resolvedSpacing.sectionGapPx}
+                            onChange={(e) => {
+                              const val = Number(e.target.value);
+                              setDocument((prev) => ({
+                                ...prev,
+                                canvasSpacing: {
+                                  mode: 'custom',
+                                  sectionGapPx: val,
+                                  pagePaddingPx: resolvedSpacing.pagePaddingPx,
+                                  dividerStyle: resolvedSpacing.dividerStyle,
+                                },
+                              }));
+                            }}
+                            className="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-500"
+                          />
+                        </div>
+
+                        {/* Link to Tab 1 */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditorActiveTab('industry');
+                            if (viewMode === 'preview') setViewMode('split');
+                            setIsSpacingPopoverOpen(false);
+                          }}
+                          className="w-full text-center text-[10.5px] text-amber-400 hover:text-amber-300 font-semibold pt-1 block cursor-pointer"
+                        >
+                          Open Full Spacing Studio (Tab 1) ➔
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </>
+              );
+            })()}
+
             {/* Live A4 Page Overflow Warning Badge */}
             {overflowPages.length > 0 && (
               <>
@@ -672,8 +873,12 @@ export default function StudioWorkspace({ initialIndustry, onNavigateToAdmin, on
                   <button
                     type="button"
                     onClick={() => {
-                      setDocument((prev) => ({ ...prev, layoutDensity: 'compact' }));
-                      showToast('Applied Compact Spacing to fit A4 page');
+                      setDocument((prev) => ({
+                        ...prev,
+                        layoutDensity: 'compact',
+                        canvasSpacing: { mode: 'tight', sectionGapPx: 10, pagePaddingPx: 24 },
+                      }));
+                      showToast('Applied Tight Spacing to fit A4 page');
                     }}
                     className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-2 py-0.5 rounded-md text-[10px] transition-colors cursor-pointer whitespace-nowrap ml-1 shadow-sm"
                     title="Click to tighten margins and fit within A4 height"
