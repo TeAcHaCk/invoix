@@ -127,19 +127,17 @@ Each of these shipped once and cost real debugging time.
 
 ## Handoff log
 
-### 2026-08-30 (latest) — Antigravity · Live Section Flow & Sequence Manager Execution & 5-Phase Space Packing
+### 2026-08-30 (latest) — Antigravity · True Dynamic Proposal Section Flow & Capacity-Based Multi-Sheet Flow
 
-**Delivered Live Section Flow Re-ordering & Zero-Waste Proposal Page Packing:**
+**Delivered 100% Dynamic Section Ordering & Continuous Capacity-Based Page Packing:**
 
-1. **Root Cause of Empty Space on Page 1 (Red Marker Squiggle in User Screenshot)**:
-   - Previously, proposals with 4 phases were arbitrarily splitting at `phases > 3`, pushing Deliverables and Pricing to Page 2. Since 3 phases alone took only ~280px on Page 1, the lower ~650px of Page 1 was completely empty white space.
-   - An A4 sheet comfortably accommodates **up to 5 phases + Deliverables + Pricing/Investment Box** (~730px total height against 1020px usable printable area).
-2. **Resolution & 5-Phase Single-Sheet Packing ([`CreativeProposalView.tsx`](file:///d:/Product%20build/src/components/CreativeProposalView.tsx) & [`ModernProposalView.tsx`](file:///d:/Product%20build/src/components/ModernProposalView.tsx))**:
-   - Upgraded multi-page threshold to `allPhases.length > 5`. Proposals with 1 to 5 phases now render **all phases + deliverables + pricing table + milestone payment terms together on Page 1**, completely eliminating empty blank space.
-   - Proposals with $> 5$ phases (e.g. 6 to 10 phases) cleanly continue phases 5..end on Page 2 without orphan trailing sheets.
-3. **Live Section Flow & Sequence Manager Dynamic Execution**:
-   - Connected `doc.sectionOrder` directly to proposal render trees (`page1Keys` and `annexureKeys`).
-   - When the user uses `[ ↑ ]` and `[ ↓ ]` in the **Modular Section Sequence & Flow Manager** (e.g. moving `Why Choose Us & Guarantees` up to position `#3` before `Specialists & Crew`), the proposal view immediately reorders the section rendering in real time.
+1. **Root Cause of Static / Selective Section Movements in Screenshot**:
+   - Previously, proposals partitioned sections using hardcoded buckets: `page1Keys = currentSectionOrder.filter(k => ['scope', 'deliverables', 'pricing'].includes(k))` and `annexureKeys = currentSectionOrder.filter(k => !['scope', 'deliverables', 'pricing'].includes(k))`.
+   - When the user moved `#3 Why Choose Us` or `#4 Signatures` up in the manager, they were trapped in `annexureKeys` and refused to move onto Page 1, while `#5 Deliverables` was forced onto Page 1 even if moved below signatures.
+2. **Resolution & True Capacity-Based Dynamic Pagination ([`CreativeProposalView.tsx`](file:///d:/Product%20build/src/components/CreativeProposalView.tsx) & [`ModernProposalView.tsx`](file:///d:/Product%20build/src/components/ModernProposalView.tsx))**:
+   - Built a dynamic page generator that iterates strictly across `currentSectionOrder` and evaluates content height capacity (760px for Page 1, 920px for subsequent pages).
+   - **Any section in any order**: If the user sets `[#1 Scope, #2 Pricing, #3 Why Choose Us, #4 Signatures, #5 Deliverables, #6 Terms, #7 Crew]`, the document renders those sections in that **exact sequence**, flowing naturally across pages without rigid categorization.
+   - Preserves uniform headers, footers, and page counters (`Page X of Y`) on every page.
 - **Verification**: `npm run lint` = **0 warnings, 0 errors**. `npm run build` = **Clean compile (exit 0)**.
 - **Target Branch**: `staging`.
 

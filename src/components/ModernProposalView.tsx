@@ -76,8 +76,6 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
   const activeDeliverables = (doc.deliverables || []).filter((d) => d.included);
   const activeTeam = (doc.crewMembers || []).filter((c) => c.enabled);
   const activeWhy = (doc.whyChooseUs || []).filter((w) => w.enabled);
-  const hasTerms = doc.sectionVisibility?.terms !== false && (doc.termsAndConditions || []).length > 0;
-  const hasSignatures = doc.sectionVisibility?.signatory !== false && doc.signatory?.enabled !== false;
 
   const defaultOrder: ProposalSectionKey[] = [
     'scope',
@@ -93,21 +91,6 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
     doc.sectionOrder && doc.sectionOrder.length === defaultOrder.length
       ? doc.sectionOrder
       : defaultOrder;
-
-  const hasAnnexure =
-    (doc.includeCrewSection && activeTeam.length > 0) ||
-    (doc.includeWhyChooseUs && activeWhy.length > 0) ||
-    hasTerms ||
-    hasSignatures;
-
-  // Split phases across pages only if there are genuinely > 5 phases (fits 1-5 phases on page 1)
-  const isMultiPageScope = activeMilestones.length > 5;
-  const page1Milestones = isMultiPageScope ? activeMilestones.slice(0, 4) : activeMilestones;
-  const page2Milestones = isMultiPageScope ? activeMilestones.slice(4) : [];
-
-  const totalPages = isMultiPageScope
-    ? (hasAnnexure ? 3 : 2)
-    : (hasAnnexure ? 2 : 1);
 
   const isCompact =
     doc.layoutDensity === 'compact' ||
@@ -290,7 +273,7 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
     );
   };
 
-  const renderScopeSection = (milestonesToRender: typeof activeMilestones = page1Milestones, isContinued = false) => {
+  const renderScopeSection = (milestonesToRender: typeof activeMilestones = activeMilestones, isContinued = false) => {
     if (doc.sectionVisibility?.scope === false || milestonesToRender.length === 0) return null;
     return (
       <div
@@ -513,10 +496,10 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
     );
   };
 
-  const renderSectionByKey = (key: ProposalSectionKey, milestonesToRender?: typeof activeMilestones, isContinued = false) => {
+  const renderSectionByKey = (key: ProposalSectionKey) => {
     switch (key) {
       case 'scope':
-        return renderScopeSection(milestonesToRender, isContinued);
+        return renderScopeSection(activeMilestones, false);
       case 'deliverables':
         return renderDeliverablesBox();
       case 'pricing':
@@ -534,239 +517,240 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
     }
   };
 
-  // Sections allocated to Page 1 vs Annexure based on user's sequence
-  const page1Keys = currentSectionOrder.filter((k) =>
-    ['scope', 'deliverables', 'pricing'].includes(k)
-  );
-
-  const annexureKeys = currentSectionOrder.filter(
-    (k) => !['scope', 'deliverables', 'pricing'].includes(k)
-  );
-
-  return (
-    <div className="space-y-8 print:space-y-0" style={{ fontFamily: `"${fontFamily}", sans-serif` }}>
+  const renderPage1Header = () => (
+    <>
       <div
-        className="print-page bg-white shadow-2xl relative transition-all duration-200"
-        style={{
-          width: '794px',
-          minHeight: '1123px',
-          boxSizing: 'border-box',
-        }}
+        onClick={() => onSelectSection?.('business', 'branding')}
+        className={`flex items-start justify-between border-b-2 border-slate-900 pb-3 mb-2.5 ${sectionClass('business')}`}
+        title={onSelectSection ? 'Click to edit business branding' : undefined}
       >
-        <WatermarkLayer config={doc.watermark} />
-        <div className={`relative z-10 ${isCompact ? 'p-6 sm:p-7' : 'p-8 sm:p-9'} text-left text-slate-900 flex flex-col justify-between h-full min-h-[1123px]`}>
-          <div>
-            <div
-              onClick={() => onSelectSection?.('business', 'branding')}
-              className={`flex items-start justify-between border-b-2 border-slate-900 pb-3 mb-2.5 ${sectionClass('business')}`}
-              title={onSelectSection ? 'Click to edit business branding' : undefined}
-            >
-              {renderEditBadge('Brand')}
-              <div className="flex-1 pr-6 min-w-0">
-                {doc.studio.logoUrl ? (
-                  <img
-                    src={doc.studio.logoUrl}
-                    alt={doc.studio.name}
-                    style={{
-                      width: `${Math.min(logoWidth, 220)}px`,
-                      maxHeight: `${Math.min(logoHeight, 75)}px`,
-                      objectFit: 'contain',
-                    }}
-                    className="mb-1 block"
-                  />
-                ) : (
-                  <h1 className="text-xl font-black text-slate-950 tracking-tight leading-snug mb-0.5 block">
-                    {doc.studio.name}
-                  </h1>
-                )}
-                <p className="text-[10px] font-semibold text-slate-600 tracking-normal uppercase leading-normal mb-0.5 block">
-                  {doc.studio.tagline}
-                </p>
-                <div className="text-[9.5px] text-slate-500 mt-0.5 space-y-0.5">
-                  <p>{doc.studio.address}</p>
-                  <p>
-                    {doc.studio.phoneNumbers && <span>Ph: {doc.studio.phoneNumbers} • </span>}
-                    {doc.studio.email && <span>{doc.studio.email}</span>}
-                  </p>
-                  {doc.studio.gstin && (
-                    <p className="font-semibold text-slate-700">
-                      {doc.studio.taxNumberLabel || 'Tax ID / GSTIN'}: {doc.studio.gstin}
-                    </p>
-                  )}
-                </div>
-              </div>
-              <div className="text-right flex flex-col items-end shrink-0 min-w-[220px]">
-                <div
-                  className="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded text-[10.5px] font-extrabold uppercase tracking-wider shadow-sm whitespace-nowrap"
-                  style={{ backgroundColor: accentColor, color: '#090d16' }}
-                >
-                  <FileText className="w-3 h-3 shrink-0" />
-                  <span className="whitespace-nowrap">
-                    {doc.type === 'INVOICE' ? 'COMMERCIAL INVOICE' : 'COMMERCIAL PROPOSAL'}
-                  </span>
-                </div>
-                <div className="mt-1.5 space-y-0.5 text-right text-xs">
-                  <div className="flex items-center justify-end space-x-1.5">
-                    <span className="text-slate-400 font-sans text-[10.5px]">Quote Ref:</span>
-                    <strong className="text-slate-950 font-bold font-mono text-[11px]">{doc.details.invoiceNo}</strong>
-                  </div>
-                  <div className="flex items-center justify-end space-x-1.5">
-                    <span className="text-slate-400 font-sans text-[10.5px]">Date:</span>
-                    <span className="text-slate-700 font-medium text-[10.5px]">{doc.details.invoiceDate}</span>
-                  </div>
-                  <div className="flex items-center justify-end space-x-1.5">
-                    <span className="text-slate-400 font-sans text-[10.5px]">Valid Until:</span>
-                    <span className="text-amber-800 font-semibold text-[10.5px]">{doc.details.validUntilDate || '30 Days from issue'}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div
-              onClick={() => onSelectSection?.('client', 'client')}
-              className={`bg-slate-50/80 border border-slate-200/90 rounded-lg p-2.5 mb-2.5 ${sectionClass('client')}`}
-              title={onSelectSection ? 'Click to edit client & project metadata' : undefined}
-            >
-              {renderEditBadge('Client')}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">
-                    Prepared For (Client)
-                  </span>
-                  <h3 className="font-bold text-slate-950 text-xs">{doc.client.clientName}</h3>
-                  <p className="text-slate-700 text-[10.5px] font-medium">{doc.client.nameOfEvent}</p>
-                  <p className="text-slate-500 text-[10px]">{doc.client.address}</p>
-                </div>
-                <div>
-                  <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">
-                    Contact & Coordinates
-                  </span>
-                  <p className="text-slate-700 text-[10px]">{doc.client.contactNo}</p>
-                  <p className="text-slate-700 text-[10px]">{doc.client.email}</p>
-                  {doc.client.taxId && (
-                    <p className="text-[10px] font-semibold text-slate-700">
-                      Tax ID: {doc.client.taxId}
-                    </p>
-                  )}
-                </div>
-              </div>
-              {doc.packageBannerTitle && (
-                <div
-                  className="mt-2 pt-1.5 border-t border-slate-200/80 text-[10.5px] font-bold uppercase tracking-wider flex items-center justify-between"
-                  style={{ color: accentColor === '#f59e0b' ? '#92400e' : accentColor }}
-                >
-                  <span>Scope: {doc.packageBannerTitle}</span>
-                  <span className="text-[9.5px] font-mono text-slate-400 lowercase font-normal">
-                    {activeMilestones.length} phases planned
-                  </span>
-                </div>
-              )}
-            </div>
-
-            {/* Render Page 1 Sections in User's Dynamic Order */}
-            {!isMultiPageScope ? (
-              page1Keys.map((k) => (
-                <React.Fragment key={k}>
-                  {renderSectionByKey(k, activeMilestones, false)}
-                </React.Fragment>
-              ))
-            ) : (
-              renderScopeSection(page1Milestones, false)
+        {renderEditBadge('Brand')}
+        <div className="flex-1 pr-6 min-w-0">
+          {doc.studio.logoUrl ? (
+            <img
+              src={doc.studio.logoUrl}
+              alt={doc.studio.name}
+              style={{
+                width: `${Math.min(logoWidth, 220)}px`,
+                maxHeight: `${Math.min(logoHeight, 75)}px`,
+                objectFit: 'contain',
+              }}
+              className="mb-1 block"
+            />
+          ) : (
+            <h1 className="text-xl font-black text-slate-950 tracking-tight leading-snug mb-0.5 block">
+              {doc.studio.name}
+            </h1>
+          )}
+          <p className="text-[10px] font-semibold text-slate-600 tracking-normal uppercase leading-normal mb-0.5 block">
+            {doc.studio.tagline}
+          </p>
+          <div className="text-[9.5px] text-slate-500 mt-0.5 space-y-0.5">
+            <p>{doc.studio.address}</p>
+            <p>
+              {doc.studio.phoneNumbers && <span>Ph: {doc.studio.phoneNumbers} • </span>}
+              {doc.studio.email && <span>{doc.studio.email}</span>}
+            </p>
+            {doc.studio.gstin && (
+              <p className="font-semibold text-slate-700">
+                {doc.studio.taxNumberLabel || 'Tax ID / GSTIN'}: {doc.studio.gstin}
+              </p>
             )}
           </div>
-          <div className="mt-3 pt-2 border-t border-slate-200 flex items-center justify-between text-[10px] text-slate-400">
-            <span>{doc.footerNote || `Confidential Proposal • ${doc.studio.name}`}</span>
-            <span className="font-semibold text-slate-600">Page 1 of {totalPages}</span>
+        </div>
+        <div className="text-right flex flex-col items-end shrink-0 min-w-[220px]">
+          <div
+            className="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded text-[10.5px] font-extrabold uppercase tracking-wider shadow-sm whitespace-nowrap"
+            style={{ backgroundColor: accentColor, color: '#090d16' }}
+          >
+            <FileText className="w-3 h-3 shrink-0" />
+            <span className="whitespace-nowrap">
+              {doc.type === 'INVOICE' ? 'COMMERCIAL INVOICE' : 'COMMERCIAL PROPOSAL'}
+            </span>
+          </div>
+          <div className="mt-1.5 space-y-0.5 text-right text-xs">
+            <div className="flex items-center justify-end space-x-1.5">
+              <span className="text-slate-400 font-sans text-[10.5px]">Quote Ref:</span>
+              <strong className="text-slate-950 font-bold font-mono text-[11px]">{doc.details.invoiceNo}</strong>
+            </div>
+            <div className="flex items-center justify-end space-x-1.5">
+              <span className="text-slate-400 font-sans text-[10.5px]">Date:</span>
+              <span className="text-slate-700 font-medium text-[10.5px]">{doc.details.invoiceDate}</span>
+            </div>
+            <div className="flex items-center justify-end space-x-1.5">
+              <span className="text-slate-400 font-sans text-[10.5px]">Valid Until:</span>
+              <span className="text-amber-800 font-semibold text-[10.5px]">{doc.details.validUntilDate || '30 Days from issue'}</span>
+            </div>
           </div>
         </div>
       </div>
 
-      {isMultiPageScope && (
-        <div
-          className="print-page bg-white shadow-2xl relative transition-all duration-200"
-          style={{
-            width: '794px',
-            minHeight: '1123px',
-            boxSizing: 'border-box',
-          }}
-        >
-          <WatermarkLayer config={doc.watermark} />
-          <div className={`relative z-10 ${isCompact ? 'p-6 sm:p-7' : 'p-8 sm:p-9'} text-left text-slate-900 flex flex-col justify-between h-full min-h-[1123px]`}>
-            <div>
-              <div className="flex items-center justify-between border-b border-slate-200 pb-2 mb-3">
-                <div className="flex items-center space-x-2">
-                  <h2 className="font-bold text-[13px] tracking-normal uppercase text-slate-950 whitespace-nowrap leading-none">
-                    {doc.studio.name}
-                  </h2>
-                  <span className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono leading-none">
-                    Ref: {doc.details.invoiceNo}
-                  </span>
-                </div>
-                <span className="text-[10px] text-slate-500 uppercase tracking-normal whitespace-nowrap leading-none">
-                  Scope & Investment Schedule (Continued)
-                </span>
-              </div>
-              
-              {/* Continued Scope Phases (Phases 5 to end) */}
-              {renderScopeSection(page2Milestones, true)}
+      <div
+        onClick={() => onSelectSection?.('client', 'client')}
+        className={`bg-slate-50/80 border border-slate-200/90 rounded-lg p-2.5 mb-2.5 ${sectionClass('client')}`}
+        title={onSelectSection ? 'Click to edit client & project metadata' : undefined}
+      >
+        {renderEditBadge('Client')}
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">
+              Prepared For (Client)
+            </span>
+            <h3 className="font-bold text-slate-950 text-xs">{doc.client.clientName}</h3>
+            <p className="text-slate-700 text-[10.5px] font-medium">{doc.client.nameOfEvent}</p>
+            <p className="text-slate-500 text-[10px]">{doc.client.address}</p>
+          </div>
+          <div>
+            <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">
+              Contact & Coordinates
+            </span>
+            <p className="text-slate-700 text-[10px]">{doc.client.contactNo}</p>
+            <p className="text-slate-700 text-[10px]">{doc.client.email}</p>
+            {doc.client.taxId && (
+              <p className="text-[10px] font-semibold text-slate-700">
+                Tax ID: {doc.client.taxId}
+              </p>
+            )}
+          </div>
+        </div>
+        {doc.packageBannerTitle && (
+          <div
+            className="mt-2 pt-1.5 border-t border-slate-200/80 text-[10.5px] font-bold uppercase tracking-wider flex items-center justify-between"
+            style={{ color: accentColor === '#f59e0b' ? '#92400e' : accentColor }}
+          >
+            <span>Scope: {doc.packageBannerTitle}</span>
+            <span className="text-[9.5px] font-mono text-slate-400 lowercase font-normal">
+              {activeMilestones.length} phases planned
+            </span>
+          </div>
+        )}
+      </div>
+    </>
+  );
 
-              {/* Remaining Page 1 Sections (Deliverables, Pricing) */}
-              {page1Keys
-                .filter((k) => k !== 'scope')
-                .map((k) => (
-                  <React.Fragment key={k}>
-                    {renderSectionByKey(k)}
+  const getSectionEstimatedHeight = (key: ProposalSectionKey): number => {
+    switch (key) {
+      case 'scope': {
+        if (doc.sectionVisibility?.scope === false || activeMilestones.length === 0) return 0;
+        return 45 + Math.min(activeMilestones.length, 6) * 44;
+      }
+      case 'pricing': {
+        if (doc.sectionVisibility?.pricingTable === false) return 0;
+        const itemCount = selectedItems.length + optionalAddons.length;
+        return 120 + itemCount * 24 + 90;
+      }
+      case 'deliverables': {
+        if (doc.sectionVisibility?.deliverables === false || activeDeliverables.length === 0) return 0;
+        return 40 + Math.ceil(activeDeliverables.length / 2) * 24;
+      }
+      case 'whyChooseUs': {
+        if (doc.sectionVisibility?.whyChooseUs === false || !doc.includeWhyChooseUs || activeWhy.length === 0) return 0;
+        return 40 + Math.ceil(activeWhy.length / 2) * 38;
+      }
+      case 'crew': {
+        if (doc.sectionVisibility?.crew === false || !doc.includeCrewSection || activeTeam.length === 0) return 0;
+        return 40 + activeTeam.length * 36;
+      }
+      case 'terms': {
+        if (doc.sectionVisibility?.terms === false || !doc.termsAndConditions || doc.termsAndConditions.length === 0) return 0;
+        return 35 + doc.termsAndConditions.length * 20;
+      }
+      case 'signatory': {
+        if (doc.sectionVisibility?.signatory === false || doc.signatory?.enabled === false) return 0;
+        return 140;
+      }
+      default:
+        return 0;
+    }
+  };
+
+  // Build Pages dynamically based on user's exact currentSectionOrder
+  const pages: ProposalSectionKey[][] = [];
+  let currentPage: ProposalSectionKey[] = [];
+  let currentHeight = 0;
+  let maxCapacity = 760; // Page 1 budget
+
+  for (const key of currentSectionOrder) {
+    const h = getSectionEstimatedHeight(key);
+    if (h === 0) continue;
+
+    if (currentHeight + h > maxCapacity && currentPage.length > 0) {
+      pages.push(currentPage);
+      currentPage = [key];
+      currentHeight = h;
+      maxCapacity = 920; // Page 2+ budget
+    } else {
+      currentPage.push(key);
+      currentHeight += h;
+    }
+  }
+
+  if (currentPage.length > 0) {
+    pages.push(currentPage);
+  }
+
+  if (pages.length === 0) {
+    pages.push(['scope', 'pricing']);
+  }
+
+  const totalPages = pages.length;
+
+  return (
+    <div className="space-y-8 print:space-y-0" style={{ fontFamily: `"${fontFamily}", sans-serif` }}>
+      {pages.map((pageSections, pageIdx) => {
+        const isFirstPage = pageIdx === 0;
+        const pageNum = pageIdx + 1;
+
+        return (
+          <div
+            key={pageIdx}
+            className="print-page bg-white shadow-2xl relative transition-all duration-200"
+            style={{
+              width: '794px',
+              minHeight: '1123px',
+              boxSizing: 'border-box',
+            }}
+          >
+            <WatermarkLayer config={doc.watermark} />
+            <div className={`relative z-10 ${isCompact ? 'p-6 sm:p-7' : 'p-8 sm:p-9'} text-left text-slate-900 flex flex-col justify-between h-full min-h-[1123px]`}>
+              <div>
+                {isFirstPage ? (
+                  renderPage1Header()
+                ) : (
+                  <div className="flex items-center justify-between border-b border-slate-200 pb-2 mb-3">
+                    <div className="flex items-center space-x-2">
+                      <h2 className="font-bold text-[13px] tracking-normal uppercase text-slate-950 whitespace-nowrap leading-none">
+                        {doc.studio.name}
+                      </h2>
+                      <span className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono leading-none">
+                        Ref: {doc.details.invoiceNo}
+                      </span>
+                    </div>
+                    <span className="text-[10px] text-slate-500 uppercase tracking-normal whitespace-nowrap leading-none">
+                      Proposal Specifications & Agreement (Page {pageNum} of {totalPages})
+                    </span>
+                  </div>
+                )}
+
+                {/* Render Sections on this sheet strictly in user's defined order */}
+                {pageSections.map((sectionKey) => (
+                  <React.Fragment key={sectionKey}>
+                    {renderSectionByKey(sectionKey)}
                   </React.Fragment>
                 ))}
-            </div>
-            <div className="mt-3 pt-2 border-t border-slate-200 flex items-center justify-between text-[10px] text-slate-400">
-              <span>{doc.studio.name} • Proposal Ref: {doc.details.invoiceNo}</span>
-              <span className="font-semibold text-slate-600">Page 2 of {totalPages}</span>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {hasAnnexure && (
-        <div
-          className="print-page bg-white shadow-2xl relative transition-all duration-200"
-          style={{
-            width: '794px',
-            minHeight: '1123px',
-            boxSizing: 'border-box',
-          }}
-        >
-          <WatermarkLayer config={doc.watermark} />
-          <div className={`relative z-10 ${isCompact ? 'p-6 sm:p-7' : 'p-8 sm:p-9'} text-left text-slate-900 flex flex-col justify-between h-full min-h-[1123px]`}>
-            <div>
-              <div className="flex items-center justify-between border-b border-slate-200 pb-2 mb-3">
-                <div className="flex items-center space-x-2">
-                  <h2 className="font-bold text-[13px] tracking-normal uppercase text-slate-950 whitespace-nowrap leading-none">
-                    {doc.studio.name}
-                  </h2>
-                  <span className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono leading-none">
-                    Ref: {doc.details.invoiceNo}
-                  </span>
-                </div>
-                <span className="text-[10px] text-slate-500 uppercase tracking-normal whitespace-nowrap leading-none">
-                  Proposal Addendum & Sign-off
-                </span>
               </div>
 
-              {/* RENDER ALL ANNEXURE SECTIONS IN USER'S CUSTOMIZED ORDER */}
-              {annexureKeys.map((k) => (
-                <React.Fragment key={k}>
-                  {renderSectionByKey(k)}
-                </React.Fragment>
-              ))}
-            </div>
-            <div className="border-t border-slate-200 pt-2 flex items-center justify-between text-[10px] text-slate-400">
-              <span>{doc.footerNote || `Confidential Proposal • ${doc.studio.name}`}</span>
-              <span className="font-semibold text-slate-600">Page {totalPages} of {totalPages} • End of Document</span>
+              {/* Page Footer */}
+              <div className="mt-3 pt-2 border-t border-slate-200 flex items-center justify-between text-[10px] text-slate-400">
+                <span>{doc.footerNote || `Confidential Proposal • ${doc.studio.name}`}</span>
+                <span className="font-semibold text-slate-600">
+                  Page {pageNum} of {totalPages} {pageNum === totalPages ? '• End of Document' : ''}
+                </span>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })}
     </div>
   );
 };

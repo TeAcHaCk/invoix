@@ -85,8 +85,6 @@ export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ docu
   const activeDeliverables = (doc.deliverables || []).filter((d) => d.included);
   const activeCrew = (doc.crewMembers || []).filter((c) => c.enabled);
   const activeWhyChoose = (doc.whyChooseUs || []).filter((w) => w.enabled);
-  const hasTerms = doc.sectionVisibility?.terms !== false && (doc.termsAndConditions || []).length > 0;
-  const hasSignatures = doc.sectionVisibility?.signatory !== false && doc.signatory?.enabled !== false;
 
   const defaultOrder: ProposalSectionKey[] = [
     'scope',
@@ -103,21 +101,6 @@ export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ docu
       ? doc.sectionOrder
       : defaultOrder;
 
-  const hasAnnexure =
-    (doc.includeCrewSection !== false && activeCrew.length > 0) ||
-    (doc.includeWhyChooseUs !== false && activeWhyChoose.length > 0) ||
-    hasTerms ||
-    hasSignatures;
-
-  // Split phases across pages only if there are genuinely > 5 phases (fits 1-5 phases on page 1)
-  const isMultiPagePhases = allPhases.length > 5;
-  const page1Phases = isMultiPagePhases ? allPhases.slice(0, 4) : allPhases;
-  const page2Phases = isMultiPagePhases ? allPhases.slice(4) : [];
-
-  const totalPages = isMultiPagePhases
-    ? (hasAnnexure ? 3 : 2)
-    : (hasAnnexure ? 2 : 1);
-
   const isCompact =
     doc.layoutDensity === 'compact' ||
     (doc.layoutDensity !== 'standard' && (
@@ -130,7 +113,7 @@ export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ docu
   const logoHeight = doc.studio.logoHeight || 130;
   const fontFamily = doc.fontFamily || 'Plus Jakarta Sans';
 
-  const renderScopeSection = (phasesToRender: typeof allPhases = page1Phases, isContinued = false) => {
+  const renderScopeSection = (phasesToRender: typeof allPhases = allPhases, isContinued = false) => {
     if (doc.sectionVisibility?.scope === false || doc.includeScopeSection === false || phasesToRender.length === 0) return null;
     return (
       <div
@@ -427,10 +410,10 @@ export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ docu
     );
   };
 
-  const renderSectionByKey = (key: ProposalSectionKey, phasesToRender?: typeof allPhases, isContinued = false) => {
+  const renderSectionByKey = (key: ProposalSectionKey) => {
     switch (key) {
       case 'scope':
-        return renderScopeSection(phasesToRender, isContinued);
+        return renderScopeSection(allPhases, false);
       case 'deliverables':
         return renderDeliverablesBox();
       case 'pricing':
@@ -448,255 +431,235 @@ export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ docu
     }
   };
 
-  // Sections allocated to Page 1 vs Annexure based on user's sequence
-  const page1Keys = currentSectionOrder.filter((k) =>
-    ['scope', 'deliverables', 'pricing'].includes(k)
-  );
-
-  const annexureKeys = currentSectionOrder.filter(
-    (k) => !['scope', 'deliverables', 'pricing'].includes(k)
-  );
-
-  return (
-    <div className="space-y-8 print:space-y-0" style={{ fontFamily: `"${fontFamily}", sans-serif` }}>
-      {/* ========================================================= */}
-      {/* PAGE 1: PRIMARY PROPOSAL, METADATA & SCOPE (PART 1)       */}
-      {/* ========================================================= */}
+  const renderPage1Header = () => (
+    <>
+      {/* TOP HEADER SECTION */}
       <div
-        className="print-page bg-white shadow-2xl relative transition-all duration-200"
-        style={{
-          width: '794px',
-          minHeight: '1123px',
-          boxSizing: 'border-box',
-        }}
+        onClick={() => onSelectSection?.('business', 'branding')}
+        className={`w-full text-center pb-1 ${sectionClass('business')}`}
+        title={onSelectSection ? 'Click to edit business branding' : undefined}
       >
-        <WatermarkLayer config={doc.watermark} />
-        <div className={`relative z-10 ${isCompact ? 'p-6 sm:p-7' : 'p-8 sm:p-9'} text-left text-slate-900 flex flex-col justify-between h-full min-h-[1123px]`}>
-          <div>
-            {/* TOP HEADER SECTION */}
-            <div
-              onClick={() => onSelectSection?.('business', 'branding')}
-              className={`w-full text-center pb-1 ${sectionClass('business')}`}
-              title={onSelectSection ? 'Click to edit business branding' : undefined}
-            >
-              {renderEditBadge('Brand')}
-              {doc.studio.logoUrl ? (
-                <div className="flex items-center justify-center mb-1">
-                  <img
-                    src={doc.studio.logoUrl}
-                    alt={doc.studio.name}
-                    style={{
-                      width: `${logoWidth}px`,
-                      maxHeight: `${logoHeight}px`,
-                      objectFit: 'contain',
-                    }}
-                  />
-                </div>
-              ) : (
-                <div className="w-full flex flex-col items-center">
-                  <h1 className="text-2xl font-extrabold tracking-[0.05em] text-[#111111] whitespace-nowrap leading-normal mb-0.5">
-                    {doc.studio.name}
-                  </h1>
-                  <p className="text-[10px] tracking-[0.15em] text-[#8C692D] uppercase font-semibold whitespace-nowrap leading-normal">
-                    {doc.studio.tagline}
-                  </p>
-                </div>
-              )}
-
-              {/* Decorative top separator line */}
-              <div className="w-full border-b border-[#8C692D] mt-1.5 mb-1.5"></div>
-
-              {/* Document Type Title Header */}
-              <div className="relative w-full flex items-center justify-center my-0.5">
-                <span className="text-[10.5px] text-slate-400 font-medium absolute left-0 whitespace-nowrap">
-                  Page 1 of {totalPages}
-                </span>
-                <h2 className="font-bold tracking-[0.2em] text-[15px] text-[#111111] uppercase whitespace-nowrap">
-                  QUOTATION & PROPOSAL
-                </h2>
-                <span className="text-[10.5px] text-amber-700 font-bold uppercase tracking-normal absolute right-0 whitespace-nowrap">
-                  Official Proposal
-                </span>
-              </div>
-            </div>
-
-            {/* CLIENT & PROPOSAL METADATA BAR */}
-            <div
-              onClick={() => onSelectSection?.('client', 'client')}
-              className={`grid grid-cols-2 gap-4 mt-2.5 mb-3 bg-slate-50/80 border border-slate-200/90 rounded-lg p-3 text-[11px] leading-relaxed ${sectionClass('client')}`}
-              title={onSelectSection ? 'Click to edit client & project metadata' : undefined}
-            >
-              {renderEditBadge('Client & Scope')}
-              <div className="space-y-0.5">
-                <p>
-                  <strong className="text-slate-900 font-semibold">Client / Project:</strong>{' '}
-                  <span className="text-slate-800">{doc.client.nameOfEvent || 'Client Project'}</span>
-                </p>
-                {doc.client.clientName && (
-                  <p>
-                    <strong className="text-slate-900 font-semibold">Contact Person:</strong>{' '}
-                    <span className="text-slate-700">{doc.client.clientName}</span>
-                  </p>
-                )}
-                <p>
-                  <strong className="text-slate-900 font-semibold">Location / Venue:</strong>{' '}
-                  <span className="text-slate-700">{doc.client.address || 'Address'}</span>
-                </p>
-                <p>
-                  <strong className="text-slate-900 font-semibold">Contact No:</strong>{' '}
-                  <span className="text-slate-700">{doc.client.contactNo || 'Phone Number'}</span>
-                </p>
-              </div>
-
-              <div className="space-y-0.5 text-right flex flex-col items-end">
-                <p>
-                  <strong className="text-slate-900 font-semibold">Quotation No:</strong>{' '}
-                  <span className="font-mono text-slate-800 font-bold">{doc.details.invoiceNo || 'QUO-001'}</span>
-                </p>
-                <p>
-                  <strong className="text-slate-900 font-semibold">Date of Issue:</strong>{' '}
-                  <span className="text-slate-700">{doc.details.invoiceDate}</span>
-                </p>
-                <p>
-                  <strong className="text-slate-900 font-semibold">Schedule Date(s):</strong>{' '}
-                  <span className="text-slate-800 font-medium">{getEventDateDisplay()}</span>
-                </p>
-                <p>
-                  <strong className="text-slate-900 font-semibold">Validity:</strong>{' '}
-                  <span className="text-amber-800 font-medium">{doc.details.validUntilDate || '30 Days from issue'}</span>
-                </p>
-              </div>
-            </div>
-
-            {/* PACKAGE BANNER TITLE */}
-            <div
-              onClick={() => onSelectSection?.('client', 'client')}
-              className={`bg-[#111111] text-amber-300 py-2 px-4 text-center rounded-sm font-bold tracking-[0.12em] text-[12.5px] uppercase shadow-md my-2.5 ${sectionClass('client')}`}
-            >
-              {doc.packageBannerTitle || preset.defaultPackageTitle}
-            </div>
-
-            {/* Render Page 1 Sections in User's Dynamic Order */}
-            {!isMultiPagePhases ? (
-              page1Keys.map((k) => (
-                <React.Fragment key={k}>
-                  {renderSectionByKey(k, allPhases, false)}
-                </React.Fragment>
-              ))
-            ) : (
-              renderScopeSection(page1Phases, false)
-            )}
+        {renderEditBadge('Brand')}
+        {doc.studio.logoUrl ? (
+          <div className="flex items-center justify-center mb-1">
+            <img
+              src={doc.studio.logoUrl}
+              alt={doc.studio.name}
+              style={{
+                width: `${logoWidth}px`,
+                maxHeight: `${logoHeight}px`,
+                objectFit: 'contain',
+              }}
+            />
           </div>
-
-          {/* PAGE 1 FOOTER */}
-          <div className="mt-3 pt-2 border-t border-slate-200 flex items-center justify-between text-[10px] text-slate-500">
-            <span>
-              {doc.studio.name} • {doc.studio.phoneNumbers} • {doc.studio.website}
-            </span>
-            <span className="font-semibold text-slate-700">Page 1 of {totalPages}</span>
+        ) : (
+          <div className="w-full flex flex-col items-center">
+            <h1 className="text-2xl font-extrabold tracking-[0.05em] text-[#111111] whitespace-nowrap leading-normal mb-0.5">
+              {doc.studio.name}
+            </h1>
+            <p className="text-[10px] tracking-[0.15em] text-[#8C692D] uppercase font-semibold whitespace-nowrap leading-normal">
+              {doc.studio.tagline}
+            </p>
           </div>
+        )}
+
+        {/* Decorative top separator line */}
+        <div className="w-full border-b border-[#8C692D] mt-1.5 mb-1.5"></div>
+
+        {/* Document Type Title Header */}
+        <div className="relative w-full flex items-center justify-center my-0.5">
+          <span className="text-[10.5px] text-slate-400 font-medium absolute left-0 whitespace-nowrap">
+            Page 1 of {totalPages}
+          </span>
+          <h2 className="font-bold tracking-[0.2em] text-[15px] text-[#111111] uppercase whitespace-nowrap">
+            QUOTATION & PROPOSAL
+          </h2>
+          <span className="text-[10.5px] text-amber-700 font-bold uppercase tracking-normal absolute right-0 whitespace-nowrap">
+            Official Proposal
+          </span>
         </div>
       </div>
 
-      {/* ========================================================= */}
-      {/* PAGE 2 (IF MULTI-PAGE PHASES): CONTINUED SCOPE & PRICING  */}
-      {/* ========================================================= */}
-      {isMultiPagePhases && (
-        <div
-          className="print-page bg-white shadow-2xl relative transition-all duration-200"
-          style={{
-            width: '794px',
-            minHeight: '1123px',
-            boxSizing: 'border-box',
-          }}
-        >
-          <WatermarkLayer config={doc.watermark} />
-          <div className={`relative z-10 ${isCompact ? 'p-6 sm:p-7' : 'p-8 sm:p-9'} text-left text-slate-900 flex flex-col justify-between h-full min-h-[1123px]`}>
-            <div>
-              {/* PAGE 2 HEADER MINI */}
-              <div className="flex items-center justify-between border-b border-slate-200 pb-2 mb-3">
-                <div className="flex items-center space-x-2">
-                  <h2 className="font-bold text-[13px] tracking-normal uppercase text-slate-950 whitespace-nowrap leading-none">
-                    {doc.studio.name}
-                  </h2>
-                  <span className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono leading-none">
-                    Ref: {doc.details.invoiceNo}
-                  </span>
-                </div>
-                <span className="text-[10px] text-slate-500 uppercase tracking-normal whitespace-nowrap leading-none">
-                  Project Scope & Investment (Continued)
-                </span>
-              </div>
+      {/* CLIENT & PROPOSAL METADATA BAR */}
+      <div
+        onClick={() => onSelectSection?.('client', 'client')}
+        className={`grid grid-cols-2 gap-4 mt-2.5 mb-3 bg-slate-50/80 border border-slate-200/90 rounded-lg p-3 text-[11px] leading-relaxed ${sectionClass('client')}`}
+        title={onSelectSection ? 'Click to edit client & project metadata' : undefined}
+      >
+        {renderEditBadge('Client & Scope')}
+        <div className="space-y-0.5">
+          <p>
+            <strong className="text-slate-900 font-semibold">Client / Project:</strong>{' '}
+            <span className="text-slate-800">{doc.client.nameOfEvent || 'Client Project'}</span>
+          </p>
+          {doc.client.clientName && (
+            <p>
+              <strong className="text-slate-900 font-semibold">Contact Person:</strong>{' '}
+              <span className="text-slate-700">{doc.client.clientName}</span>
+            </p>
+          )}
+          <p>
+            <strong className="text-slate-900 font-semibold">Location / Venue:</strong>{' '}
+            <span className="text-slate-700">{doc.client.address || 'Address'}</span>
+          </p>
+          <p>
+            <strong className="text-slate-900 font-semibold">Contact No:</strong>{' '}
+            <span className="text-slate-700">{doc.client.contactNo || 'Phone Number'}</span>
+          </p>
+        </div>
 
-              {/* CONTINUED SOW PHASES (PHASES 5 TO END) */}
-              {renderScopeSection(page2Phases, true)}
+        <div className="space-y-0.5 text-right flex flex-col items-end">
+          <p>
+            <strong className="text-slate-900 font-semibold">Quotation No:</strong>{' '}
+            <span className="font-mono text-slate-800 font-bold">{doc.details.invoiceNo || 'QUO-001'}</span>
+          </p>
+          <p>
+            <strong className="text-slate-900 font-semibold">Date of Issue:</strong>{' '}
+            <span className="text-slate-700">{doc.details.invoiceDate}</span>
+          </p>
+          <p>
+            <strong className="text-slate-900 font-semibold">Schedule Date(s):</strong>{' '}
+            <span className="text-slate-800 font-medium">{getEventDateDisplay()}</span>
+          </p>
+          <p>
+            <strong className="text-slate-900 font-semibold">Validity:</strong>{' '}
+            <span className="text-amber-800 font-medium">{doc.details.validUntilDate || '30 Days from issue'}</span>
+          </p>
+        </div>
+      </div>
 
-              {/* RENDER REMAINING PAGE 1 SECTIONS (DELIVERABLES, PRICING) ON PAGE 2 */}
-              {page1Keys
-                .filter((k) => k !== 'scope')
-                .map((k) => (
-                  <React.Fragment key={k}>
-                    {renderSectionByKey(k)}
+      {/* PACKAGE BANNER TITLE */}
+      <div
+        onClick={() => onSelectSection?.('client', 'client')}
+        className={`bg-[#111111] text-amber-300 py-2 px-4 text-center rounded-sm font-bold tracking-[0.12em] text-[12.5px] uppercase shadow-md my-2.5 ${sectionClass('client')}`}
+      >
+        {doc.packageBannerTitle || preset.defaultPackageTitle}
+      </div>
+    </>
+  );
+
+  const getSectionEstimatedHeight = (key: ProposalSectionKey): number => {
+    switch (key) {
+      case 'scope': {
+        if (doc.sectionVisibility?.scope === false || doc.includeScopeSection === false || allPhases.length === 0) return 0;
+        return 45 + Math.min(allPhases.length, 6) * 44;
+      }
+      case 'pricing': {
+        if (doc.sectionVisibility?.pricingTable === false) return 0;
+        return 165;
+      }
+      case 'deliverables': {
+        if (doc.sectionVisibility?.deliverables === false || activeDeliverables.length === 0) return 0;
+        return 40 + Math.ceil(activeDeliverables.length / 2) * 24;
+      }
+      case 'whyChooseUs': {
+        if (doc.sectionVisibility?.whyChooseUs === false || doc.includeWhyChooseUs === false || activeWhyChoose.length === 0) return 0;
+        return 40 + Math.ceil(activeWhyChoose.length / 2) * 38;
+      }
+      case 'crew': {
+        if (doc.sectionVisibility?.crew === false || doc.includeCrewSection === false || activeCrew.length === 0) return 0;
+        return 40 + activeCrew.length * 36;
+      }
+      case 'terms': {
+        if (doc.sectionVisibility?.terms === false || termsList.length === 0) return 0;
+        return 35 + Math.ceil(termsList.length / 2) * 24;
+      }
+      case 'signatory': {
+        if (doc.sectionVisibility?.signatory === false || doc.signatory?.enabled === false) return 0;
+        return 130;
+      }
+      default:
+        return 0;
+    }
+  };
+
+  // Build Pages dynamically based on user's exact currentSectionOrder
+  const pages: ProposalSectionKey[][] = [];
+  let currentPage: ProposalSectionKey[] = [];
+  let currentHeight = 0;
+  let maxCapacity = 760; // Page 1 budget
+
+  for (const key of currentSectionOrder) {
+    const h = getSectionEstimatedHeight(key);
+    if (h === 0) continue;
+
+    if (currentHeight + h > maxCapacity && currentPage.length > 0) {
+      pages.push(currentPage);
+      currentPage = [key];
+      currentHeight = h;
+      maxCapacity = 920; // Page 2+ budget
+    } else {
+      currentPage.push(key);
+      currentHeight += h;
+    }
+  }
+
+  if (currentPage.length > 0) {
+    pages.push(currentPage);
+  }
+
+  if (pages.length === 0) {
+    pages.push(['scope', 'pricing']);
+  }
+
+  const totalPages = pages.length;
+
+  return (
+    <div className="space-y-8 print:space-y-0" style={{ fontFamily: `"${fontFamily}", sans-serif` }}>
+      {pages.map((pageSections, pageIdx) => {
+        const isFirstPage = pageIdx === 0;
+        const pageNum = pageIdx + 1;
+
+        return (
+          <div
+            key={pageIdx}
+            className="print-page bg-white shadow-2xl relative transition-all duration-200"
+            style={{
+              width: '794px',
+              minHeight: '1123px',
+              boxSizing: 'border-box',
+            }}
+          >
+            <WatermarkLayer config={doc.watermark} />
+            <div className={`relative z-10 ${isCompact ? 'p-6 sm:p-7' : 'p-8 sm:p-9'} text-left text-slate-900 flex flex-col justify-between h-full min-h-[1123px]`}>
+              <div>
+                {isFirstPage ? (
+                  renderPage1Header()
+                ) : (
+                  <div className="flex items-center justify-between border-b border-slate-200 pb-2 mb-3">
+                    <div className="flex items-center space-x-2">
+                      <h2 className="font-bold text-[13px] tracking-normal uppercase text-slate-950 whitespace-nowrap leading-none">
+                        {doc.studio.name}
+                      </h2>
+                      <span className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono leading-none">
+                        Ref: {doc.details.invoiceNo}
+                      </span>
+                    </div>
+                    <span className="text-[10px] text-slate-500 uppercase tracking-normal whitespace-nowrap leading-none">
+                      Proposal Specifications & Agreement (Page {pageNum} of {totalPages})
+                    </span>
+                  </div>
+                )}
+
+                {/* Render Sections on this sheet strictly in user's defined order */}
+                {pageSections.map((sectionKey) => (
+                  <React.Fragment key={sectionKey}>
+                    {renderSectionByKey(sectionKey)}
                   </React.Fragment>
                 ))}
-            </div>
-
-            {/* PAGE 2 FOOTER */}
-            <div className="mt-3 pt-2 border-t border-slate-200 flex items-center justify-between text-[10px] text-slate-500">
-              <span>{doc.studio.name} • Proposal Ref: {doc.details.invoiceNo}</span>
-              <span className="font-semibold text-slate-700">Page 2 of {totalPages}</span>
-            </div>
-          </div>
-        </div>
-      )}
-
-
-      {/* ========================================================= */}
-      {/* ANNEXURE PAGE (PAGE 2 OR PAGE 3): CREW, GUARANTEES, TERMS */}
-      {/* ========================================================= */}
-      {hasAnnexure && (
-        <div
-          className="print-page bg-white shadow-2xl relative transition-all duration-200"
-          style={{
-            width: '794px',
-            minHeight: '1123px',
-            boxSizing: 'border-box',
-          }}
-        >
-          <WatermarkLayer config={doc.watermark} />
-          <div className={`relative z-10 ${isCompact ? 'p-6 sm:p-7' : 'p-8 sm:p-9'} text-left text-slate-900 flex flex-col justify-between h-full min-h-[1123px]`}>
-            <div>
-              {/* ANNEXURE HEADER MINI */}
-              <div className="flex items-center justify-between border-b border-slate-200 pb-2 mb-3">
-                <div className="flex items-center space-x-2">
-                  <h2 className="font-bold text-[13px] tracking-normal uppercase text-slate-950 whitespace-nowrap leading-none">
-                    {doc.studio.name}
-                  </h2>
-                  <span className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono leading-none">
-                    Ref: {doc.details.invoiceNo}
-                  </span>
-                </div>
-                <span className="text-[10px] text-slate-500 uppercase tracking-normal whitespace-nowrap leading-none">
-                  Proposal Annexure & Formal Sign-off
-                </span>
               </div>
 
-              {/* RENDER ALL ANNEXURE SECTIONS IN USER'S CUSTOMIZED ORDER */}
-              {annexureKeys.map((k) => (
-                <React.Fragment key={k}>
-                  {renderSectionByKey(k)}
-                </React.Fragment>
-              ))}
-            </div>
-
-            {/* ANNEXURE FOOTER */}
-            <div className="border-t border-slate-200 pt-2 flex items-center justify-between text-[10px] text-slate-400">
-              <span>{doc.footerNote || `Real Moments, Timeless Stories • ${doc.studio.name}`}</span>
-              <span className="font-semibold text-slate-600">Page {totalPages} of {totalPages} • End of Document</span>
+              {/* Page Footer */}
+              <div className="mt-3 pt-2 border-t border-slate-200 flex items-center justify-between text-[10px] text-slate-500">
+                <span>{doc.footerNote || `${doc.studio.name} • Proposal Ref: ${doc.details.invoiceNo}`}</span>
+                <span className="font-semibold text-slate-700">
+                  Page {pageNum} of {totalPages} {pageNum === totalPages ? '• End of Document' : ''}
+                </span>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })}
     </div>
   );
 };
