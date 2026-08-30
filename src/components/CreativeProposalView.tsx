@@ -1,5 +1,5 @@
 import React from 'react';
-import type { QuotationDocument } from '../types';
+import type { QuotationDocument, ProposalSectionKey } from '../types';
 import { formatCurrency } from '../utils/formatters';
 import { WatermarkLayer } from './WatermarkLayer';
 import { INDUSTRY_PRESETS } from '../constants/industryPresets';
@@ -88,16 +88,31 @@ export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ docu
   const hasTerms = doc.sectionVisibility?.terms !== false && (doc.termsAndConditions || []).length > 0;
   const hasSignatures = doc.sectionVisibility?.signatory !== false && doc.signatory?.enabled !== false;
 
+  const defaultOrder: ProposalSectionKey[] = [
+    'scope',
+    'deliverables',
+    'pricing',
+    'crew',
+    'whyChooseUs',
+    'terms',
+    'signatory',
+  ];
+
+  const currentSectionOrder: ProposalSectionKey[] =
+    doc.sectionOrder && doc.sectionOrder.length === defaultOrder.length
+      ? doc.sectionOrder
+      : defaultOrder;
+
   const hasAnnexure =
     (doc.includeCrewSection !== false && activeCrew.length > 0) ||
     (doc.includeWhyChooseUs !== false && activeWhyChoose.length > 0) ||
     hasTerms ||
     hasSignatures;
 
-  // Split phases across pages if more than 3
-  const isMultiPagePhases = allPhases.length > 3;
-  const page1Phases = isMultiPagePhases ? allPhases.slice(0, 3) : allPhases;
-  const page2Phases = isMultiPagePhases ? allPhases.slice(3) : [];
+  // Split phases across pages only if there are genuinely > 5 phases (fits 1-5 phases on page 1)
+  const isMultiPagePhases = allPhases.length > 5;
+  const page1Phases = isMultiPagePhases ? allPhases.slice(0, 4) : allPhases;
+  const page2Phases = isMultiPagePhases ? allPhases.slice(4) : [];
 
   const totalPages = isMultiPagePhases
     ? (hasAnnexure ? 3 : 2)
@@ -115,68 +130,57 @@ export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ docu
   const logoHeight = doc.studio.logoHeight || 130;
   const fontFamily = doc.fontFamily || 'Plus Jakarta Sans';
 
-  const renderInvestmentBox = () => (
-    <div
-      onClick={() => onSelectSection?.('pricing', 'pricing')}
-      className={`mt-3 border-2 border-slate-900 rounded-lg overflow-hidden bg-white shadow-sm ${sectionClass('pricing')}`}
-      title={onSelectSection ? 'Click to edit pricing & discount' : undefined}
-    >
-      {renderEditBadge('Pricing')}
-      <div className="bg-[#111111] text-white px-4 py-2 flex items-center justify-between">
-        <div>
-          <span className="text-[10px] tracking-[0.2em] text-amber-300 uppercase font-semibold block">
-            TOTAL INVESTMENT VALUE
-          </span>
-          <span className="text-[11px] text-slate-300">All deliverables, crew deployment & post-production included</span>
-        </div>
-        <div className="text-right font-mono font-bold text-[19px] text-amber-400 tracking-tight">
-          {formatCurrency(totalAmount, currency)}
-        </div>
-      </div>
-
-      {/* 3-Step Milestone Terms Bar */}
+  const renderScopeSection = (phasesToRender: typeof allPhases = page1Phases, isContinued = false) => {
+    if (doc.sectionVisibility?.scope === false || doc.includeScopeSection === false || phasesToRender.length === 0) return null;
+    return (
       <div
-        onClick={(e) => {
-          e.stopPropagation();
-          onSelectSection?.('tax-payment', 'payment-milestones');
-        }}
-        className="grid grid-cols-3 divide-x divide-slate-200 bg-slate-50 p-2.5 text-center text-[10.5px] cursor-pointer hover:bg-amber-50/40 transition-colors"
-        title={onSelectSection ? 'Click to edit payment milestones' : undefined}
+        key={isContinued ? 'scope-cont' : 'scope'}
+        onClick={() => onSelectSection?.('scope', 'scope')}
+        className={`my-2.5 ${sectionClass('scope')}`}
+        title={onSelectSection ? 'Click to edit event coverage & phases' : undefined}
       >
-        <div className="flex flex-col justify-between items-center px-1.5 min-h-[46px]">
-          <span className="text-[9px] text-slate-500 font-bold uppercase leading-tight block mb-0.5">
-            {doc.paymentTerms?.paymentMilestoneLabels?.advanceLabel || `${advPct}% Advance Booking`}
+        {renderEditBadge('Phases')}
+        <h3 className="font-bold text-[11.5px] uppercase tracking-[0.08em] text-[#111111] mb-1.5 border-b border-slate-200 pb-1 flex items-center justify-between whitespace-nowrap">
+          <span>{doc.sectionTitles?.scopeTitle || preset.scopeSectionTitle || 'PROJECT PHASES & SOW MILESTONES'} {isContinued ? '(CONTINUED)' : ''}</span>
+          <span className="text-[10px] text-amber-700 font-normal lowercase tracking-normal">
+            {isContinued ? `Phases 5 to ${allPhases.length}` : `${allPhases.length} phase(s) planned`}
           </span>
-          <strong className="text-slate-900 font-mono text-[11.5px] block mt-auto whitespace-nowrap">
-            {formatCurrency(advanceAmount, currency)}
-          </strong>
-        </div>
+        </h3>
 
-        <div className="flex flex-col justify-between items-center px-1.5 min-h-[46px]">
-          <span className="text-[9px] text-slate-500 font-bold uppercase leading-tight block mb-0.5">
-            {doc.paymentTerms?.paymentMilestoneLabels?.afterEventLabel || `${midPct}% Interim Phase`}
-          </span>
-          <strong className="text-slate-900 font-mono text-[11.5px] block mt-auto whitespace-nowrap">
-            {formatCurrency(afterEventAmount, currency)}
-          </strong>
-        </div>
-
-        <div className="flex flex-col justify-between items-center px-1.5 min-h-[46px]">
-          <span className="text-[9px] text-slate-500 font-bold uppercase leading-tight block mb-0.5">
-            {doc.paymentTerms?.paymentMilestoneLabels?.balanceLabel || `${balPct}% Final Handover`}
-          </span>
-          <strong className="text-slate-900 font-mono text-[11.5px] block mt-auto whitespace-nowrap">
-            {formatCurrency(balanceAmount, currency)}
-          </strong>
+        <div className="space-y-1.5">
+          {phasesToRender.map((item, idx) => (
+            <div
+              key={item.id || idx}
+              className="bg-slate-50/60 border border-slate-200 rounded p-2 text-[11px]"
+            >
+              <div className="font-bold text-slate-900 mb-1 flex items-start space-x-2">
+                <span className="w-4 h-4 rounded-full bg-amber-500 text-slate-950 text-[9px] font-extrabold flex items-center justify-center shrink-0 mt-0.5">
+                  {isContinued ? idx + 5 : idx + 1}
+                </span>
+                <span className="font-['Outfit'] uppercase tracking-normal text-[11px] text-amber-950 leading-snug block flex-1">
+                  {item.dayTitle}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-1 pl-6 mt-1">
+                {item.services.map((service, sIdx) => (
+                  <div key={sIdx} className="flex items-start space-x-1.5 text-slate-700 leading-tight">
+                    <span className="text-amber-600 text-[10px] shrink-0 mt-0.5">◆</span>
+                    <span className="font-medium text-[10px] leading-tight">{service}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const renderDeliverablesBox = () => {
     if (doc.sectionVisibility?.deliverables === false || activeDeliverables.length === 0) return null;
     return (
       <div
+        key="deliverables"
         onClick={() => onSelectSection?.('deliverables', 'deliverables')}
         className={`my-2.5 ${sectionClass('deliverables')}`}
         title={onSelectSection ? 'Click to edit deliverables' : undefined}
@@ -196,6 +200,262 @@ export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ docu
       </div>
     );
   };
+
+  const renderInvestmentBox = () => {
+    if (doc.sectionVisibility?.pricingTable === false) return null;
+    return (
+      <div
+        key="pricing"
+        onClick={() => onSelectSection?.('pricing', 'pricing')}
+        className={`mt-3 border-2 border-slate-900 rounded-lg overflow-hidden bg-white shadow-sm ${sectionClass('pricing')}`}
+        title={onSelectSection ? 'Click to edit pricing & discount' : undefined}
+      >
+        {renderEditBadge('Pricing')}
+        <div className="bg-[#111111] text-white px-4 py-2 flex items-center justify-between">
+          <div>
+            <span className="text-[10px] tracking-[0.2em] text-amber-300 uppercase font-semibold block">
+              TOTAL INVESTMENT VALUE
+            </span>
+            <span className="text-[11px] text-slate-300">All deliverables, crew deployment & post-production included</span>
+          </div>
+          <div className="text-right font-mono font-bold text-[19px] text-amber-400 tracking-tight">
+            {formatCurrency(totalAmount, currency)}
+          </div>
+        </div>
+
+        {/* 3-Step Milestone Terms Bar */}
+        <div
+          onClick={(e) => {
+            e.stopPropagation();
+            onSelectSection?.('tax-payment', 'payment-milestones');
+          }}
+          className="grid grid-cols-3 divide-x divide-slate-200 bg-slate-50 p-2.5 text-center text-[10.5px] cursor-pointer hover:bg-amber-50/40 transition-colors"
+          title={onSelectSection ? 'Click to edit payment milestones' : undefined}
+        >
+          <div className="flex flex-col justify-between items-center px-1.5 min-h-[46px]">
+            <span className="text-[9px] text-slate-500 font-bold uppercase leading-tight block mb-0.5">
+              {doc.paymentTerms?.paymentMilestoneLabels?.advanceLabel || `${advPct}% Advance Booking`}
+            </span>
+            <strong className="text-slate-900 font-mono text-[11.5px] block mt-auto whitespace-nowrap">
+              {formatCurrency(advanceAmount, currency)}
+            </strong>
+          </div>
+
+          <div className="flex flex-col justify-between items-center px-1.5 min-h-[46px]">
+            <span className="text-[9px] text-slate-500 font-bold uppercase leading-tight block mb-0.5">
+              {doc.paymentTerms?.paymentMilestoneLabels?.afterEventLabel || `${midPct}% Interim Phase`}
+            </span>
+            <strong className="text-slate-900 font-mono text-[11.5px] block mt-auto whitespace-nowrap">
+              {formatCurrency(afterEventAmount, currency)}
+            </strong>
+          </div>
+
+          <div className="flex flex-col justify-between items-center px-1.5 min-h-[46px]">
+            <span className="text-[9px] text-slate-500 font-bold uppercase leading-tight block mb-0.5">
+              {doc.paymentTerms?.paymentMilestoneLabels?.balanceLabel || `${balPct}% Final Handover`}
+            </span>
+            <strong className="text-slate-900 font-mono text-[11.5px] block mt-auto whitespace-nowrap">
+              {formatCurrency(balanceAmount, currency)}
+            </strong>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderCrewSection = () => {
+    if (doc.sectionVisibility?.crew === false || doc.includeCrewSection === false || activeCrew.length === 0) return null;
+    return (
+      <div
+        key="crew"
+        onClick={() => onSelectSection?.('deliverables', 'crew')}
+        className={`mb-3.5 ${sectionClass('deliverables')}`}
+        title={onSelectSection ? 'Click to edit team allocation' : undefined}
+      >
+        {renderEditBadge('Team')}
+        <div className="flex items-center space-x-1.5 mb-1.5 pb-1 border-b border-slate-200">
+          <Users className="w-3.5 h-3.5 text-amber-700" />
+          <h3 className="font-bold text-[11.5px] uppercase tracking-[0.08em] text-[#111111] whitespace-nowrap">
+            {doc.sectionTitles?.crewTitle || preset.teamSectionTitle || 'Dedicated Team & Specialist Deployment'}
+          </h3>
+        </div>
+
+        <div className="space-y-1.5">
+          {activeCrew.map((c) => (
+            <div
+              key={c.id}
+              className="bg-slate-50 border border-slate-200/90 rounded p-2 text-[11px] flex items-start space-x-2"
+            >
+              <span className="text-amber-700 font-bold text-[11px] mt-0.5 shrink-0">◆</span>
+              <div>
+                <strong className="text-slate-900 font-bold uppercase tracking-normal text-[10.5px]">
+                  {c.team}:
+                </strong>{' '}
+                <span className="text-slate-700 text-[10px]">{c.role}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  const renderWhyChooseUsSection = () => {
+    if (doc.sectionVisibility?.whyChooseUs === false || doc.includeWhyChooseUs === false || activeWhyChoose.length === 0) return null;
+    return (
+      <div
+        key="whyChooseUs"
+        onClick={() => onSelectSection?.('deliverables', 'why-choose-us')}
+        className={`mb-3.5 ${sectionClass('deliverables')}`}
+        title={onSelectSection ? 'Click to edit guarantees & value proposition' : undefined}
+      >
+        {renderEditBadge('Why Us')}
+        <div className="flex items-center space-x-1.5 mb-1.5 pb-1 border-b border-slate-200">
+          <ShieldCheck className="w-3.5 h-3.5 text-emerald-700" />
+          <h3 className="font-bold text-[11.5px] uppercase tracking-[0.08em] text-[#111111] whitespace-nowrap">
+            {doc.sectionTitles?.whyChooseUsTitle || `Why Partner With ${doc.studio.name}`}
+          </h3>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2">
+          {activeWhyChoose.map((why) => (
+            <div
+              key={why.id}
+              className="bg-amber-50/30 border border-amber-200/60 rounded p-2 text-[10.5px]"
+            >
+              <div className="font-bold text-slate-900 flex items-center space-x-1 mb-0.5">
+                {why.icon ? <span>{why.icon}</span> : null}
+                <span className="font-['Outfit'] text-[10.5px]">{why.title}</span>
+              </div>
+              <p className="text-slate-600 text-[10px] leading-tight pl-4">{why.description}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  const renderTermsSection = () => {
+    if (doc.sectionVisibility?.terms === false || termsList.length === 0) return null;
+    return (
+      <div
+        key="terms"
+        onClick={() => onSelectSection?.('watermark-terms', 'terms')}
+        className={`mb-3.5 ${sectionClass('watermark-terms')}`}
+        title={onSelectSection ? 'Click to edit terms & conditions' : undefined}
+      >
+        {renderEditBadge('Terms')}
+        <h3 className="font-bold text-[11.5px] uppercase tracking-[0.08em] text-[#111111] mb-1.5 border-b border-slate-200 pb-1 whitespace-nowrap">
+          {doc.sectionTitles?.termsTitle || 'TERMS OF ENGAGEMENT & ACCEPTANCE CRITERIA'}
+        </h3>
+
+        <div className="grid grid-cols-2 gap-4 text-[10px] text-slate-700 leading-relaxed">
+          <ol className="space-y-1 pl-4 list-decimal">
+            {leftTerms.map((term, tIdx) => (
+              <li key={tIdx} className="leading-tight">
+                {term}
+              </li>
+            ))}
+          </ol>
+
+          <ol start={halfLength + 1} className="space-y-1 pl-4 list-decimal">
+            {rightTerms.map((term, tIdx) => (
+              <li key={tIdx + halfLength} className="leading-tight">
+                {term}
+              </li>
+            ))}
+          </ol>
+        </div>
+      </div>
+    );
+  };
+
+  const renderSignatorySection = () => {
+    if (doc.sectionVisibility?.signatory === false || doc.signatory?.enabled === false) return null;
+    return (
+      <div
+        key="signatory"
+        onClick={() => onSelectSection?.('watermark-terms', 'signatory')}
+        className={`mt-3 pt-2.5 border-t-2 border-slate-900 grid grid-cols-2 gap-6 ${sectionClass('watermark-terms')}`}
+        title={onSelectSection ? 'Click to edit signatory details' : undefined}
+      >
+        {renderEditBadge('Signatures')}
+        <div>
+          <p className="text-[9.5px] font-bold text-slate-400 uppercase tracking-normal mb-0.5 whitespace-nowrap">
+            ISSUED BY:
+          </p>
+          <p className="font-bold text-xs text-slate-900">{doc.studio.name}</p>
+          <div className="h-11 border-b border-slate-300 flex items-end pb-1 my-1">
+            {doc.signatory?.signatureDataUrl ? (
+              <img src={doc.signatory.signatureDataUrl} alt="Signature" className="max-h-9 object-contain" />
+            ) : (
+              <span className="text-[10px] font-mono text-slate-400 italic">
+                {doc.signatory?.signerName || 'Authorized Signatory'}
+              </span>
+            )}
+          </div>
+          <div className="flex justify-between text-[9.5px] text-slate-500">
+            <span>{doc.signatory?.signerTitle || 'Managing Director'}</span>
+            <span>Date: {doc.signatory?.signatureDate || doc.details.invoiceDate}</span>
+          </div>
+        </div>
+
+        <div>
+          <p className="text-[9.5px] font-bold text-slate-400 uppercase tracking-normal mb-0.5 whitespace-nowrap">
+            CLIENT ACCEPTANCE:
+          </p>
+          <p className="font-bold text-xs text-slate-900">
+            {doc.client.clientName || doc.client.nameOfEvent || 'Client Authorized Representative'}
+          </p>
+          <div className="h-11 border-b border-slate-300 flex items-end pb-1 my-1">
+            {doc.signatory?.clientSignatureDataUrl ? (
+              <img src={doc.signatory.clientSignatureDataUrl} alt="Client Signature" className="max-h-9 object-contain" />
+            ) : doc.signatory?.clientSignedName ? (
+              <span className="text-xs font-serif text-emerald-800 font-bold italic">
+                Digitally Signed: {doc.signatory.clientSignedName}
+              </span>
+            ) : (
+              <span className="text-[9.5px] text-slate-400 italic">Sign / Draw here to approve</span>
+            )}
+          </div>
+          <div className="flex justify-between text-[9.5px] text-slate-500">
+            <span>Date: {doc.signatory?.clientSignedDate || '___/___/______'}</span>
+            <span>Status: {doc.signatory?.clientSignedName ? 'APPROVED' : 'AWAITING APPROVAL'}</span>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderSectionByKey = (key: ProposalSectionKey, phasesToRender?: typeof allPhases, isContinued = false) => {
+    switch (key) {
+      case 'scope':
+        return renderScopeSection(phasesToRender, isContinued);
+      case 'deliverables':
+        return renderDeliverablesBox();
+      case 'pricing':
+        return renderInvestmentBox();
+      case 'crew':
+        return renderCrewSection();
+      case 'whyChooseUs':
+        return renderWhyChooseUsSection();
+      case 'terms':
+        return renderTermsSection();
+      case 'signatory':
+        return renderSignatorySection();
+      default:
+        return null;
+    }
+  };
+
+  // Sections allocated to Page 1 vs Annexure based on user's sequence
+  const page1Keys = currentSectionOrder.filter((k) =>
+    ['scope', 'deliverables', 'pricing'].includes(k)
+  );
+
+  const annexureKeys = currentSectionOrder.filter(
+    (k) => !['scope', 'deliverables', 'pricing'].includes(k)
+  );
 
   return (
     <div className="space-y-8 print:space-y-0" style={{ fontFamily: `"${fontFamily}", sans-serif` }}>
@@ -316,55 +576,15 @@ export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ docu
               {doc.packageBannerTitle || preset.defaultPackageTitle}
             </div>
 
-            {/* SCOPE & SCHEDULE MATRIX (PAGE 1 PHASES) */}
-            {doc.sectionVisibility?.scope !== false && doc.includeScopeSection !== false && page1Phases.length > 0 && (
-              <div
-                onClick={() => onSelectSection?.('scope', 'scope')}
-                className={`my-2.5 ${sectionClass('scope')}`}
-                title={onSelectSection ? 'Click to edit event coverage & phases' : undefined}
-              >
-                {renderEditBadge('Phases')}
-                <h3 className="font-bold text-[11.5px] uppercase tracking-[0.08em] text-[#111111] mb-1.5 border-b border-slate-200 pb-1 flex items-center justify-between whitespace-nowrap">
-                  <span>{doc.sectionTitles?.scopeTitle || preset.scopeSectionTitle || 'PROJECT PHASES & SOW MILESTONES'}</span>
-                  <span className="text-[10px] text-amber-700 font-normal lowercase tracking-normal">
-                    {allPhases.length} phase(s) planned {isMultiPagePhases ? `(Showing 1–${page1Phases.length})` : ''}
-                  </span>
-                </h3>
-
-                <div className="space-y-1.5">
-                  {page1Phases.map((item, idx) => (
-                    <div
-                      key={item.id || idx}
-                      className="bg-slate-50/60 border border-slate-200 rounded p-2 text-[11px]"
-                    >
-                      <div className="font-bold text-slate-900 mb-1 flex items-start space-x-2">
-                        <span className="w-4 h-4 rounded-full bg-amber-500 text-slate-950 text-[9px] font-extrabold flex items-center justify-center shrink-0 mt-0.5">
-                          {idx + 1}
-                        </span>
-                        <span className="font-['Outfit'] uppercase tracking-normal text-[11px] text-amber-950 leading-snug block flex-1">
-                          {item.dayTitle}
-                        </span>
-                      </div>
-                      <div className="grid grid-cols-2 gap-x-4 gap-y-1 pl-6 mt-1">
-                        {item.services.map((service, sIdx) => (
-                          <div key={sIdx} className="flex items-start space-x-1.5 text-slate-700 leading-tight">
-                            <span className="text-amber-600 text-[10px] shrink-0 mt-0.5">◆</span>
-                            <span className="font-medium text-[10px] leading-tight">{service}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* If Single-Page Scope: Render Deliverables and Investment Box on Page 1 */}
-            {!isMultiPagePhases && (
-              <>
-                {renderDeliverablesBox()}
-                {renderInvestmentBox()}
-              </>
+            {/* Render Page 1 Sections in User's Dynamic Order */}
+            {!isMultiPagePhases ? (
+              page1Keys.map((k) => (
+                <React.Fragment key={k}>
+                  {renderSectionByKey(k, allPhases, false)}
+                </React.Fragment>
+              ))
+            ) : (
+              renderScopeSection(page1Phases, false)
             )}
           </div>
 
@@ -408,52 +628,17 @@ export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ docu
                 </span>
               </div>
 
-              {/* CONTINUED SOW PHASES (PHASES 4 TO END) */}
-              <div
-                onClick={() => onSelectSection?.('scope', 'scope')}
-                className={`my-3 ${sectionClass('scope')}`}
-                title={onSelectSection ? 'Click to edit event coverage & phases' : undefined}
-              >
-                {renderEditBadge('Phases')}
-                <h3 className="font-bold text-[11.5px] uppercase tracking-[0.08em] text-[#111111] mb-2 border-b border-slate-200 pb-1 flex items-center justify-between whitespace-nowrap">
-                  <span>{doc.sectionTitles?.scopeTitle || preset.scopeSectionTitle || 'PROJECT PHASES & SOW MILESTONES'} (CONTINUED)</span>
-                  <span className="text-[10px] text-amber-700 font-normal lowercase tracking-normal">
-                    Phases 4 to {allPhases.length}
-                  </span>
-                </h3>
+              {/* CONTINUED SOW PHASES (PHASES 5 TO END) */}
+              {renderScopeSection(page2Phases, true)}
 
-                <div className="space-y-2">
-                  {page2Phases.map((item, idx) => (
-                    <div
-                      key={item.id || idx}
-                      className="bg-slate-50/60 border border-slate-200 rounded p-2.5 text-[11px]"
-                    >
-                      <div className="font-bold text-slate-900 mb-1 flex items-start space-x-2">
-                        <span className="w-4 h-4 rounded-full bg-amber-500 text-slate-950 text-[9px] font-extrabold flex items-center justify-center shrink-0 mt-0.5">
-                          {idx + 4}
-                        </span>
-                        <span className="font-['Outfit'] uppercase tracking-normal text-[11px] text-amber-950 leading-snug block flex-1">
-                          {item.dayTitle}
-                        </span>
-                      </div>
-                      <div className="grid grid-cols-2 gap-x-4 gap-y-1 pl-6 mt-1">
-                        {item.services.map((service, sIdx) => (
-                          <div key={sIdx} className="flex items-start space-x-1.5 text-slate-700 leading-tight">
-                            <span className="text-amber-600 text-[10px] shrink-0 mt-0.5">◆</span>
-                            <span className="font-medium text-[10.5px] leading-tight">{service}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* RENDER DELIVERABLES INCLUDED ON PAGE 2 IMMEDIATELY AFTER SOW PHASES */}
-              {renderDeliverablesBox()}
-
-              {/* RENDER TOTAL INVESTMENT BOX ON PAGE 2 */}
-              {renderInvestmentBox()}
+              {/* RENDER REMAINING PAGE 1 SECTIONS (DELIVERABLES, PRICING) ON PAGE 2 */}
+              {page1Keys
+                .filter((k) => k !== 'scope')
+                .map((k) => (
+                  <React.Fragment key={k}>
+                    {renderSectionByKey(k)}
+                  </React.Fragment>
+                ))}
             </div>
 
             {/* PAGE 2 FOOTER */}
@@ -496,157 +681,12 @@ export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ docu
                 </span>
               </div>
 
-              {/* CREW / TEAM ALLOCATION SECTION */}
-              {doc.sectionVisibility?.crew !== false && doc.includeCrewSection !== false && activeCrew.length > 0 && (
-                <div
-                  onClick={() => onSelectSection?.('deliverables', 'crew')}
-                  className={`mb-3.5 ${sectionClass('deliverables')}`}
-                  title={onSelectSection ? 'Click to edit team allocation' : undefined}
-                >
-                  {renderEditBadge('Team')}
-                  <div className="flex items-center space-x-1.5 mb-1.5 pb-1 border-b border-slate-200">
-                    <Users className="w-3.5 h-3.5 text-amber-700" />
-                    <h3 className="font-bold text-[11.5px] uppercase tracking-[0.08em] text-[#111111] whitespace-nowrap">
-                      {doc.sectionTitles?.crewTitle || preset.teamSectionTitle || 'Dedicated Team & Specialist Deployment'}
-                    </h3>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    {activeCrew.map((c) => (
-                      <div
-                        key={c.id}
-                        className="bg-slate-50 border border-slate-200/90 rounded p-2 text-[11px] flex items-start space-x-2"
-                      >
-                        <span className="text-amber-700 font-bold text-[11px] mt-0.5 shrink-0">◆</span>
-                        <div>
-                          <strong className="text-slate-900 font-bold uppercase tracking-normal text-[10.5px]">
-                            {c.team}:
-                          </strong>{' '}
-                          <span className="text-slate-700 text-[10px]">{c.role}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* WHY WORK WITH US SECTION */}
-              {doc.sectionVisibility?.whyChooseUs !== false && doc.includeWhyChooseUs !== false && activeWhyChoose.length > 0 && (
-                <div
-                  onClick={() => onSelectSection?.('deliverables', 'why-choose-us')}
-                  className={`mb-3.5 ${sectionClass('deliverables')}`}
-                  title={onSelectSection ? 'Click to edit guarantees & value proposition' : undefined}
-                >
-                  {renderEditBadge('Why Us')}
-                  <div className="flex items-center space-x-1.5 mb-1.5 pb-1 border-b border-slate-200">
-                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-700" />
-                    <h3 className="font-bold text-[11.5px] uppercase tracking-[0.08em] text-[#111111] whitespace-nowrap">
-                      {doc.sectionTitles?.whyChooseUsTitle || `Why Partner With ${doc.studio.name}`}
-                    </h3>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2">
-                    {activeWhyChoose.map((why) => (
-                      <div
-                        key={why.id}
-                        className="bg-amber-50/30 border border-amber-200/60 rounded p-2 text-[10.5px]"
-                      >
-                        <div className="font-bold text-slate-900 flex items-center space-x-1 mb-0.5">
-                          {why.icon ? <span>{why.icon}</span> : null}
-                          <span className="font-['Outfit'] text-[10.5px]">{why.title}</span>
-                        </div>
-                        <p className="text-slate-600 text-[10px] leading-tight pl-4">{why.description}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* TERMS & CONDITIONS (2-Column Layout) */}
-              {doc.sectionVisibility?.terms !== false && (
-                <div
-                  onClick={() => onSelectSection?.('watermark-terms', 'terms')}
-                  className={`mb-3.5 ${sectionClass('watermark-terms')}`}
-                  title={onSelectSection ? 'Click to edit terms & conditions' : undefined}
-                >
-                  {renderEditBadge('Terms')}
-                  <h3 className="font-bold text-[11.5px] uppercase tracking-[0.08em] text-[#111111] mb-1.5 border-b border-slate-200 pb-1 whitespace-nowrap">
-                    {doc.sectionTitles?.termsTitle || 'TERMS OF ENGAGEMENT & ACCEPTANCE CRITERIA'}
-                  </h3>
-
-                  <div className="grid grid-cols-2 gap-4 text-[10px] text-slate-700 leading-relaxed">
-                    <ol className="space-y-1 pl-4 list-decimal">
-                      {leftTerms.map((term, tIdx) => (
-                        <li key={tIdx} className="leading-tight">
-                          {term}
-                        </li>
-                      ))}
-                    </ol>
-
-                    <ol start={halfLength + 1} className="space-y-1 pl-4 list-decimal">
-                      {rightTerms.map((term, tIdx) => (
-                        <li key={tIdx + halfLength} className="leading-tight">
-                          {term}
-                        </li>
-                      ))}
-                    </ol>
-                  </div>
-                </div>
-              )}
-
-              {/* SIGNATURE & CLIENT APPROVAL SECTION */}
-              {doc.sectionVisibility?.signatory !== false && doc.signatory?.enabled !== false && (
-                <div
-                  onClick={() => onSelectSection?.('watermark-terms', 'signatory')}
-                  className={`mt-3 pt-2.5 border-t-2 border-slate-900 grid grid-cols-2 gap-6 ${sectionClass('watermark-terms')}`}
-                  title={onSelectSection ? 'Click to edit signatory details' : undefined}
-                >
-                  {renderEditBadge('Signatures')}
-                  <div>
-                    <p className="text-[9.5px] font-bold text-slate-400 uppercase tracking-normal mb-0.5 whitespace-nowrap">
-                      ISSUED BY:
-                    </p>
-                    <p className="font-bold text-xs text-slate-900">{doc.studio.name}</p>
-                    <div className="h-11 border-b border-slate-300 flex items-end pb-1 my-1">
-                      {doc.signatory?.signatureDataUrl ? (
-                        <img src={doc.signatory.signatureDataUrl} alt="Signature" className="max-h-9 object-contain" />
-                      ) : (
-                        <span className="text-[10px] font-mono text-slate-400 italic">
-                          {doc.signatory?.signerName || 'Authorized Signatory'}
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex justify-between text-[9.5px] text-slate-500">
-                      <span>{doc.signatory?.signerTitle || 'Managing Director'}</span>
-                      <span>Date: {doc.signatory?.signatureDate || doc.details.invoiceDate}</span>
-                    </div>
-                  </div>
-
-                  <div>
-                    <p className="text-[9.5px] font-bold text-slate-400 uppercase tracking-normal mb-0.5 whitespace-nowrap">
-                      CLIENT ACCEPTANCE:
-                    </p>
-                    <p className="font-bold text-xs text-slate-900">
-                      {doc.client.clientName || doc.client.nameOfEvent || 'Client Authorized Representative'}
-                    </p>
-                    <div className="h-11 border-b border-slate-300 flex items-end pb-1 my-1">
-                      {doc.signatory?.clientSignatureDataUrl ? (
-                        <img src={doc.signatory.clientSignatureDataUrl} alt="Client Signature" className="max-h-9 object-contain" />
-                      ) : doc.signatory?.clientSignedName ? (
-                        <span className="text-xs font-serif text-emerald-800 font-bold italic">
-                          Digitally Signed: {doc.signatory.clientSignedName}
-                        </span>
-                      ) : (
-                        <span className="text-[9.5px] text-slate-400 italic">Sign / Draw here to approve</span>
-                      )}
-                    </div>
-                    <div className="flex justify-between text-[9.5px] text-slate-500">
-                      <span>Date: {doc.signatory?.clientSignedDate || '___/___/______'}</span>
-                      <span>Status: {doc.signatory?.clientSignedName ? 'APPROVED' : 'AWAITING APPROVAL'}</span>
-                    </div>
-                  </div>
-                </div>
-              )}
+              {/* RENDER ALL ANNEXURE SECTIONS IN USER'S CUSTOMIZED ORDER */}
+              {annexureKeys.map((k) => (
+                <React.Fragment key={k}>
+                  {renderSectionByKey(k)}
+                </React.Fragment>
+              ))}
             </div>
 
             {/* ANNEXURE FOOTER */}

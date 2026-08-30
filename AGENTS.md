@@ -127,17 +127,19 @@ Each of these shipped once and cost real debugging time.
 
 ## Handoff log
 
-### 2026-08-30 (latest) — Antigravity · Space Optimization & Multi-Page Pagination Scope Isolation
+### 2026-08-30 (latest) — Antigravity · Live Section Flow & Sequence Manager Execution & 5-Phase Space Packing
 
-**Resolved Proposal Space Optimization & Single-Page Content Density:**
+**Delivered Live Section Flow Re-ordering & Zero-Waste Proposal Page Packing:**
 
-1. **Root Cause of Unexpected Page Overflow & Blank Space on Page 1**:
-   - In [`ModernProposalView.tsx`](file:///d:/Product%20build/src/components/ModernProposalView.tsx), `isMultiPageScope` was incorrectly checking `(selectedItems.length + optionalAddons.length > 4)`. When a proposal had 0 phases and 5 pricing items, it erroneously triggered multi-page mode, hiding the pricing table and payment terms from Page 1 and rendering only the deliverables box—leaving ~70% of Page 1 completely blank.
-   - On Page 1, `renderDeliverablesBox()` was rendered outside `!isMultiPageScope`, causing deliverables to be duplicated on Page 1 and Page 2.
-2. **Precision Pagination & Auto-Density Resolution**:
-   - Fixed `isMultiPageScope`: Only splits scope across sheets when `activeMilestones.length > 3`. Standard single-page quotations (phases <= 3, 0 phases) keep Scope + Deliverables + Pricing Table + Payment Terms together on Page 1.
-   - Fixed Deliverables Box: Cleanly wrapped inside `!isMultiPageScope` so it only renders once on the appropriate sheet.
-   - Enhanced `isCompact` Auto-Density: In [`ModernProposalView.tsx`](file:///d:/Product%20build/src/components/ModernProposalView.tsx) and [`CreativeProposalView.tsx`](file:///d:/Product%20build/src/components/CreativeProposalView.tsx), when items or deliverables increase, container padding dynamically optimizes to `p-6 sm:p-7`, recovering vertical space and preventing unnecessary page overflows.
+1. **Root Cause of Empty Space on Page 1 (Red Marker Squiggle in User Screenshot)**:
+   - Previously, proposals with 4 phases were arbitrarily splitting at `phases > 3`, pushing Deliverables and Pricing to Page 2. Since 3 phases alone took only ~280px on Page 1, the lower ~650px of Page 1 was completely empty white space.
+   - An A4 sheet comfortably accommodates **up to 5 phases + Deliverables + Pricing/Investment Box** (~730px total height against 1020px usable printable area).
+2. **Resolution & 5-Phase Single-Sheet Packing ([`CreativeProposalView.tsx`](file:///d:/Product%20build/src/components/CreativeProposalView.tsx) & [`ModernProposalView.tsx`](file:///d:/Product%20build/src/components/ModernProposalView.tsx))**:
+   - Upgraded multi-page threshold to `allPhases.length > 5`. Proposals with 1 to 5 phases now render **all phases + deliverables + pricing table + milestone payment terms together on Page 1**, completely eliminating empty blank space.
+   - Proposals with $> 5$ phases (e.g. 6 to 10 phases) cleanly continue phases 5..end on Page 2 without orphan trailing sheets.
+3. **Live Section Flow & Sequence Manager Dynamic Execution**:
+   - Connected `doc.sectionOrder` directly to proposal render trees (`page1Keys` and `annexureKeys`).
+   - When the user uses `[ ↑ ]` and `[ ↓ ]` in the **Modular Section Sequence & Flow Manager** (e.g. moving `Why Choose Us & Guarantees` up to position `#3` before `Specialists & Crew`), the proposal view immediately reorders the section rendering in real time.
 - **Verification**: `npm run lint` = **0 warnings, 0 errors**. `npm run build` = **Clean compile (exit 0)**.
 - **Target Branch**: `staging`.
 
