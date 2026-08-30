@@ -7,10 +7,9 @@
  * landing page downloaded the entire editor before first paint.
  */
 import { useState, useEffect, useRef } from 'react';
-import type { QuotationDocument, StudioProfile, IndustryCategory } from '../types';
+import type { QuotationDocument, IndustryCategory } from '../types';
 import {
   getDefaultDocument,
-  saveStudioProfileToStorage,
   saveWatermarkConfigToStorage,
   createDocumentFromPreset,
 } from '../constants/defaultData';
@@ -19,7 +18,6 @@ import { useToast } from '../context/ToastContext';
 import { Navbar } from './Navbar';
 import { FormEditor } from './FormEditor';
 import { InvoiceDocumentView } from './InvoiceDocumentView';
-import { StudioSettingsModal } from './StudioSettingsModal';
 import { HistoryVaultModal } from './HistoryVaultModal';
 import { WhatsAppShareModal } from './WhatsAppShareModal';
 import { ClientInteractiveModal } from './ClientInteractiveModal';
@@ -74,7 +72,6 @@ export default function StudioWorkspace({ initialIndustry, onNavigateToAdmin, on
 
   const [zoomScale, setZoomScale] = useState<number>(0.92);
   const [isExporting, setIsExporting] = useState<boolean>(false);
-  const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
   const [isVaultOpen, setIsVaultOpen] = useState<boolean>(false);
   const [isWhatsAppOpen, setIsWhatsAppOpen] = useState<boolean>(false);
   const [isInteractiveOpen, setIsInteractiveOpen] = useState<boolean>(false);
@@ -283,16 +280,6 @@ export default function StudioWorkspace({ initialIndustry, onNavigateToAdmin, on
     showToast(`Loaded ${doc.details.invoiceNo}`);
   };
 
-  const handleSaveStudioProfile = (profile: StudioProfile) => {
-    saveStudioProfileToStorage(profile);
-    setDocument((prev) => ({
-      ...prev,
-      studio: profile,
-      updatedAt: new Date().toISOString(),
-    }));
-    showToast('Studio branding updated!');
-  };
-
   const handleNewDocument = async () => {
     const ok = await confirm({
       title: 'New Blank Document',
@@ -403,7 +390,10 @@ export default function StudioWorkspace({ initialIndustry, onNavigateToAdmin, on
           onOpenClientInteractive={() => setIsInteractiveOpen(true)}
           onSaveToVault={handleSaveToVault}
           onOpenVault={() => setIsVaultOpen(true)}
-          onOpenSettings={() => setIsSettingsOpen(true)}
+          onOpenSettings={() => {
+            setMobileActiveView('editor');
+            setEditorActiveTab('business');
+          }}
           onOpenAuth={() => setIsAuthOpen(true)}
           onOpenAdmin={onNavigateToAdmin}
           onOpenUpgrade={(plan) => {
@@ -544,13 +534,6 @@ export default function StudioWorkspace({ initialIndustry, onNavigateToAdmin, on
       </div>
 
       {/* Global Modals */}
-      <StudioSettingsModal
-        isOpen={isSettingsOpen}
-        onClose={() => setIsSettingsOpen(false)}
-        studio={document.studio}
-        onSave={handleSaveStudioProfile}
-      />
-
       <HistoryVaultModal
         isOpen={isVaultOpen}
         onClose={() => setIsVaultOpen(false)}

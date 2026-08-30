@@ -1496,6 +1496,25 @@ export const FormEditor: React.FC<FormEditorProps> = ({
                 </div>
               </div>
             </div>
+
+            {/* 1-Click Save as Default Business Profile */}
+            <div className="flex items-center justify-between p-3.5 bg-slate-950/70 border border-slate-800/80 rounded-2xl">
+              <div>
+                <p className="text-xs font-bold text-slate-200 font-['Outfit']">Save as Permanent Business Defaults</p>
+                <p className="text-[11px] text-slate-400">Auto-applies your logo, name, and bank info to all new documents</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  saveStudioProfileToStorage(doc.studio);
+                  toast.success('Business profile saved as default for new documents!');
+                }}
+                className="px-3.5 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 shadow-md shadow-amber-500/20 cursor-pointer"
+              >
+                <Save className="w-3.5 h-3.5" />
+                <span>Save Defaults</span>
+              </button>
+            </div>
           </div>
         )}
 
