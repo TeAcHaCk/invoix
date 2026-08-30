@@ -195,16 +195,29 @@ export const FormEditor: React.FC<FormEditorProps> = ({
     }
     const newTmpl = createTemplateFromDocument(doc, templateNameInput.trim(), templateDescInput.trim());
     const res = await saveCustomTemplate(newTmpl, user?.id);
-    if (!res.isCloud && res.error) {
-      console.warn('Custom template saved locally only:', res.error);
-    }
     const updated = await fetchCustomTemplates(user?.id);
     setCustomTemplates(updated);
     update({ customTemplateId: newTmpl.id });
     setIsSaveTemplateModalOpen(false);
     setTemplateNameInput('');
     setTemplateDescInput('');
-    toast.success(`Saved "${newTmpl.name}" to custom templates!`);
+
+    /*
+      A local-only save must not report plain success.
+
+      Console-warning it and still showing "Saved!" is the exact pattern behind
+      the missing-on-second-device reports: the user is told their template is
+      stored, learns days later it only ever existed in one browser, and loses it
+      when that browser is cleared.
+    */
+    if (!res.isCloud) {
+      toast.warning(
+        res.error || `Saved "${newTmpl.name}" on this device only — it will not appear elsewhere.`
+      );
+      return;
+    }
+
+    toast.success(`Saved "${newTmpl.name}" to your templates on all devices.`);
   };
 
   const currentVisibility: SectionVisibilityConfig = {

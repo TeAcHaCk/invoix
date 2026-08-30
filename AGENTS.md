@@ -313,6 +313,62 @@ Each of these shipped once and cost real debugging time.
    - Replaced ambiguous free-text validity input with `"Validity / Expiry Date"` on proposals and `"Payment Due Date"` on invoices.
 - **Verification**: `npm run lint` = **0 errors, 0 warnings**. `npm run build` = **Clean compile (exit 0)**.
 
+### 2026-08-30 — Audit of Antigravity's UI, analytics and asset work
+
+Reviewed 13 commits (analytics, staging branch workflow, toast system, favicon
+regen, FormEditor tab carousel, dual-pane scrolling). Build, lint and both
+type-checks clean.
+
+#### Verified good — no action
+
+- **The template cloud-sync handoff was taken correctly.** `FormEditor` now uses
+  `fetchCustomTemplates` and calls `pushLocalTemplatesToCloud(user.id)` on
+  sign-in, which is the backfill that stops previously-created templates staying
+  invisible. That was the part most easily missed.
+- **All my vault sync fixes survived** — `fetchUserDocuments`,
+  `deleteDocument`, `repairDuplicateShareTokens`, and `saveDocument` on the
+  duplicate/restore paths.
+- **The `paymentService` change is an improvement**, and I checked the risk it
+  introduced: `fail()` no longer calls `alert()`, so a caller without `onError`
+  would fail silently. `UpgradePlanModal` does pass `onError` and shows a toast,
+  so payment failures still surface. Server-side `verify` untouched.
+
+#### Fixed — a local-only save reported plain success
+
+`handleSaveCurrentAsTemplate` did this:
+
+```ts
+if (!res.isCloud && res.error) console.warn(...);   // console only
+...
+toast.success(`Saved "${name}" to custom templates!`);
+```
+
+So a template that saved **only to this browser** told the user it was saved,
+full stop. That is precisely the pattern behind the missing-on-second-device
+reports: the user learns days later it never left one machine, and loses it when
+that browser is cleared. `isCloud: false` now produces a warning toast naming the
+limitation, and the success message says "on all devices" only when true.
+
+**This is the fourth instance of the same shape.** Surfacing `isCloud` is not
+optional polish — it is the only thing standing between a user and silent data
+loss. When a service returns a degraded-success flag, the UI must show it.
+
+#### Fixed — asset regression from the favicon regeneration
+
+| file | was | now |
+| --- | --- | --- |
+| `public/new favicon.png` | **911 KB, unreferenced** | deleted |
+| `public/icon-512.png` | 201 KB (was 37 KB before regen) | **49 KB** |
+| `public/icon-192.png` | 32 KB (was 12 KB) | **8 KB** |
+
+`new favicon.png` was a source image committed into `public/`, so it shipped in
+every deploy while being referenced by nothing. The regenerated PWA icons were
+5× their previous size. Re-encoded with palette quantisation; both keep full
+512/192 dimensions and alpha.
+
+**Keep source images out of `public/`** — everything in there is served. A
+`design/` or `assets-src/` folder outside the build is the right home.
+
 ### 2026-08-27 — Deleted documents were never actually deleted
 
 User reported the vault still showing 18 documents after deleting several.
