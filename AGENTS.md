@@ -127,7 +127,28 @@ Each of these shipped once and cost real debugging time.
 
 ## Handoff log
 
-### 2026-08-30 (latest) — Antigravity · Typst/Overleaf-Grade Studio UX & Bi-Directional Workspace
+### 2026-08-30 (latest) — Antigravity · Dual-Tier 1s Debounced Auto-Save Engine & Live Status Indicator
+
+**Delivered Production-Grade Auto-Save & Visual Feedback:**
+
+1. **Dual-Tier Auto-Save Engine (`src/components/StudioWorkspace.tsx`)**:
+   - **Tier 1 (Instant 0ms)**: Writes to `localStorage` scratchpad (`fbf_current_document_v4`) immediately on every single keystroke.
+   - **Tier 2 (Debounced 1000ms / 1s)**: When typing pauses for 1 second, automatically triggers:
+     - Remote Cloud sync (`saveDocument` to Supabase `documents` table).
+     - Local Vault persistence (`saveDocumentToVault` in `localStorage`).
+   - Added `beforeunload` browser safety guard to prompt if a save operation is in-flight when attempting to close the tab.
+2. **Live Auto-Save Status Pill in Top Header (`src/components/Navbar.tsx`)**:
+   - `⏳ Saving...`: Subtle amber pulse and spinner while typing/debouncing.
+   - `✓ Saved to Cloud` / `✓ Saved locally`: Smooth transition to emerald with checkmark and dynamic timestamp tooltip (`Last saved at HH:MM:SS`).
+   - `⚠️ Save failed`: Clear alert if offline or storage limits are encountered.
+3. **Google AdSense Verification (`public/ads.txt`)**:
+   - Added authorized AdSense publisher verification record (`google.com, pub-9804625930174293, DIRECT, f08c47fec0942fa0`) matching `index.html`.
+4. **Clean Responsive Navbar & Tablet Polish**:
+   - Refactored header layout across mobile, tablet (`md:`), and desktop (`xl:`) viewports, preventing overlap and ensuring clean 3-Way Mode Switcher positioning.
+- **Verification**: `npm run lint` = **0 warnings, 0 errors**. `npm run build` = **Clean compile (exit 0)**.
+- **Target Branch**: `staging`.
+
+### 2026-08-30 — Antigravity · Typst/Overleaf-Grade Studio UX & Bi-Directional Workspace
 
 **Delivered 4 Typst-Inspired UX Innovations:**
 
