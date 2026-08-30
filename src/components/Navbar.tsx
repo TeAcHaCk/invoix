@@ -20,8 +20,6 @@ import {
   Link,
   Check,
   User,
-  Cloud,
-  CloudOff,
   Crown,
   Globe,
   ChevronDown,
@@ -78,7 +76,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   isExporting,
   onToggleWatermark,
 }) => {
-  const { user, profile, isAdmin, isCloudConnected } = useAuth();
+  const { user, profile, isAdmin } = useAuth();
   const isPro = isPaidPlan(profile);
   const [copiedLink, setCopiedLink] = useState(false);
   const [isShareOpen, setIsShareOpen] = useState(false);
@@ -133,35 +131,46 @@ export const Navbar: React.FC<NavbarProps> = ({
   };
 
   return (
-    <header className="bg-slate-950/90 backdrop-blur-xl border-b border-slate-800/60 sticky top-0 z-40 px-4 lg:px-8 py-3 select-none font-['Plus_Jakarta_Sans',sans-serif]">
-      <div className="max-w-[1700px] mx-auto flex items-center justify-between gap-4">
+    <header className="bg-slate-950/95 backdrop-blur-xl border-b border-slate-800/80 sticky top-0 z-40 px-3 sm:px-5 lg:px-7 py-2.5 select-none font-['Plus_Jakarta_Sans',sans-serif]">
+      <div className="max-w-[1800px] mx-auto flex items-center justify-between gap-2 sm:gap-4">
         {/* Left: Studio Brand & Title */}
-        <div className="flex items-center space-x-2.5 min-w-0 shrink">
+        <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 shrink">
           {onNavigateToHome && (
             <button
               type="button"
               onClick={onNavigateToHome}
-              className="p-1.5 rounded-xl glass text-slate-400 hover:text-amber-400 transition-colors hidden sm:flex items-center space-x-1 cursor-pointer shrink-0"
+              className="p-1.5 rounded-xl glass text-slate-400 hover:text-amber-400 transition-colors flex items-center space-x-1 cursor-pointer shrink-0"
               title="Return to Landing Page"
             >
               <Globe className="w-3.5 h-3.5" />
-              <span className="text-[10.5px] font-semibold">Home</span>
+              <span className="text-[10px] font-semibold hidden md:inline">Home</span>
             </button>
           )}
 
-          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 p-0.5 shadow-lg shadow-amber-500/20 flex items-center justify-center shrink-0">
-            <div className="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center text-base sm:text-lg">
+          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 p-0.5 shadow-md shadow-amber-500/20 flex items-center justify-center shrink-0">
+            <div className="w-full h-full bg-slate-950 rounded-[9px] flex items-center justify-center text-sm sm:text-base">
               {preset.icon || '💼'}
             </div>
           </div>
-          <div className="min-w-0 max-w-[130px] sm:max-w-none">
-            <div className="flex items-center space-x-1.5">
-              <h1 className="text-xs sm:text-sm md:text-base font-bold text-amber-100 tracking-wide font-['Outfit'] truncate">
-                {doc.studio.name || 'INVOIX STUDIO'}
-              </h1>
-              <span className="text-slate-600 hidden sm:inline text-xs">›</span>
-              
-              {/* Inline Editable Document Title */}
+
+          <div className="min-w-0 flex items-center space-x-1.5 sm:space-x-2">
+            <h1 className="text-xs sm:text-sm font-bold text-amber-100 tracking-wide font-['Outfit'] truncate max-w-[90px] sm:max-w-[140px] md:max-w-[180px]">
+              {doc.studio.name || 'INVOIX STUDIO'}
+            </h1>
+
+            <span
+              className={`text-[9px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider shrink-0 ${
+                doc.type === 'INVOICE'
+                  ? 'bg-blue-500/20 text-blue-300 border border-blue-500/40'
+                  : 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+              }`}
+            >
+              {doc.type}
+            </span>
+
+            {/* Inline Editable Document Title (Desktop xl+ screens) */}
+            <div className="hidden xl:flex items-center space-x-1 text-slate-500">
+              <span className="text-xs">›</span>
               {isEditingTitle ? (
                 <input
                   type="text"
@@ -194,100 +203,66 @@ export const Navbar: React.FC<NavbarProps> = ({
                     setTempTitle(doc.packageBannerTitle || doc.client.nameOfEvent || doc.details.invoiceNo || '');
                     setIsEditingTitle(true);
                   }}
-                  className="group flex items-center space-x-1 hover:text-amber-300 transition-colors text-slate-300 font-mono text-[11px] cursor-pointer hidden sm:flex"
+                  className="group flex items-center space-x-1 hover:text-amber-300 transition-colors text-slate-300 font-mono text-[11px] cursor-pointer"
                   title="Click to rename document"
                 >
-                  <span className="truncate max-w-[120px] md:max-w-[180px] font-bold text-amber-300/90">
+                  <span className="truncate max-w-[140px] 2xl:max-w-[200px] font-bold text-amber-300/90">
                     [{doc.packageBannerTitle || doc.client.nameOfEvent || doc.details.invoiceNo || 'Draft'}]
                   </span>
                   <span className="opacity-0 group-hover:opacity-100 text-[10px]">✏️</span>
                 </button>
               )}
-
-              <span
-                className={`hidden sm:inline-flex text-[9.5px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider shrink-0 ${
-                  doc.type === 'INVOICE'
-                    ? 'bg-blue-500/20 text-blue-300 border border-blue-500/40'
-                    : 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
-                }`}
-              >
-                {doc.type}
-              </span>
-
-              {/* Cloud Sync Status Indicator */}
-              <div
-                className={`hidden md:flex items-center space-x-1 text-[10px] px-2 py-0.5 rounded-full border shrink-0 ${
-                  user && isCloudConnected
-                    ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30'
-                    : 'bg-amber-500/10 text-amber-300 border-amber-500/30'
-                }`}
-                title={user ? 'Synced with Supabase Cloud' : 'Local storage mode'}
-              >
-                {user ? (
-                  <>
-                    <Cloud className="w-3 h-3 text-emerald-400 animate-pulse" />
-                    <span>Cloud Sync</span>
-                  </>
-                ) : (
-                  <>
-                    <CloudOff className="w-3 h-3 text-amber-400" />
-                    <span>Local Mode</span>
-                  </>
-                )}
-              </div>
             </div>
-            <p className="text-[10px] text-slate-400 font-medium hidden sm:block truncate">
-              {doc.studio.tagline || 'Universal Multi-Industry Proposal & Invoicing Platform'}
-            </p>
           </div>
         </div>
 
+        {/* Center: 3-Way Studio View Mode Switcher (Visible on md, lg, xl screens) */}
+        {onViewModeChange && (
+          <div className="hidden md:flex items-center bg-slate-900/90 rounded-xl p-0.5 border border-slate-800 shadow-inner shrink-0">
+            <button
+              type="button"
+              onClick={() => onViewModeChange('split')}
+              className={`px-2.5 py-1.5 rounded-lg text-xs font-bold flex items-center space-x-1.5 transition-all cursor-pointer ${
+                viewMode === 'split'
+                  ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20 scale-[1.02]'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+              }`}
+              title="Split View: Side by Side [Alt+1]"
+            >
+              <Columns className="w-3.5 h-3.5" />
+              <span>Split</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => onViewModeChange('editor')}
+              className={`px-2.5 py-1.5 rounded-lg text-xs font-bold flex items-center space-x-1.5 transition-all cursor-pointer ${
+                viewMode === 'editor'
+                  ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20 scale-[1.02]'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+              }`}
+              title="Editor Focus: Full Width Form [Alt+2]"
+            >
+              <Edit3 className="w-3.5 h-3.5" />
+              <span>Editor</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => onViewModeChange('preview')}
+              className={`px-2.5 py-1.5 rounded-lg text-xs font-bold flex items-center space-x-1.5 transition-all cursor-pointer ${
+                viewMode === 'preview'
+                  ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20 scale-[1.02]'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+              }`}
+              title="Canvas Review: Full Width Document [Alt+3]"
+            >
+              <Eye className="w-3.5 h-3.5" />
+              <span>Canvas</span>
+            </button>
+          </div>
+        )}
+
         {/* Right: Grouped Actions */}
         <div className="flex items-center space-x-1.5 sm:space-x-2 shrink-0">
-          {/* === 3-WAY STUDIO VIEW MODE SWITCHER (Always Visible in Header) === */}
-          {onViewModeChange && (
-            <div className="hidden lg:flex items-center bg-slate-900/90 rounded-xl p-0.5 border border-slate-800 shadow-inner mr-1">
-              <button
-                type="button"
-                onClick={() => onViewModeChange('split')}
-                className={`px-2.5 py-1.5 rounded-lg text-xs font-bold flex items-center space-x-1.5 transition-all cursor-pointer ${
-                  viewMode === 'split'
-                    ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20 scale-[1.02]'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
-                }`}
-                title="Split View: Side by Side [Alt+1]"
-              >
-                <Columns className="w-3.5 h-3.5" />
-                <span>Split</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => onViewModeChange('editor')}
-                className={`px-2.5 py-1.5 rounded-lg text-xs font-bold flex items-center space-x-1.5 transition-all cursor-pointer ${
-                  viewMode === 'editor'
-                    ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20 scale-[1.02]'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
-                }`}
-                title="Editor Focus: Full Width Form [Alt+2]"
-              >
-                <Edit3 className="w-3.5 h-3.5" />
-                <span>Editor</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => onViewModeChange('preview')}
-                className={`px-2.5 py-1.5 rounded-lg text-xs font-bold flex items-center space-x-1.5 transition-all cursor-pointer ${
-                  viewMode === 'preview'
-                    ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20 scale-[1.02]'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
-                }`}
-                title="Canvas Review: Full Width Document [Alt+3]"
-              >
-                <Eye className="w-3.5 h-3.5" />
-                <span>Canvas</span>
-              </button>
-            </div>
-          )}
           {/* === PRE-FLIGHT HEALTH INSPECTOR === */}
           {onOpenHealth && (
             <button

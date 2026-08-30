@@ -73,7 +73,6 @@ import {
   Loader2,
   ChevronLeft,
   ChevronRight,
-  Columns,
 } from 'lucide-react';
 
 interface FormEditorProps {
@@ -83,8 +82,6 @@ interface FormEditorProps {
   activeTab?: string;
   onTabChange?: (tab: string) => void;
   onOpenHealth?: () => void;
-  viewMode?: 'split' | 'editor' | 'preview';
-  onViewModeChange?: (mode: 'split' | 'editor' | 'preview') => void;
 }
 
 export const FormEditor: React.FC<FormEditorProps> = ({
@@ -94,8 +91,6 @@ export const FormEditor: React.FC<FormEditorProps> = ({
   activeTab: externalTab,
   onTabChange,
   onOpenHealth,
-  viewMode = 'split',
-  onViewModeChange,
 }) => {
   const { user, profile } = useAuth();
   const { toast, confirm } = useToast();
@@ -798,44 +793,6 @@ export const FormEditor: React.FC<FormEditorProps> = ({
           <span className="hidden sm:inline">
             {doc.pricingItems?.length || 0} items • {doc.eventCoverage?.length || 0} phases
           </span>
-
-          {/* Quick View Mode Switcher within Editor */}
-          {onViewModeChange && (
-            <div className="hidden lg:flex items-center bg-slate-900 rounded-lg p-0.5 border border-slate-800">
-              <button
-                type="button"
-                onClick={() => onViewModeChange('split')}
-                className={`px-2 py-0.5 rounded text-[10px] font-bold flex items-center space-x-1 cursor-pointer transition-colors ${
-                  viewMode === 'split' ? 'bg-amber-500 text-slate-950 shadow-sm' : 'text-slate-400 hover:text-slate-200'
-                }`}
-                title="Split View (Side by Side) [Alt+1]"
-              >
-                <Columns className="w-3 h-3" />
-                <span>Split</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => onViewModeChange('editor')}
-                className={`px-2 py-0.5 rounded text-[10px] font-bold flex items-center space-x-1 cursor-pointer transition-colors ${
-                  viewMode === 'editor' ? 'bg-amber-500 text-slate-950 shadow-sm' : 'text-slate-400 hover:text-slate-200'
-                }`}
-                title="Editor Focus (Full Width) [Alt+2]"
-              >
-                <span>Full</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => onViewModeChange('preview')}
-                className={`px-2 py-0.5 rounded text-[10px] font-bold flex items-center space-x-1 cursor-pointer transition-colors ${
-                  viewMode === 'preview' ? 'bg-amber-500 text-slate-950 shadow-sm' : 'text-slate-400 hover:text-slate-200'
-                }`}
-                title="Canvas Review (Full Document) [Alt+3]"
-              >
-                <Eye className="w-3 h-3" />
-                <span>Canvas</span>
-              </button>
-            </div>
-          )}
 
           <button
             type="button"

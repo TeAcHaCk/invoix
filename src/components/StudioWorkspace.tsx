@@ -387,6 +387,20 @@ export default function StudioWorkspace({ initialIndustry, onNavigateToAdmin, on
     showToast('Proposal signed and accepted!');
   };
 
+  const handleViewModeChange = (mode: 'split' | 'editor' | 'preview') => {
+    setViewMode(mode);
+    if (mode === 'editor') {
+      setMobileActiveView('editor');
+    } else if (mode === 'preview') {
+      setMobileActiveView('preview');
+    }
+    try {
+      localStorage.setItem('invoix_view_mode', mode);
+    } catch {
+      /* ignore */
+    }
+  };
+
   return (
     <div className="h-screen max-h-screen overflow-hidden bg-slate-950 text-slate-100 flex flex-col font-['Plus_Jakarta_Sans',sans-serif]">
       {/* Save Failure Banner — stays until dismissed */}
@@ -421,10 +435,7 @@ export default function StudioWorkspace({ initialIndustry, onNavigateToAdmin, on
         <Navbar
           document={document}
           viewMode={viewMode}
-          onViewModeChange={(mode) => {
-            setViewMode(mode);
-            localStorage.setItem('invoix_view_mode', mode);
-          }}
+          onViewModeChange={handleViewModeChange}
           onExportPdf={handleExportPdf}
           onPrint={handlePrint}
           onOpenWhatsApp={() => setIsWhatsAppOpen(true)}
@@ -451,11 +462,14 @@ export default function StudioWorkspace({ initialIndustry, onNavigateToAdmin, on
         />
       </div>
 
-      {/* Mobile View Toggle Bar */}
-      <div className="lg:hidden shrink-0 flex items-center justify-center p-2 bg-slate-900/90 border-b border-slate-800 z-30 space-x-2">
+      {/* Mobile / Tablet View Toggle Bar (Only when screen is compact) */}
+      <div className="md:hidden shrink-0 flex items-center justify-center p-2 bg-slate-900/95 border-b border-slate-800 z-30 space-x-2">
         <button
           type="button"
-          onClick={() => setMobileActiveView('editor')}
+          onClick={() => {
+            setMobileActiveView('editor');
+            setViewMode('editor');
+          }}
           className={`flex-1 py-2 rounded-xl text-xs font-bold flex items-center justify-center space-x-1.5 transition-all ${
             mobileActiveView === 'editor'
               ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
@@ -467,7 +481,10 @@ export default function StudioWorkspace({ initialIndustry, onNavigateToAdmin, on
         </button>
         <button
           type="button"
-          onClick={() => setMobileActiveView('preview')}
+          onClick={() => {
+            setMobileActiveView('preview');
+            setViewMode('preview');
+          }}
           className={`flex-1 py-2 rounded-xl text-xs font-bold flex items-center justify-center space-x-1.5 transition-all ${
             mobileActiveView === 'preview'
               ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
@@ -507,11 +524,6 @@ export default function StudioWorkspace({ initialIndustry, onNavigateToAdmin, on
             activeTab={editorActiveTab}
             onTabChange={setEditorActiveTab}
             onOpenHealth={() => setIsHealthOpen(true)}
-            viewMode={viewMode}
-            onViewModeChange={(mode) => {
-              setViewMode(mode);
-              localStorage.setItem('invoix_view_mode', mode);
-            }}
             onOpenUpgrade={(plan) => {
               setUpgradePlan(plan || 'pro');
               setIsUpgradeOpen(true);
