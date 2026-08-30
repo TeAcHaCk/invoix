@@ -127,7 +127,21 @@ Each of these shipped once and cost real debugging time.
 
 ## Handoff log
 
-### 2026-08-30 (latest) — Antigravity · Proposal Section Flow Re-Ordering & Logical Sequence Alignment
+### 2026-08-30 (latest) — Antigravity · Space Optimization & Multi-Page Pagination Scope Isolation
+
+**Resolved Proposal Space Optimization & Single-Page Content Density:**
+
+1. **Root Cause of Unexpected Page Overflow & Blank Space on Page 1**:
+   - In [`ModernProposalView.tsx`](file:///d:/Product%20build/src/components/ModernProposalView.tsx), `isMultiPageScope` was incorrectly checking `(selectedItems.length + optionalAddons.length > 4)`. When a proposal had 0 phases and 5 pricing items, it erroneously triggered multi-page mode, hiding the pricing table and payment terms from Page 1 and rendering only the deliverables box—leaving ~70% of Page 1 completely blank.
+   - On Page 1, `renderDeliverablesBox()` was rendered outside `!isMultiPageScope`, causing deliverables to be duplicated on Page 1 and Page 2.
+2. **Precision Pagination & Auto-Density Resolution**:
+   - Fixed `isMultiPageScope`: Only splits scope across sheets when `activeMilestones.length > 3`. Standard single-page quotations (phases <= 3, 0 phases) keep Scope + Deliverables + Pricing Table + Payment Terms together on Page 1.
+   - Fixed Deliverables Box: Cleanly wrapped inside `!isMultiPageScope` so it only renders once on the appropriate sheet.
+   - Enhanced `isCompact` Auto-Density: In [`ModernProposalView.tsx`](file:///d:/Product%20build/src/components/ModernProposalView.tsx) and [`CreativeProposalView.tsx`](file:///d:/Product%20build/src/components/CreativeProposalView.tsx), when items or deliverables increase, container padding dynamically optimizes to `p-6 sm:p-7`, recovering vertical space and preventing unnecessary page overflows.
+- **Verification**: `npm run lint` = **0 warnings, 0 errors**. `npm run build` = **Clean compile (exit 0)**.
+- **Target Branch**: `staging`.
+
+### 2026-08-30 — Antigravity · Proposal Section Flow Re-Ordering & Logical Sequence Alignment
 
 **Delivered Dynamic Section Flow Manager & Logical Proposal Sequencing:**
 

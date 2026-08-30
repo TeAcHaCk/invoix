@@ -103,6 +103,13 @@ export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ docu
     ? (hasAnnexure ? 3 : 2)
     : (hasAnnexure ? 2 : 1);
 
+  const isCompact =
+    doc.layoutDensity === 'compact' ||
+    (doc.layoutDensity !== 'standard' && (
+      allPhases.length > 2 ||
+      (doc.pricingItems?.length || 0) > 3 ||
+      activeDeliverables.length > 4
+    ));
 
   const logoWidth = doc.studio.logoWidth || 320;
   const logoHeight = doc.studio.logoHeight || 130;
@@ -204,8 +211,7 @@ export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ docu
         }}
       >
         <WatermarkLayer config={doc.watermark} />
-
-        <div className="relative z-10 p-8 sm:p-9 text-left text-slate-900 flex flex-col justify-between h-full min-h-[1123px]">
+        <div className={`relative z-10 ${isCompact ? 'p-6 sm:p-7' : 'p-8 sm:p-9'} text-left text-slate-900 flex flex-col justify-between h-full min-h-[1123px]`}>
           <div>
             {/* TOP HEADER SECTION */}
             <div
@@ -385,8 +391,7 @@ export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ docu
           }}
         >
           <WatermarkLayer config={doc.watermark} />
-
-          <div className="relative z-10 p-8 sm:p-9 text-left text-slate-900 flex flex-col justify-between h-full min-h-[1123px]">
+          <div className={`relative z-10 ${isCompact ? 'p-6 sm:p-7' : 'p-8 sm:p-9'} text-left text-slate-900 flex flex-col justify-between h-full min-h-[1123px]`}>
             <div>
               {/* PAGE 2 HEADER MINI */}
               <div className="flex items-center justify-between border-b border-slate-200 pb-2 mb-3">
@@ -474,8 +479,7 @@ export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ docu
           }}
         >
           <WatermarkLayer config={doc.watermark} />
-
-          <div className="relative z-10 p-8 sm:p-9 text-left text-slate-900 flex flex-col justify-between h-full min-h-[1123px]">
+          <div className={`relative z-10 ${isCompact ? 'p-6 sm:p-7' : 'p-8 sm:p-9'} text-left text-slate-900 flex flex-col justify-between h-full min-h-[1123px]`}>
             <div>
               {/* ANNEXURE HEADER MINI */}
               <div className="flex items-center justify-between border-b border-slate-200 pb-2 mb-3">

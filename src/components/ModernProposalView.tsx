@@ -85,7 +85,7 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
     hasTerms ||
     hasSignatures;
 
-  const isMultiPageScope = activeMilestones.length > 3 || (selectedItems.length + optionalAddons.length > 4);
+  const isMultiPageScope = activeMilestones.length > 3;
   const page1Milestones = isMultiPageScope ? activeMilestones.slice(0, 3) : activeMilestones;
   const page2Milestones = isMultiPageScope ? activeMilestones.slice(3) : [];
 
@@ -93,7 +93,13 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
     ? (hasAnnexure ? 3 : 2)
     : (hasAnnexure ? 2 : 1);
 
-  const isCompact = doc.layoutDensity === 'compact';
+  const isCompact =
+    doc.layoutDensity === 'compact' ||
+    (doc.layoutDensity !== 'standard' && (
+      activeMilestones.length > 2 ||
+      (selectedItems.length + optionalAddons.length) > 3 ||
+      activeDeliverables.length > 4
+    ));
   const accentColor = doc.accentColor || '#f59e0b';
   const fontFamily = doc.fontFamily || 'Plus Jakarta Sans';
   const logoWidth = doc.studio.logoWidth || 240;
@@ -294,7 +300,7 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
         }}
       >
         <WatermarkLayer config={doc.watermark} />
-        <div className="relative z-10 p-8 sm:p-9 text-left text-slate-900 flex flex-col justify-between h-full min-h-[1123px]">
+        <div className={`relative z-10 ${isCompact ? 'p-6 sm:p-7' : 'p-8 sm:p-9'} text-left text-slate-900 flex flex-col justify-between h-full min-h-[1123px]`}>
           <div>
             <div
               onClick={() => onSelectSection?.('business', 'branding')}
@@ -446,10 +452,10 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
               </div>
             )}
 
-            {renderDeliverablesBox()}
-
+            {/* If Single-Page Scope: Render Deliverables, Pricing, and Payments on Page 1 */}
             {!isMultiPageScope && (
               <>
+                {renderDeliverablesBox()}
                 {renderPricingTableAndTotals()}
                 <div className="grid grid-cols-2 gap-2.5 mb-2">
                   {renderPaymentTermsBox()}
@@ -474,7 +480,7 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
           }}
         >
           <WatermarkLayer config={doc.watermark} />
-          <div className="relative z-10 p-8 sm:p-9 text-left text-slate-900 flex flex-col justify-between h-full min-h-[1123px]">
+          <div className={`relative z-10 ${isCompact ? 'p-6 sm:p-7' : 'p-8 sm:p-9'} text-left text-slate-900 flex flex-col justify-between h-full min-h-[1123px]`}>
             <div>
               <div className="flex items-center justify-between border-b border-slate-200 pb-2 mb-3">
                 <div className="flex items-center space-x-2">
@@ -553,7 +559,7 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
           }}
         >
           <WatermarkLayer config={doc.watermark} />
-          <div className="relative z-10 p-8 sm:p-9 text-left text-slate-900 flex flex-col justify-between h-full min-h-[1123px]">
+          <div className={`relative z-10 ${isCompact ? 'p-6 sm:p-7' : 'p-8 sm:p-9'} text-left text-slate-900 flex flex-col justify-between h-full min-h-[1123px]`}>
             <div>
               <div className="flex items-center justify-between border-b border-slate-200 pb-2 mb-3">
                 <div className="flex items-center space-x-2">
