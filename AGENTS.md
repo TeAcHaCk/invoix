@@ -127,7 +127,22 @@ Each of these shipped once and cost real debugging time.
 
 ## Handoff log
 
-### 2026-08-30 (latest) — Antigravity · Streamlined Studio Top Bar & Uncluttered Header UX
+### 2026-08-30 (latest) — Antigravity · Interactive Mini Studio Playground on Landing Hero
+
+**Delivered Live Interactive Mini Playground in Hero Section ([`LandingHero.tsx`](file:///d:/Product%20build/src/components/landing/LandingHero.tsx)):**
+
+1. **Replaced Static Signing Mock with Live Mini Studio ("Type & Watch Live")**:
+   - Replaced the previous single-purpose signature signing box with a rich, interactive split-pane mini studio playground.
+   - **4 Instant Industry Presets**: `💻 Web & Software`, `🎨 Creative Agency`, `📸 Photo & Film`, and `🧾 Tax Invoice`. Clicking any preset instantly reconfigures the studio title, deliverables, scope milestones, line items, and base investment.
+2. **Real-Time Synchronized Dual-Pane Experience**:
+   - **Left Mini Form**: Live inputs for *Studio Name*, *Client Name*, *Project Scope Title*, *Base Rate Slider ($1,000–$10,000)*, and *Interactive Upsell Add-ons*.
+   - **Right Mini A4 Proposal Sheet**: Updates instantaneously on every keystroke with gold/amber highlighting, dynamically recalculating the total deal investment, 30% advance booking deposit, and rendering live QR scan-to-pay + digital signature trust badges.
+3. **High-Converting Seamless Studio Hand-off**:
+   - Built a 1-click **"Open This in Full Studio (Free) ➔"** golden CTA that triggers confetti and launches the full Studio Editor with zero barrier to entry.
+- **Verification**: `npm run lint` = **0 warnings, 0 errors**. `npm run build` = **Clean compile (exit 0)**.
+- **Target Branch**: `staging`.
+
+### 2026-08-30 — Antigravity · Streamlined Studio Top Bar & Uncluttered Header UX
 
 **Delivered Clean, High-End Studio Top Bar & Removed Visual Clutter:**
 
