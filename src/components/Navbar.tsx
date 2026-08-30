@@ -14,6 +14,8 @@ import {
   Settings,
   Sparkles,
   Eye,
+  Edit3,
+  Columns,
   Plus,
   Link,
   Check,
@@ -33,6 +35,8 @@ import {
 
 interface NavbarProps {
   document: QuotationDocument;
+  viewMode?: 'split' | 'editor' | 'preview';
+  onViewModeChange?: (mode: 'split' | 'editor' | 'preview') => void;
   onExportPdf: (quality?: 'text' | 'image') => void;
   onPrint: () => void;
   onOpenWhatsApp: () => void;
@@ -54,6 +58,8 @@ interface NavbarProps {
 
 export const Navbar: React.FC<NavbarProps> = ({
   document: doc,
+  viewMode = 'split',
+  onViewModeChange,
   onExportPdf,
   onPrint,
   onOpenWhatsApp,
@@ -238,6 +244,50 @@ export const Navbar: React.FC<NavbarProps> = ({
 
         {/* Right: Grouped Actions */}
         <div className="flex items-center space-x-1.5 sm:space-x-2 shrink-0">
+          {/* === 3-WAY STUDIO VIEW MODE SWITCHER (Always Visible in Header) === */}
+          {onViewModeChange && (
+            <div className="hidden lg:flex items-center bg-slate-900/90 rounded-xl p-0.5 border border-slate-800 shadow-inner mr-1">
+              <button
+                type="button"
+                onClick={() => onViewModeChange('split')}
+                className={`px-2.5 py-1.5 rounded-lg text-xs font-bold flex items-center space-x-1.5 transition-all cursor-pointer ${
+                  viewMode === 'split'
+                    ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20 scale-[1.02]'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                }`}
+                title="Split View: Side by Side [Alt+1]"
+              >
+                <Columns className="w-3.5 h-3.5" />
+                <span>Split</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => onViewModeChange('editor')}
+                className={`px-2.5 py-1.5 rounded-lg text-xs font-bold flex items-center space-x-1.5 transition-all cursor-pointer ${
+                  viewMode === 'editor'
+                    ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20 scale-[1.02]'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                }`}
+                title="Editor Focus: Full Width Form [Alt+2]"
+              >
+                <Edit3 className="w-3.5 h-3.5" />
+                <span>Editor</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => onViewModeChange('preview')}
+                className={`px-2.5 py-1.5 rounded-lg text-xs font-bold flex items-center space-x-1.5 transition-all cursor-pointer ${
+                  viewMode === 'preview'
+                    ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20 scale-[1.02]'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                }`}
+                title="Canvas Review: Full Width Document [Alt+3]"
+              >
+                <Eye className="w-3.5 h-3.5" />
+                <span>Canvas</span>
+              </button>
+            </div>
+          )}
           {/* === PRE-FLIGHT HEALTH INSPECTOR === */}
           {onOpenHealth && (
             <button

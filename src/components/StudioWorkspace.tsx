@@ -420,6 +420,11 @@ export default function StudioWorkspace({ initialIndustry, onNavigateToAdmin, on
       <div className="shrink-0 z-40">
         <Navbar
           document={document}
+          viewMode={viewMode}
+          onViewModeChange={(mode) => {
+            setViewMode(mode);
+            localStorage.setItem('invoix_view_mode', mode);
+          }}
           onExportPdf={handleExportPdf}
           onPrint={handlePrint}
           onOpenWhatsApp={() => setIsWhatsAppOpen(true)}
@@ -502,6 +507,11 @@ export default function StudioWorkspace({ initialIndustry, onNavigateToAdmin, on
             activeTab={editorActiveTab}
             onTabChange={setEditorActiveTab}
             onOpenHealth={() => setIsHealthOpen(true)}
+            viewMode={viewMode}
+            onViewModeChange={(mode) => {
+              setViewMode(mode);
+              localStorage.setItem('invoix_view_mode', mode);
+            }}
             onOpenUpgrade={(plan) => {
               setUpgradePlan(plan || 'pro');
               setIsUpgradeOpen(true);
