@@ -29,12 +29,16 @@ import {
   ShieldAlert,
   ShieldCheck,
   AlertTriangle,
+  Loader2,
+  AlertCircle,
 } from 'lucide-react';
 
 interface NavbarProps {
   document: QuotationDocument;
   viewMode?: 'split' | 'editor' | 'preview';
   onViewModeChange?: (mode: 'split' | 'editor' | 'preview') => void;
+  saveStatus?: 'saved' | 'saving' | 'error';
+  lastSavedTime?: Date | null;
   onExportPdf: (quality?: 'text' | 'image') => void;
   onPrint: () => void;
   onOpenWhatsApp: () => void;
@@ -58,6 +62,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   document: doc,
   viewMode = 'split',
   onViewModeChange,
+  saveStatus = 'saved',
+  lastSavedTime,
   onExportPdf,
   onPrint,
   onOpenWhatsApp,
@@ -216,50 +222,92 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
         </div>
 
-        {/* Center: 3-Way Studio View Mode Switcher (Visible on md, lg, xl screens) */}
-        {onViewModeChange && (
-          <div className="hidden md:flex items-center bg-slate-900/90 rounded-xl p-0.5 border border-slate-800 shadow-inner shrink-0">
-            <button
-              type="button"
-              onClick={() => onViewModeChange('split')}
-              className={`px-2.5 py-1.5 rounded-lg text-xs font-bold flex items-center space-x-1.5 transition-all cursor-pointer ${
-                viewMode === 'split'
-                  ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20 scale-[1.02]'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
-              }`}
-              title="Split View: Side by Side [Alt+1]"
-            >
-              <Columns className="w-3.5 h-3.5" />
-              <span>Split</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => onViewModeChange('editor')}
-              className={`px-2.5 py-1.5 rounded-lg text-xs font-bold flex items-center space-x-1.5 transition-all cursor-pointer ${
-                viewMode === 'editor'
-                  ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20 scale-[1.02]'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
-              }`}
-              title="Editor Focus: Full Width Form [Alt+2]"
-            >
-              <Edit3 className="w-3.5 h-3.5" />
-              <span>Editor</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => onViewModeChange('preview')}
-              className={`px-2.5 py-1.5 rounded-lg text-xs font-bold flex items-center space-x-1.5 transition-all cursor-pointer ${
-                viewMode === 'preview'
-                  ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20 scale-[1.02]'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
-              }`}
-              title="Canvas Review: Full Width Document [Alt+3]"
-            >
-              <Eye className="w-3.5 h-3.5" />
-              <span>Canvas</span>
-            </button>
+        {/* Center: Auto-Save Status & 3-Way Mode Switcher */}
+        <div className="flex items-center space-x-2 sm:space-x-3 shrink-0">
+          {/* Live Auto-Save Status Pill */}
+          <div className="flex items-center">
+            {saveStatus === 'saving' ? (
+              <div
+                className="flex items-center space-x-1 px-2 py-1 sm:px-2.5 sm:py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[10px] font-semibold animate-pulse"
+                title="Saving changes..."
+              >
+                <Loader2 className="w-3 h-3 animate-spin text-amber-400" />
+                <span className="hidden sm:inline">Saving...</span>
+              </div>
+            ) : saveStatus === 'error' ? (
+              <div
+                className="flex items-center space-x-1 px-2 py-1 sm:px-2.5 sm:py-1 rounded-full bg-rose-500/10 border border-rose-500/30 text-rose-300 text-[10px] font-semibold"
+                title="Auto-save failed. Click manual Save button to retry."
+              >
+                <AlertCircle className="w-3 h-3 text-rose-400" />
+                <span className="hidden sm:inline">Save failed</span>
+              </div>
+            ) : (
+              <div
+                className="flex items-center space-x-1 px-2 py-1 sm:px-2.5 sm:py-1 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-300 text-[10px] font-medium transition-all"
+                title={
+                  lastSavedTime
+                    ? `All changes saved (${lastSavedTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })})`
+                    : 'All changes saved'
+                }
+              >
+                <Check className="w-3 h-3 text-emerald-400" />
+                <span className="hidden md:inline">{user ? 'Saved to Cloud' : 'Saved locally'}</span>
+                <span className="md:hidden">Saved</span>
+                {lastSavedTime && (
+                  <span className="hidden 2xl:inline text-[9px] text-emerald-400/60 ml-0.5">
+                    • {lastSavedTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                )}
+              </div>
+            )}
           </div>
-        )}
+
+          {/* 3-Way Studio View Mode Switcher (Visible on md, lg, xl screens) */}
+          {onViewModeChange && (
+            <div className="hidden md:flex items-center bg-slate-900/90 rounded-xl p-0.5 border border-slate-800 shadow-inner shrink-0">
+              <button
+                type="button"
+                onClick={() => onViewModeChange('split')}
+                className={`px-2.5 py-1.5 rounded-lg text-xs font-bold flex items-center space-x-1.5 transition-all cursor-pointer ${
+                  viewMode === 'split'
+                    ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20 scale-[1.02]'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                }`}
+                title="Split View: Side by Side [Alt+1]"
+              >
+                <Columns className="w-3.5 h-3.5" />
+                <span>Split</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => onViewModeChange('editor')}
+                className={`px-2.5 py-1.5 rounded-lg text-xs font-bold flex items-center space-x-1.5 transition-all cursor-pointer ${
+                  viewMode === 'editor'
+                    ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20 scale-[1.02]'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                }`}
+                title="Editor Focus: Full Width Form [Alt+2]"
+              >
+                <Edit3 className="w-3.5 h-3.5" />
+                <span>Editor</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => onViewModeChange('preview')}
+                className={`px-2.5 py-1.5 rounded-lg text-xs font-bold flex items-center space-x-1.5 transition-all cursor-pointer ${
+                  viewMode === 'preview'
+                    ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20 scale-[1.02]'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                }`}
+                title="Canvas Review: Full Width Document [Alt+3]"
+              >
+                <Eye className="w-3.5 h-3.5" />
+                <span>Canvas</span>
+              </button>
+            </div>
+          )}
+        </div>
 
         {/* Right: Grouped Actions */}
         <div className="flex items-center space-x-1.5 sm:space-x-2 shrink-0">

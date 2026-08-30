@@ -93,6 +93,8 @@ export default function StudioWorkspace({ initialIndustry, onNavigateToAdmin, on
     }
     return 'split';
   });
+  const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'error'>('saved');
+  const [lastSavedTime, setLastSavedTime] = useState<Date | null>(() => new Date());
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   // Persistent (not auto-dismissing) banner for save failures. A toast is the
   // wrong shape for "your work was not stored" — it vanishes before it is read.
@@ -205,14 +207,14 @@ export default function StudioWorkspace({ initialIndustry, onNavigateToAdmin, on
     });
   };
 
-  // Autosave current draft to localStorage & Cloud
+  const isInitialMount = useRef(true);
+
+  // Autosave current draft: Instant (0ms) to localStorage scratchpad + Debounced (1000ms) to Vault & Supabase Cloud
   useEffect(() => {
+    // 1. Instant local scratchpad write
     try {
       localStorage.setItem('fbf_current_document_v4', JSON.stringify(document));
     } catch (e) {
-      // Draft autosave failed (almost always a full quota). Warn once rather
-      // than on every keystroke, but do not stay silent — without this the
-      // draft is lost on refresh with no indication anything went wrong.
       console.warn('LocalStorage quota limit warning:', e);
       if (!draftWarnedRef.current) {
         draftWarnedRef.current = true;
@@ -222,20 +224,51 @@ export default function StudioWorkspace({ initialIndustry, onNavigateToAdmin, on
         );
       }
     }
-    if (user) {
-      const timer = setTimeout(() => {
-        // Reconcile so the in-memory copy learns it is synced. Without this the
-        // text-PDF export and the share-link check stay permanently disabled
-        // even though every save succeeds.
-        saveDocument(document, user.id, isPaidPlan(profile)).then((res) =>
-          reconcileSynced(res.synced)
-        );
-      }, 1200);
-      return () => clearTimeout(timer);
+
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
     }
-    // profile is a dependency so an upgrade re-stamps showInvoixBranding on the
-    // next save, clearing the footer CTA from the user's client links.
+
+    // 2. Transition to 'saving' status shortly after user edits
+    const savingIndicatorTimer = setTimeout(() => {
+      setSaveStatus('saving');
+    }, 50);
+
+    // 3. Debounced (1000ms) save to Vault & Supabase Cloud
+    const saveTimer = setTimeout(async () => {
+      try {
+        const res = await saveDocument(document, user?.id, isPaidPlan(profile));
+        if (res.success) {
+          reconcileSynced(res.synced);
+          setSaveStatus('saved');
+          setLastSavedTime(new Date());
+        } else {
+          setSaveStatus(user ? 'error' : 'saved');
+        }
+      } catch (err) {
+        console.error('Auto-save error:', err);
+        setSaveStatus('error');
+      }
+    }, 1000);
+
+    return () => {
+      clearTimeout(savingIndicatorTimer);
+      clearTimeout(saveTimer);
+    };
   }, [document, user, profile]);
+
+  // Protect against tab closing while a save is in-flight
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (saveStatus === 'saving') {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [saveStatus]);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -278,12 +311,14 @@ export default function StudioWorkspace({ initialIndustry, onNavigateToAdmin, on
   };
 
   const handleSaveToVault = async () => {
+    setSaveStatus('saving');
     const vaultDocs = getVaultDocuments();
     const isExisting = vaultDocs.some((d) => d.id === document.id);
     if (!isPaidPlan(profile) && !isExisting && vaultDocs.length >= FREE_PLAN_MAX_DOCUMENTS) {
       setUpgradePlan('pro');
       setIsUpgradeOpen(true);
       showToast(`Free plan limit (${FREE_PLAN_MAX_DOCUMENTS} proposals). Upgrade to Pro for unlimited storage.`);
+      setSaveStatus('saved');
       return;
     }
 
@@ -293,11 +328,14 @@ export default function StudioWorkspace({ initialIndustry, onNavigateToAdmin, on
     if (!res.success) {
       // The document reached neither the cloud nor local storage. Never
       // celebrate this: the user's work is genuinely gone.
+      setSaveStatus('error');
       setSaveError(res.error || 'This document could not be saved. Please try again.');
       showToast('Could not save — your work is not stored.');
       return;
     }
 
+    setSaveStatus('saved');
+    setLastSavedTime(new Date());
     confetti({ particleCount: 50, spread: 50, origin: { y: 0.8 } });
     showToast(res.isCloud ? 'Synced to Supabase Cloud!' : 'Saved to Local Vault!');
 
@@ -436,6 +474,8 @@ export default function StudioWorkspace({ initialIndustry, onNavigateToAdmin, on
           document={document}
           viewMode={viewMode}
           onViewModeChange={handleViewModeChange}
+          saveStatus={saveStatus}
+          lastSavedTime={lastSavedTime}
           onExportPdf={handleExportPdf}
           onPrint={handlePrint}
           onOpenWhatsApp={() => setIsWhatsAppOpen(true)}
