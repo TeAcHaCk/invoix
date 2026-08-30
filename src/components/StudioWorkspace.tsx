@@ -139,6 +139,31 @@ export default function StudioWorkspace({ initialIndustry, onNavigateToAdmin, on
   });
   const [isResizing, setIsResizing] = useState<boolean>(false);
 
+  // Real-time A4 Page Height & Overflow Detection
+  const [overflowPages, setOverflowPages] = useState<{ pageIndex: number; overflowPx: number; percent: number }[]>([]);
+
+  useEffect(() => {
+    const checkOverflow = () => {
+      const pageEls = window.document.querySelectorAll<HTMLElement>('#quotation-preview-container .print-page');
+      const overflowing: { pageIndex: number; overflowPx: number; percent: number }[] = [];
+
+      pageEls.forEach((el, idx) => {
+        // Natural A4 height is 1123px. A small 4px buffer is allowed for sub-pixel anti-aliasing.
+        const scrollH = el.scrollHeight;
+        if (scrollH > 1127) {
+          const overflowPx = Math.round(scrollH - 1123);
+          const percent = Math.round((scrollH / 1123) * 100);
+          overflowing.push({ pageIndex: idx, overflowPx, percent });
+        }
+      });
+
+      setOverflowPages(overflowing);
+    };
+
+    const timer = setTimeout(checkOverflow, 350);
+    return () => clearTimeout(timer);
+  }, [document, zoomScale]);
+
   useEffect(() => {
     if (!isResizing) return;
 
@@ -634,6 +659,30 @@ export default function StudioWorkspace({ initialIndustry, onNavigateToAdmin, on
               <Maximize2 className="w-3 h-3" />
               <span>Fit A4</span>
             </button>
+
+            {/* Live A4 Page Overflow Warning Badge */}
+            {overflowPages.length > 0 && (
+              <>
+                <div className="w-px h-4 bg-slate-800" />
+                <div className="flex items-center space-x-1.5 bg-amber-500/15 border border-amber-500/40 text-amber-300 px-2 py-0.5 rounded-xl text-[10.5px] shadow-lg animate-pulse">
+                  <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                  <span className="font-semibold whitespace-nowrap">
+                    Page {overflowPages.map((p) => p.pageIndex + 1).join(', ')} Exceeds A4 (+{overflowPages[0].overflowPx}px)
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDocument((prev) => ({ ...prev, layoutDensity: 'compact' }));
+                      showToast('Applied Compact Spacing to fit A4 page');
+                    }}
+                    className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-2 py-0.5 rounded-md text-[10px] transition-colors cursor-pointer whitespace-nowrap ml-1 shadow-sm"
+                    title="Click to tighten margins and fit within A4 height"
+                  >
+                    ⚡ Auto-Fit A4
+                  </button>
+                </div>
+              </>
+            )}
           </div>
 
           {/* Scaled Printable Document Paper */}

@@ -65,6 +65,22 @@ export const auditDocument = (doc: QuotationDocument): AuditIssue[] => {
     });
   }
 
+  // Check if standard spacing might cause A4 page spill with dense items
+  const totalDensityScore =
+    (doc.pricingItems || []).length +
+    (doc.eventCoverage || []).length +
+    activeDeliverables.length;
+
+  if (doc.layoutDensity === 'standard' && totalDensityScore > 7) {
+    issues.push({
+      id: 'a4-density-overflow-warning',
+      severity: 'warning',
+      tab: 'Preset & Style',
+      message: 'Standard 40px padding with this many items may spill past the A4 page boundary.',
+      hint: 'Switch A4 Page Spacing & Density to "Smart Auto" or "Compact" in Preset & Style tab for a guaranteed single-page fit.',
+    });
+  }
+
   // ---------------------------------------------------------------------------
   // Upsells rendering check
   // ---------------------------------------------------------------------------

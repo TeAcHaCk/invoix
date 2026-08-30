@@ -183,7 +183,18 @@ async function drawPageIntoPdf(
     return;
   }
 
-  // Taller than A4: re-draw the same image shifted up by one page each time.
+  // Minor overflow (up to 8% / ~23mm extra height):
+  // Instead of generating an ugly 1-line orphaned blank page with a cut-off footer,
+  // slightly scale the capture to fit cleanly onto this single A4 sheet.
+  if (drawH <= pdfH * 1.08) {
+    const scaleFactor = pdfH / drawH;
+    const scaledW = drawW * scaleFactor;
+    const offsetX = (pdfW - scaledW) / 2;
+    pdf.addImage(imgData, 'PNG', offsetX, 0, scaledW, pdfH, alias, 'FAST');
+    return;
+  }
+
+  // Taller than A4 (>8% excess): re-draw the same image shifted up by one page each time.
   // jsPDF clips to the page box, so each pass reveals the next slice.
   let offsetY = 0;
   let remaining = drawH;

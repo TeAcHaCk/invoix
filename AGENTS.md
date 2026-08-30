@@ -127,7 +127,26 @@ Each of these shipped once and cost real debugging time.
 
 ## Handoff log
 
-### 2026-08-30 (latest) — Antigravity · Fix Why Choose Us Emoji Erase & Fallback Bug
+### 2026-08-30 (latest) — Antigravity · A4 Page Overflow Detection, Density Engine & Single-Sheet PDF Fit
+
+**Delivered Comprehensive A4 Overflow Prevention & Visual Warning System:**
+
+1. **Root Cause of PDF Alignment & Sliced Footer Bug**:
+   - In [`ModernProposalView.tsx`](file:///d:/Product%20build/src/components/ModernProposalView.tsx) and [`CreativeProposalView.tsx`](file:///d:/Product%20build/src/components/CreativeProposalView.tsx), when documents contain multiple SOW phases + pricing items + payment tranches + deliverables on Page 1, the default `p-10` padding caused the rendered container height to expand to ~1145–1170px (exceeding the standard 1123px A4 printable boundary by 20–45px).
+   - In `pdfGenerator.ts`, `drawPageIntoPdf` pushed this minor excess onto a new PDF sheet, creating an orphaned blank sheet containing just the sliced bottom number `2` from `"Page 1 of 2"`.
+2. **Dynamic Auto-Density & Compact Spacing (`doc.layoutDensity`)**:
+   - Implemented dynamic density calculation in [`ModernProposalView.tsx`](file:///d:/Product%20build/src/components/ModernProposalView.tsx), [`CreativeProposalView.tsx`](file:///d:/Product%20build/src/components/CreativeProposalView.tsx), and [`FormalInvoiceView.tsx`](file:///d:/Product%20build/src/components/FormalInvoiceView.tsx).
+   - When item count exceeds 3–4 items or density is active, margins and container padding automatically adjust to `p-6 sm:p-7`, recovering **80px+ of vertical headroom** and fitting dense proposals safely within 1123px.
+   - Added an **A4 Page Spacing & Density Switcher** (`[ ⚡ Smart Auto | 📐 Standard | 📦 Compact ]`) in [`FormEditor.tsx`](file:///d:/Product%20build/src/components/FormEditor.tsx) Tab 1.
+3. **Live Canvas A4 Overflow Warning Pill & 1-Click Auto-Fit ([`StudioWorkspace.tsx`](file:///d:/Product%20build/src/components/StudioWorkspace.tsx))**:
+   - Real-time DOM height observation monitors each `.print-page` element.
+   - If any page exceeds 1123px, an animated Amber warning pill displays on the canvas toolbar (`⚠️ Page 1 Exceeds A4 (+38px)`) with a 1-click **"⚡ Auto-Fit A4"** button that immediately switches density to compact.
+4. **Intelligent Single-Sheet PDF Minor Overflow Scaling ([`pdfGenerator.ts`](file:///d:/Product%20build/src/utils/pdfGenerator.ts))**:
+   - Upgraded `drawPageIntoPdf`: If a page exhibits minor height overflow (<= 8% / ~23mm), jsPDF automatically scales the capture to fit on that single A4 sheet without creating an orphaned trailing page.
+- **Verification**: `npm run lint` = **0 warnings, 0 errors**. `npm run build` = **Clean compile (exit 0)**.
+- **Target Branch**: `staging`.
+
+### 2026-08-30 — Antigravity · Fix Why Choose Us Emoji Erase & Fallback Bug
 
 **Resolved Emoji Input Fallback & Canvas Render Bug:**
 

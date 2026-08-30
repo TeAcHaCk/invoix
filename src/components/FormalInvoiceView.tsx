@@ -113,10 +113,16 @@ export const FormalInvoiceView: React.FC<FormalInvoiceViewProps> = ({ document: 
   }, [doc.studio.upiId, doc.studio.paymentLink, doc.studio.website, doc.studio.name, doc.details.invoiceNo, balanceDue, grandTotal, currency.code]);
 
   const fontFamily = doc.fontFamily || 'Plus Jakarta Sans';
+  const isCompact =
+    doc.layoutDensity === 'compact' ||
+    (doc.layoutDensity !== 'standard' && (
+      (doc.pricingItems?.length || 0) > 4 ||
+      (doc.termsAndConditions?.length || 0) > 3
+    ));
 
   return (
     <div
-      className="relative w-full h-full bg-white text-slate-900 text-left p-10 flex flex-col justify-between select-text min-h-[1123px]"
+      className={`relative w-full h-full bg-white text-slate-900 text-left ${isCompact ? 'p-6 sm:p-7' : 'p-10'} flex flex-col justify-between select-text min-h-[1123px]`}
       style={{ fontFamily: `"${fontFamily}", sans-serif` }}
     >
       {/* Top Header */}

@@ -242,6 +242,7 @@ export interface QuotationDocument {
   currency: CurrencyConfig;
   accentColor?: string; // Custom brand hex color (e.g. #f59e0b)
   fontFamily?: string;  // e.g. 'Outfit', 'Plus Jakarta Sans', 'Inter', 'Playfair Display'
+  layoutDensity?: 'auto' | 'standard' | 'compact'; // Spacing control for A4 page fit
   customTemplateId?: string;
   sectionVisibility?: SectionVisibilityConfig;
   sectionTitles?: SectionTitlesConfig;

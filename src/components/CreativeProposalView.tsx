@@ -88,6 +88,12 @@ export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ docu
     (doc.includeCrewSection !== false && activeCrew.length > 0) ||
     (doc.includeWhyChooseUs !== false && activeWhyChoose.length > 0);
 
+  const isCompact =
+    doc.layoutDensity === 'compact' ||
+    (doc.layoutDensity !== 'standard' && (
+      (doc.eventCoverage?.length || 0) + (doc.pricingItems?.length || 0) > 4
+    ));
+
   const logoWidth = doc.studio.logoWidth || 320;
   const logoHeight = doc.studio.logoHeight || 130;
   const fontFamily = doc.fontFamily || 'Plus Jakarta Sans';
@@ -107,7 +113,7 @@ export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ docu
       >
         <WatermarkLayer config={doc.watermark} />
 
-        <div className="relative z-10 p-10 text-left text-slate-900 flex flex-col justify-between h-full min-h-[1123px]">
+        <div className={`relative z-10 ${isCompact ? 'p-6 sm:p-7' : 'p-10'} text-left text-slate-900 flex flex-col justify-between h-full min-h-[1123px]`}>
           <div>
             {/* TOP HEADER SECTION */}
             <div
@@ -361,7 +367,7 @@ export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ docu
         >
           <WatermarkLayer config={doc.watermark} />
 
-          <div className="relative z-10 p-10 text-left text-slate-900 flex flex-col justify-between h-full min-h-[1123px]">
+          <div className={`relative z-10 ${isCompact ? 'p-6 sm:p-7' : 'p-10'} text-left text-slate-900 flex flex-col justify-between h-full min-h-[1123px]`}>
             <div>
               {/* PAGE 2 HEADER */}
               <div className="flex items-center justify-between border-b border-slate-200 pb-2 mb-4">

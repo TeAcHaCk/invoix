@@ -895,7 +895,63 @@ export const FormEditor: React.FC<FormEditorProps> = ({
               </div>
             )}
 
-            {/* 3. Industry Preset Selector */}
+            {/* 3. A4 Page Spacing & Density Switcher */}
+            <div className="bg-slate-950/70 border border-slate-800/80 rounded-2xl p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-slate-200 uppercase tracking-wider block font-['Outfit'] flex items-center space-x-1.5">
+                  <Sliders className="w-3.5 h-3.5 text-amber-400" />
+                  <span>A4 Page Spacing & Density</span>
+                </label>
+                <span className="text-[10.5px] text-amber-400 font-mono font-bold bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
+                  {doc.layoutDensity === 'compact' ? 'Compact' : doc.layoutDensity === 'standard' ? 'Standard' : '⚡ Smart Auto'}
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-400">
+                Adjust content density to fit quotations and proposals cleanly on 1 or 2 A4 sheets without unexpected page overflow.
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <button
+                  type="button"
+                  onClick={() => update({ layoutDensity: 'auto' })}
+                  className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                    !doc.layoutDensity || doc.layoutDensity === 'auto'
+                      ? 'bg-amber-500/20 border-amber-500 text-amber-200 ring-1 ring-amber-500/50 shadow-md shadow-amber-500/10'
+                      : 'bg-slate-900/60 border-slate-800/80 text-slate-400 hover:bg-slate-800/60'
+                  }`}
+                >
+                  <p className="font-bold text-xs font-['Outfit']">⚡ Smart Auto</p>
+                  <p className="text-[10px] text-slate-400 mt-0.5">Adapts margins dynamically to prevent page spills</p>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => update({ layoutDensity: 'standard' })}
+                  className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                    doc.layoutDensity === 'standard'
+                      ? 'bg-amber-500/20 border-amber-500 text-amber-200 ring-1 ring-amber-500/50 shadow-md shadow-amber-500/10'
+                      : 'bg-slate-900/60 border-slate-800/80 text-slate-400 hover:bg-slate-800/60'
+                  }`}
+                >
+                  <p className="font-bold text-xs font-['Outfit']">📐 Standard</p>
+                  <p className="text-[10px] text-slate-400 mt-0.5">Spacious 40px padding for short quotations</p>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => update({ layoutDensity: 'compact' })}
+                  className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                    doc.layoutDensity === 'compact'
+                      ? 'bg-amber-500/20 border-amber-500 text-amber-200 ring-1 ring-amber-500/50 shadow-md shadow-amber-500/10'
+                      : 'bg-slate-900/60 border-slate-800/80 text-slate-400 hover:bg-slate-800/60'
+                  }`}
+                >
+                  <p className="font-bold text-xs font-['Outfit']">📦 Compact</p>
+                  <p className="text-[10px] text-slate-400 mt-0.5">High-density fit for dense multi-item SOWs</p>
+                </button>
+              </div>
+            </div>
+
+            {/* 4. Industry Preset Selector */}
             <IndustryPresetSelector
               currentIndustry={doc.industry}
               onSelectIndustry={handleSelectIndustryPreset}
