@@ -175,27 +175,15 @@ async function drawPageIntoPdf(
   const drawW = pdfW;
   const drawH = pdfW / imgAspect;
 
-  // Half a millimetre of slack so rounding never triggers a blank trailing page.
-  const TOLERANCE_MM = 0.5;
-
-  if (drawH <= pdfH + TOLERANCE_MM) {
-    pdf.addImage(imgData, 'PNG', 0, 0, drawW, drawH, alias, 'FAST');
+  // Standard full-page fit (with up to 2% sub-pixel tolerance)
+  if (drawH <= pdfH * 1.025) {
+    pdf.addImage(imgData, 'PNG', 0, 0, drawW, pdfH, alias, 'FAST');
     return;
   }
 
-  // Minor overflow (up to 8% / ~23mm extra height):
-  // Instead of generating an ugly 1-line orphaned blank page with a cut-off footer,
-  // slightly scale the capture to fit cleanly onto this single A4 sheet.
-  if (drawH <= pdfH * 1.08) {
-    const scaleFactor = pdfH / drawH;
-    const scaledW = drawW * scaleFactor;
-    const offsetX = (pdfW - scaledW) / 2;
-    pdf.addImage(imgData, 'PNG', offsetX, 0, scaledW, pdfH, alias, 'FAST');
-    return;
-  }
-
-  // Taller than A4 (>8% excess): re-draw the same image shifted up by one page each time.
+  // Taller than A4: re-draw the same image shifted up by one page each time.
   // jsPDF clips to the page box, so each pass reveals the next slice.
+  const TOLERANCE_MM = 1.0;
   let offsetY = 0;
   let remaining = drawH;
 

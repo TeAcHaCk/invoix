@@ -5,7 +5,6 @@ import { WatermarkLayer } from './WatermarkLayer';
 import { INDUSTRY_PRESETS } from '../constants/industryPresets';
 import {
   CheckCircle2,
-  Calendar,
   Layers,
   Sparkles,
   ShieldCheck,
@@ -34,9 +33,6 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
         ✏️ {label}
       </span>
     ) : null;
-
-  const logoWidth = doc.studio.logoWidth || 280;
-  const logoHeight = doc.studio.logoHeight || 110;
 
   // Pricing calculations
   const selectedItems = doc.pricingItems.filter((i) => !i.isOptional || i.selected);
@@ -76,37 +72,192 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
     ? doc.paymentTerms?.balanceCustomAmount ?? Math.round((grandTotal * balPct) / 100)
     : Math.max(0, grandTotal - advanceAmt - midAmt);
 
-  const activeMilestones = doc.eventCoverage || [];
+  const activeMilestones = (doc.eventCoverage || []).filter((m) => m.dayTitle || (m.services || []).length > 0);
   const activeDeliverables = (doc.deliverables || []).filter((d) => d.included);
   const activeTeam = (doc.crewMembers || []).filter((c) => c.enabled);
   const activeWhy = (doc.whyChooseUs || []).filter((w) => w.enabled);
+  const hasTerms = doc.sectionVisibility?.terms !== false && (doc.termsAndConditions || []).length > 0;
+  const hasSignatures = doc.sectionVisibility?.signatory !== false && doc.signatory?.enabled !== false;
 
-  const isCompact =
-    doc.layoutDensity === 'compact' ||
-    (doc.layoutDensity !== 'standard' && (
-      (activeMilestones.length > 0 ? 1 : 0) +
-      (selectedItems.length + optionalAddons.length > 3 ? 1 : 0) +
-      (activeDeliverables.length > 0 ? 1 : 0) >= 2 ||
-      selectedItems.length + optionalAddons.length >= 4 ||
-      activeMilestones.length >= 3
-    ));
-
-  const hasPage2 =
+  const hasAnnexure =
     (doc.includeCrewSection && activeTeam.length > 0) ||
     (doc.includeWhyChooseUs && activeWhy.length > 0) ||
-    (doc.termsAndConditions && doc.termsAndConditions.length > 5) ||
-    activeMilestones.length > 4 ||
-    activeDeliverables.length > 6 ||
-    (doc.pricingItems && doc.pricingItems.length > 8);
+    hasTerms ||
+    hasSignatures;
 
+  const isMultiPageScope = activeMilestones.length > 3 || (selectedItems.length + optionalAddons.length > 4);
+  const page1Milestones = isMultiPageScope ? activeMilestones.slice(0, 3) : activeMilestones;
+  const page2Milestones = isMultiPageScope ? activeMilestones.slice(3) : [];
+
+  const totalPages = isMultiPageScope
+    ? (hasAnnexure ? 3 : 2)
+    : (hasAnnexure ? 2 : 1);
+
+  const isCompact = doc.layoutDensity === 'compact';
   const accentColor = doc.accentColor || '#f59e0b';
   const fontFamily = doc.fontFamily || 'Plus Jakarta Sans';
+  const logoWidth = doc.studio.logoWidth || 240;
+  const logoHeight = doc.studio.logoHeight || 80;
+
+  const renderPricingTableAndTotals = () => (
+    <div
+      onClick={() => onSelectSection?.('pricing', 'pricing')}
+      className={`${isCompact ? 'mb-2' : 'mb-3'} ${sectionClass('pricing')}`}
+      title={onSelectSection ? 'Click to edit pricing items and discount' : undefined}
+    >
+      {renderEditBadge('Pricing')}
+      <div className="flex items-center justify-between border-b border-slate-200/90 pb-1 mb-1.5">
+        <div className="flex items-center space-x-2">
+          <Sparkles className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+          <h4 className="text-[11px] font-bold text-slate-900 uppercase tracking-normal whitespace-nowrap">
+            {doc.sectionTitles?.pricingTitle || 'Itemized Investment Schedule'}
+          </h4>
+        </div>
+        <span className="text-[9.5px] text-slate-400 font-mono">Currency: {currency.code} ({currency.symbol})</span>
+      </div>
+
+      <div className="border border-slate-200 rounded-lg overflow-hidden">
+        <table className="w-full text-left text-xs border-collapse">
+          <thead>
+            <tr className="bg-slate-900 text-slate-200 text-[9.5px] font-bold uppercase tracking-normal">
+              <th className="py-1.5 px-2.5 w-8 text-center">#</th>
+              <th className="py-1.5 px-2.5">Item / Service Description</th>
+              <th className="py-1.5 px-2.5 text-center w-14">Qty</th>
+              <th className="py-1.5 px-2.5 text-center w-14">Unit</th>
+              <th className="py-1.5 px-2.5 text-right w-24">Rate</th>
+              <th className="py-1.5 px-2.5 text-right w-28">Amount</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100 text-[10.5px]">
+            {selectedItems.map((item, idx) => {
+              const itemRate = item.rate || 0;
+              const itemQty = item.qty || 1;
+              const itemTotal = item.qty && item.rate ? itemQty * itemRate : item.amount || 0;
+
+              return (
+                <tr key={item.id || idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/60'}>
+                  <td className="py-1 px-2.5 text-center text-slate-400 font-mono text-[9.5px]">{idx + 1}</td>
+                  <td className="py-1 px-2.5">
+                    <span className="font-semibold text-slate-900">{item.description}</span>
+                    {item.isOptional && (
+                      <span className="ml-2 text-[8.5px] bg-emerald-100 text-emerald-800 px-1.5 py-0.2 rounded font-bold uppercase">
+                        Included Add-on
+                      </span>
+                    )}
+                  </td>
+                  <td className="py-1 px-2.5 text-center text-slate-700 font-mono">{itemQty}</td>
+                  <td className="py-1 px-2.5 text-center text-slate-500 text-[9.5px] uppercase">
+                    {item.unit || 'units'}
+                  </td>
+                  <td className="py-1 px-2.5 text-right font-mono text-slate-700">
+                    {formatCurrency(itemRate, currency, { showFraction: false })}
+                  </td>
+                  <td className="py-1 px-2.5 text-right font-bold font-mono text-slate-900">
+                    {formatCurrency(itemTotal, currency, { showFraction: false })}
+                  </td>
+                </tr>
+              );
+            })}
+
+            {optionalAddons.map((item, optIdx) => {
+              const itemRate = item.rate || 0;
+              const itemQty = item.qty || 1;
+              const itemTotal = item.qty && item.rate ? itemQty * itemRate : item.amount || 0;
+
+              return (
+                <tr key={item.id || `opt-${optIdx}`} className="bg-amber-50/40 border-t border-dashed border-amber-200/80">
+                  <td className="py-1 px-2.5 text-center text-amber-500 font-mono text-[9.5px]">+</td>
+                  <td className="py-1 px-2.5">
+                    <span className="font-medium text-slate-800">{item.description}</span>
+                    <span className="ml-2 text-[8.5px] bg-amber-100 text-amber-800 border border-amber-300/60 px-1.5 py-0.2 rounded font-bold uppercase tracking-wider">
+                      Available Add-on
+                    </span>
+                  </td>
+                  <td className="py-1 px-2.5 text-center text-slate-500 font-mono">{itemQty}</td>
+                  <td className="py-1 px-2.5 text-center text-slate-400 text-[9.5px] uppercase">
+                    {item.unit || 'units'}
+                  </td>
+                  <td className="py-1 px-2.5 text-right font-mono text-slate-500 italic">
+                    {formatCurrency(itemRate, currency, { showFraction: false })}
+                  </td>
+                  <td className="py-1 px-2.5 text-right font-semibold font-mono text-amber-900">
+                    +{formatCurrency(itemTotal, currency, { showFraction: false })}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="flex justify-end mt-1.5">
+        <div className="w-72 bg-slate-50 border border-slate-200 rounded-lg p-2 space-y-0.5 text-xs">
+          <div className="flex justify-between items-baseline gap-3 text-slate-600 text-[10.5px]">
+            <span className="whitespace-nowrap">Subtotal:</span>
+            <span className="font-mono font-medium whitespace-nowrap">{formatCurrency(subtotal, currency)}</span>
+          </div>
+
+          {discountAmount > 0 && (
+            <div className="flex justify-between items-baseline gap-3 text-emerald-700 text-[10.5px]">
+              <span className="whitespace-nowrap">Discount:</span>
+              <span className="font-mono font-medium whitespace-nowrap">-{formatCurrency(discountAmount, currency)}</span>
+            </div>
+          )}
+
+          {taxAmount > 0 && (
+            <div className="flex justify-between items-baseline gap-3 text-slate-600 text-[10.5px]">
+              <span className="whitespace-nowrap">
+                {doc.taxConfig?.label || doc.taxType?.toUpperCase() || 'Tax'} ({doc.taxConfig?.percent || doc.taxPercent}%):
+              </span>
+              <span className="font-mono font-medium whitespace-nowrap">{formatCurrency(taxAmount, currency)}</span>
+            </div>
+          )}
+
+          <div className="border-t-2 border-slate-900 pt-0.5 flex justify-between items-baseline gap-3 font-bold text-xs text-slate-950">
+            <span className="whitespace-nowrap">Total Investment:</span>
+            <span className="font-mono text-amber-950 font-extrabold text-[13px] whitespace-nowrap">{formatCurrency(grandTotal, currency)}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderPaymentTermsBox = () => (
+    <div
+      onClick={() => onSelectSection?.('tax-payment', 'payment-milestones')}
+      className={`bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-[10.5px] ${sectionClass('tax-payment')}`}
+      title={onSelectSection ? 'Click to edit payment terms & milestones' : undefined}
+    >
+      {renderEditBadge('Payment')}
+      <div className="flex items-center space-x-1.5 pb-1 mb-1.5 border-b border-slate-200/80">
+        <Clock className="w-3 h-3 text-amber-700 shrink-0" />
+        <span className="font-bold text-slate-900 uppercase tracking-normal text-[9px] whitespace-nowrap">
+          Milestone Payment Terms
+        </span>
+      </div>
+      <div className="space-y-0.5">
+        <div className="flex justify-between items-center text-[10px]">
+          <span className="text-slate-600">{doc.paymentTerms?.paymentMilestoneLabels?.advanceLabel || `${advPct}% Advance Deposit`}:</span>
+          <strong className="font-mono text-slate-900">{formatCurrency(advanceAmt, currency)}</strong>
+        </div>
+        {midPct > 0 && (
+          <div className="flex justify-between items-center text-[10px]">
+            <span className="text-slate-600">{doc.paymentTerms?.paymentMilestoneLabels?.afterEventLabel || `${midPct}% Interim Milestone`}:</span>
+            <strong className="font-mono text-slate-900">{formatCurrency(midAmt, currency)}</strong>
+          </div>
+        )}
+        {balPct > 0 && (
+          <div className="flex justify-between items-center text-[10px]">
+            <span className="text-slate-600">{doc.paymentTerms?.paymentMilestoneLabels?.balanceLabel || `${balPct}% Final Handover`}:</span>
+            <strong className="font-mono text-slate-900">{formatCurrency(balanceAmt, currency)}</strong>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 
   return (
     <div className="space-y-8 print:space-y-0" style={{ fontFamily: `"${fontFamily}", sans-serif` }}>
-      {/* ========================================================= */}
-      {/* PAGE 1: EXECUTIVE SUMMARY, SCOPE & PRICING               */}
-      {/* ========================================================= */}
       <div
         className="print-page bg-white shadow-2xl relative transition-all duration-200"
         style={{
@@ -116,13 +267,11 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
         }}
       >
         <WatermarkLayer config={doc.watermark} />
-
-        <div className={`relative z-10 ${isCompact ? 'p-6 sm:p-7' : 'p-10'} text-left text-slate-900 flex flex-col justify-between h-full min-h-[1123px]`}>
+        <div className="relative z-10 p-8 sm:p-9 text-left text-slate-900 flex flex-col justify-between h-full min-h-[1123px]">
           <div>
-            {/* Header / Brand Block */}
             <div
               onClick={() => onSelectSection?.('business', 'branding')}
-              className={`flex items-start justify-between border-b-2 border-slate-900 ${isCompact ? 'pb-3 mb-2' : 'pb-5'} ${sectionClass('business')}`}
+              className={`flex items-start justify-between border-b-2 border-slate-900 pb-3 mb-2.5 ${sectionClass('business')}`}
               title={onSelectSection ? 'Click to edit business branding' : undefined}
             >
               {renderEditBadge('Brand')}
@@ -132,21 +281,21 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
                     src={doc.studio.logoUrl}
                     alt={doc.studio.name}
                     style={{
-                      width: `${isCompact ? Math.min(logoWidth, 220) : logoWidth}px`,
-                      maxHeight: `${isCompact ? Math.min(logoHeight, 75) : logoHeight}px`,
+                      width: `${Math.min(logoWidth, 220)}px`,
+                      maxHeight: `${Math.min(logoHeight, 75)}px`,
                       objectFit: 'contain',
                     }}
-                    className="mb-1.5 block"
+                    className="mb-1 block"
                   />
                 ) : (
-                  <h1 className={`${isCompact ? 'text-xl' : 'text-2xl'} font-black text-slate-950 tracking-tight leading-snug mb-1 block`}>
+                  <h1 className="text-xl font-black text-slate-950 tracking-tight leading-snug mb-0.5 block">
                     {doc.studio.name}
                   </h1>
                 )}
-                <p className="text-[10.5px] font-semibold text-slate-600 tracking-normal uppercase leading-normal mb-0.5 block">
+                <p className="text-[10px] font-semibold text-slate-600 tracking-normal uppercase leading-normal mb-0.5 block">
                   {doc.studio.tagline}
                 </p>
-                <div className="text-[10px] text-slate-500 mt-0.5 space-y-0.5">
+                <div className="text-[9.5px] text-slate-500 mt-0.5 space-y-0.5">
                   <p>{doc.studio.address}</p>
                   <p>
                     {doc.studio.phoneNumbers && <span>Ph: {doc.studio.phoneNumbers} • </span>}
@@ -159,107 +308,105 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
                   )}
                 </div>
               </div>
-
-              {/* Right Document Reference Tag */}
-              <div className="text-right flex flex-col items-end shrink-0 min-w-[240px]">
+              <div className="text-right flex flex-col items-end shrink-0 min-w-[220px]">
                 <div
-                  className="inline-flex items-center space-x-1.5 px-3 py-1 rounded text-[11px] font-extrabold uppercase tracking-wider shadow-sm whitespace-nowrap"
+                  className="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded text-[10.5px] font-extrabold uppercase tracking-wider shadow-sm whitespace-nowrap"
                   style={{ backgroundColor: accentColor, color: '#090d16' }}
                 >
-                  <FileText className="w-3.5 h-3.5 shrink-0" />
+                  <FileText className="w-3 h-3 shrink-0" />
                   <span className="whitespace-nowrap">
                     {doc.type === 'INVOICE' ? 'COMMERCIAL INVOICE' : 'COMMERCIAL PROPOSAL'}
                   </span>
                 </div>
+                <div className="mt-1.5 space-y-0.5 text-right text-xs">
+                  <div className="flex items-center justify-end space-x-1.5">
+                    <span className="text-slate-400 font-sans text-[10.5px]">Quote Ref:</span>
+                    <strong className="text-slate-950 font-bold font-mono text-[11px]">{doc.details.invoiceNo}</strong>
+                  </div>
+                  <div className="flex items-center justify-end space-x-1.5">
+                    <span className="text-slate-400 font-sans text-[10.5px]">Date:</span>
+                    <span className="text-slate-700 font-medium text-[10.5px]">{doc.details.invoiceDate}</span>
+                  </div>
+                  <div className="flex items-center justify-end space-x-1.5">
+                    <span className="text-slate-400 font-sans text-[10.5px]">Valid Until:</span>
+                    <span className="text-amber-800 font-semibold text-[10.5px]">{doc.details.validUntilDate || '30 Days from issue'}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
 
-                <div className="mt-2 space-y-0.5 text-right text-xs">
-                  <div className="flex items-center justify-end space-x-1.5">
-                    <span className="text-slate-400 font-sans text-[11px]">Quote Ref:</span>
-                    <strong className="text-slate-950 font-bold font-mono">{doc.details.invoiceNo}</strong>
-                  </div>
-                  <div className="flex items-center justify-end space-x-1.5">
-                    <span className="text-slate-400 text-[11px]">Date:</span>
-                    <strong className="text-slate-800 font-medium">{doc.details.invoiceDate}</strong>
-                  </div>
-                  <div className="flex items-center justify-end space-x-1.5">
-                    <span className="text-slate-400 text-[11px]">Valid Until:</span>
-                    <strong className="text-emerald-700 font-semibold">{doc.details.validUntilDate || '30 Days from issue date'}</strong>
-                  </div>
-                  {doc.details.poNumber && (
-                    <div className="flex items-center justify-end space-x-1.5">
-                      <span className="text-slate-400 text-[11px]">Ref / PO #:</span>
-                      <span className="font-mono text-slate-800">{doc.details.poNumber}</span>
-                    </div>
+            <div
+              onClick={() => onSelectSection?.('client', 'client')}
+              className={`bg-slate-50/80 border border-slate-200/90 rounded-lg p-2.5 mb-2.5 ${sectionClass('client')}`}
+              title={onSelectSection ? 'Click to edit client & project metadata' : undefined}
+            >
+              {renderEditBadge('Client')}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">
+                    Prepared For (Client)
+                  </span>
+                  <h3 className="font-bold text-slate-950 text-xs">{doc.client.clientName}</h3>
+                  <p className="text-slate-700 text-[10.5px] font-medium">{doc.client.nameOfEvent}</p>
+                  <p className="text-slate-500 text-[10px]">{doc.client.address}</p>
+                </div>
+                <div>
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">
+                    Contact & Coordinates
+                  </span>
+                  <p className="text-slate-700 text-[10px]">{doc.client.contactNo}</p>
+                  <p className="text-slate-700 text-[10px]">{doc.client.email}</p>
+                  {doc.client.taxId && (
+                    <p className="text-[10px] font-semibold text-slate-700">
+                      Tax ID: {doc.client.taxId}
+                    </p>
                   )}
                 </div>
               </div>
-            </div>
-
-            {/* Client & Project Banner */}
-            <div
-              onClick={() => onSelectSection?.('client', 'client')}
-              className={`grid grid-cols-2 gap-4 ${isCompact ? 'my-2.5 p-3' : 'my-4 p-3.5'} bg-slate-50 border border-slate-200/80 rounded-xl ${sectionClass('client')}`}
-              title={onSelectSection ? 'Click to edit client and project details' : undefined}
-            >
-              {renderEditBadge('Client & Scope')}
-              <div>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal mb-0.5">
-                  PREPARED FOR / CLIENT:
-                </p>
-                <h3 className="text-sm font-bold text-slate-950">
-                  {doc.client.clientName || doc.client.nameOfEvent || 'Valued Client'}
-                </h3>
-                <p className="text-[11px] text-slate-600 font-medium">{doc.client.address || 'Client Address'}</p>
-                <p className="text-[11px] text-slate-500 mt-0.5">
-                  {doc.client.contactNo && <span>Tel: {doc.client.contactNo}</span>}
-                  {doc.client.email && <span> • {doc.client.email}</span>}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal mb-0.5">
-                  PROJECT / ENGAGEMENT:
-                </p>
-                <h3 className="text-sm font-bold text-amber-900">
-                  {doc.packageBannerTitle || doc.client.nameOfEvent || 'Professional Services Scope'}
-                </h3>
-                <p className="text-[11px] text-slate-600 mt-0.5 flex items-center">
-                  <Calendar className="w-3 h-3 mr-1 text-slate-400 inline shrink-0" />
-                  <span>
-                    Timeline: {doc.details.eventDateMode === 'single' ? doc.details.eventDate : `${doc.details.eventDateFrom} to ${doc.details.eventDateTo}`}
+              {doc.packageBannerTitle && (
+                <div
+                  className="mt-2 pt-1.5 border-t border-slate-200/80 text-[10.5px] font-bold uppercase tracking-wider flex items-center justify-between"
+                  style={{ color: accentColor === '#f59e0b' ? '#92400e' : accentColor }}
+                >
+                  <span>Scope: {doc.packageBannerTitle}</span>
+                  <span className="text-[9.5px] font-mono text-slate-400 lowercase font-normal">
+                    {activeMilestones.length} phases planned
                   </span>
-                </p>
-              </div>
+                </div>
+              )}
             </div>
 
-            {/* Project Scope / Phases (If present) */}
-            {doc.sectionVisibility?.scope !== false && doc.includeScopeSection !== false && activeMilestones.length > 0 && (
+            {doc.sectionVisibility?.scope !== false && page1Milestones.length > 0 && (
               <div
                 onClick={() => onSelectSection?.('scope', 'scope')}
-                className={`${isCompact ? 'mb-2.5' : 'mb-4'} ${sectionClass('scope')}`}
-                title={onSelectSection ? 'Click to edit SOW phases and milestones' : undefined}
+                className={`mb-2.5 ${sectionClass('scope')}`}
+                title={onSelectSection ? 'Click to edit scope milestones' : undefined}
               >
                 {renderEditBadge('Phases')}
-                <div className="flex items-center space-x-2 border-b border-slate-200/90 pb-1 mb-2">
-                  <Layers className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                <div className="flex items-center space-x-2 border-b border-slate-200/90 pb-1 mb-1.5">
+                  <Layers className="w-3.5 h-3.5 text-amber-700 shrink-0" />
                   <h4 className="text-[11px] font-bold text-slate-900 uppercase tracking-normal whitespace-nowrap">
-                    {doc.sectionTitles?.scopeTitle || preset.scopeSectionTitle || 'Project Phases & SOW Milestones'}
+                    {doc.sectionTitles?.scopeTitle || 'Project Phases & SOW Milestones'}
                   </h4>
+                  {isMultiPageScope && (
+                    <span className="text-[9.5px] text-amber-700 font-normal ml-auto">
+                      (Showing 1–{page1Milestones.length} of {activeMilestones.length})
+                    </span>
+                  )}
                 </div>
-
                 <div className="grid grid-cols-2 gap-2">
-                  {activeMilestones.map((m, idx) => (
+                  {page1Milestones.map((m, idx) => (
                     <div
                       key={m.id || idx}
-                      className={`bg-white border border-slate-200/90 rounded-lg ${isCompact ? 'p-2' : 'p-2.5'} shadow-sm text-[11px]`}
+                      className="bg-white border border-slate-200/90 rounded-lg p-2 shadow-sm text-[10.5px]"
                     >
                       <p className="font-bold text-slate-900 flex items-center">
-                        <span className="w-4 h-4 rounded-full bg-amber-100 text-amber-900 text-[9.5px] font-bold flex items-center justify-center mr-1.5 shrink-0">
+                        <span className="w-4 h-4 rounded-full bg-amber-100 text-amber-900 text-[9px] font-bold flex items-center justify-center mr-1.5 shrink-0">
                           {idx + 1}
                         </span>
-                        <span>{m.dayTitle}</span>
+                        <span className="font-['Outfit']">{m.dayTitle}</span>
                       </p>
-                      <ul className="mt-0.5 space-y-0.5 pl-5 list-disc text-slate-600 text-[10px]">
+                      <ul className="mt-0.5 space-y-0.5 pl-5 list-disc text-slate-600 text-[9.5px]">
                         {m.services.map((s, sIdx) => (
                           <li key={sIdx} className="leading-tight">
                             {s}
@@ -272,206 +419,70 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
               </div>
             )}
 
-            {/* Itemized Investment & Pricing Table */}
-            {doc.sectionVisibility?.pricingTable !== false && (
+            {doc.sectionVisibility?.deliverables !== false && activeDeliverables.length > 0 && isMultiPageScope && (
               <div
-                onClick={() => onSelectSection?.('pricing', 'pricing')}
-                className={`${isCompact ? 'mb-2.5' : 'mb-4'} ${sectionClass('pricing')}`}
-                title={onSelectSection ? 'Click to edit pricing items and discount' : undefined}
+                onClick={() => onSelectSection?.('deliverables', 'deliverables')}
+                className={`mb-2.5 ${sectionClass('deliverables')}`}
+                title={onSelectSection ? 'Click to edit project deliverables' : undefined}
               >
-                {renderEditBadge('Pricing')}
-                <div className="flex items-center justify-between border-b border-slate-200/90 pb-1 mb-2">
-                  <div className="flex items-center space-x-2">
-                    <Sparkles className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                    <h4 className="text-[11px] font-bold text-slate-900 uppercase tracking-normal whitespace-nowrap">
-                      {doc.sectionTitles?.pricingTitle || 'Itemized Investment Schedule'}
-                    </h4>
-                  </div>
-                  <span className="text-[10px] text-slate-400 font-mono">Currency: {currency.code} ({currency.symbol})</span>
-                </div>
-
-              <div className="border border-slate-200 rounded-lg overflow-hidden">
-                <table className="w-full text-left text-xs border-collapse">
-                  <thead>
-                    <tr className="bg-slate-900 text-slate-200 text-[10px] font-bold uppercase tracking-normal">
-                      <th className={`${isCompact ? 'py-1.5 px-2.5' : 'py-2 px-3'} w-8 text-center`}>#</th>
-                      <th className={`${isCompact ? 'py-1.5 px-2.5' : 'py-2 px-3'}`}>Item / Service Description</th>
-                      <th className={`${isCompact ? 'py-1.5 px-2.5' : 'py-2 px-3'} text-center w-16`}>Qty</th>
-                      <th className={`${isCompact ? 'py-1.5 px-2.5' : 'py-2 px-3'} text-center w-16`}>Unit</th>
-                      <th className={`${isCompact ? 'py-1.5 px-2.5' : 'py-2 px-3'} text-right w-24`}>Rate</th>
-                      <th className={`${isCompact ? 'py-1.5 px-2.5' : 'py-2 px-3'} text-right w-28`}>Amount</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 text-[11px]">
-                    {selectedItems.map((item, idx) => {
-                      const itemRate = item.rate || 0;
-                      const itemQty = item.qty || 1;
-                      const itemTotal = item.qty && item.rate ? itemQty * itemRate : item.amount || 0;
-
-                      return (
-                        <tr key={item.id || idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/60'}>
-                          <td className={`${isCompact ? 'py-1.5 px-2.5' : 'py-2 px-3'} text-center text-slate-400 font-mono text-[10px]`}>{idx + 1}</td>
-                          <td className={`${isCompact ? 'py-1.5 px-2.5' : 'py-2 px-3'}`}>
-                            <span className="font-semibold text-slate-900">{item.description}</span>
-                            {item.isOptional && (
-                              <span className="ml-2 text-[9px] bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded font-bold uppercase">
-                                Included Add-on
-                              </span>
-                            )}
-                          </td>
-                          <td className={`${isCompact ? 'py-1.5 px-2.5' : 'py-2 px-3'} text-center text-slate-700 font-mono`}>{itemQty}</td>
-                          <td className={`${isCompact ? 'py-1.5 px-2.5' : 'py-2 px-3'} text-center text-slate-500 text-[10px] uppercase`}>
-                            {item.unit || 'units'}
-                          </td>
-                          <td className={`${isCompact ? 'py-1.5 px-2.5' : 'py-2 px-3'} text-right font-mono text-slate-700`}>
-                            {formatCurrency(itemRate, currency, { showFraction: false })}
-                          </td>
-                          <td className={`${isCompact ? 'py-1.5 px-2.5' : 'py-2 px-3'} text-right font-bold font-mono text-slate-900`}>
-                            {formatCurrency(itemTotal, currency, { showFraction: false })}
-                          </td>
-                        </tr>
-                      );
-                    })}
-
-                    {/* Optional Upsell Add-ons (Visible in PDF as available upgrades) */}
-                    {optionalAddons.map((item, optIdx) => {
-                      const itemRate = item.rate || 0;
-                      const itemQty = item.qty || 1;
-                      const itemTotal = item.qty && item.rate ? itemQty * itemRate : item.amount || 0;
-
-                      return (
-                        <tr key={item.id || `opt-${optIdx}`} className="bg-amber-50/40 border-t border-dashed border-amber-200/80">
-                          <td className={`${isCompact ? 'py-1.5 px-2.5' : 'py-2 px-3'} text-center text-amber-500 font-mono text-[10px]`}>+</td>
-                          <td className={`${isCompact ? 'py-1.5 px-2.5' : 'py-2 px-3'}`}>
-                            <span className="font-medium text-slate-800">{item.description}</span>
-                            <span className="ml-2 text-[9px] bg-amber-100 text-amber-800 border border-amber-300/60 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">
-                              Available Add-on
-                            </span>
-                          </td>
-                          <td className={`${isCompact ? 'py-1.5 px-2.5' : 'py-2 px-3'} text-center text-slate-500 font-mono`}>{itemQty}</td>
-                          <td className={`${isCompact ? 'py-1.5 px-2.5' : 'py-2 px-3'} text-center text-slate-400 text-[10px] uppercase`}>
-                            {item.unit || 'units'}
-                          </td>
-                          <td className={`${isCompact ? 'py-1.5 px-2.5' : 'py-2 px-3'} text-right font-mono text-slate-500 italic`}>
-                            {formatCurrency(itemRate, currency, { showFraction: false })}
-                          </td>
-                          <td className={`${isCompact ? 'py-1.5 px-2.5' : 'py-2 px-3'} text-right font-semibold font-mono text-amber-900`}>
-                            +{formatCurrency(itemTotal, currency, { showFraction: false })}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Financial Totals Block */}
-              <div className="flex justify-end mt-1.5">
-                <div className={`w-80 bg-slate-50 border border-slate-200 rounded-lg ${isCompact ? 'p-2 space-y-0.5' : 'p-2.5 space-y-1'} text-xs`}>
-                  <div className="flex justify-between items-baseline gap-3 text-slate-600 text-[11px]">
-                    <span className="whitespace-nowrap">Subtotal:</span>
-                    <span className="font-mono font-medium whitespace-nowrap">{formatCurrency(subtotal, currency)}</span>
-                  </div>
-
-                  {discountAmount > 0 && (
-                    <div className="flex justify-between items-baseline gap-3 text-emerald-700 text-[11px]">
-                      <span className="whitespace-nowrap">Discount:</span>
-                      <span className="font-mono font-medium whitespace-nowrap">-{formatCurrency(discountAmount, currency)}</span>
-                    </div>
-                  )}
-
-                  {taxAmount > 0 && (
-                    <div className="flex justify-between items-baseline gap-3 text-slate-600 text-[11px]">
-                      <span className="whitespace-nowrap">
-                        {doc.taxConfig?.label || doc.taxType?.toUpperCase() || 'Tax'} ({doc.taxConfig?.percent || doc.taxPercent}%):
-                      </span>
-                      <span className="font-mono font-medium whitespace-nowrap">{formatCurrency(taxAmount, currency)}</span>
-                    </div>
-                  )}
-
-                  <div className="border-t-2 border-slate-900 pt-1 flex justify-between items-baseline gap-3 font-bold text-sm text-slate-950">
-                    <span className="whitespace-nowrap">Total Investment:</span>
-                    <span className="font-mono text-amber-950 font-extrabold whitespace-nowrap">{formatCurrency(grandTotal, currency)}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-            )}
-
-            {/* Payment Milestones & Deliverables Summary */}
-            <div className={`grid grid-cols-2 ${isCompact ? 'gap-2.5 mb-1.5' : 'gap-3 mb-2'}`}>
-              {/* Payment Terms Milestones */}
-              <div
-                onClick={() => onSelectSection?.('tax-payment', 'payment-milestones')}
-                className={`bg-slate-50 border border-slate-200 rounded-lg ${isCompact ? 'p-2 text-[10.5px]' : 'p-2.5 text-[11px]'} ${sectionClass('tax-payment')}`}
-                title={onSelectSection ? 'Click to edit payment terms & milestones' : undefined}
-              >
-                {renderEditBadge('Payment')}
+                {renderEditBadge('Deliverables')}
                 <div className="flex items-center space-x-1.5 pb-1 mb-1.5 border-b border-slate-200/80">
-                  <Clock className="w-3 h-3 text-amber-700 shrink-0" />
-                  <span className="font-bold text-slate-900 uppercase tracking-normal text-[9px] whitespace-nowrap">
-                    Milestone Payment Terms
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                  <span className="font-bold text-slate-900 uppercase tracking-normal text-[11px] whitespace-nowrap">
+                    {doc.sectionTitles?.deliverablesTitle || 'Included Key Deliverables'}
                   </span>
                 </div>
-                <div className="space-y-0.5">
-                  <div className="flex justify-between items-center text-[10px]">
-                    <span className="text-slate-600">{doc.paymentTerms?.paymentMilestoneLabels?.advanceLabel || `${advPct}% Advance Deposit`}:</span>
-                    <strong className="font-mono text-slate-900">{formatCurrency(advanceAmt, currency)}</strong>
-                  </div>
-                  {midPct > 0 && (
-                    <div className="flex justify-between items-center text-[10px]">
-                      <span className="text-slate-600">{doc.paymentTerms?.paymentMilestoneLabels?.afterEventLabel || `${midPct}% Interim Milestone`}:</span>
-                      <strong className="font-mono text-slate-900">{formatCurrency(midAmt, currency)}</strong>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-1 bg-amber-50/30 border border-amber-200/60 rounded-lg p-2.5 text-[10.5px]">
+                  {activeDeliverables.map((del) => (
+                    <div key={del.id} className="flex items-start space-x-1.5">
+                      <span className="text-emerald-700 font-bold text-[11px] leading-none shrink-0 mt-0.5">✓</span>
+                      <span className="text-slate-800 font-medium leading-tight">{del.text}</span>
                     </div>
-                  )}
-                  {balPct > 0 && (
-                    <div className="flex justify-between items-center text-[10px]">
-                      <span className="text-slate-600">{doc.paymentTerms?.paymentMilestoneLabels?.balanceLabel || `${balPct}% Final Handover`}:</span>
-                      <strong className="font-mono text-slate-900">{formatCurrency(balanceAmt, currency)}</strong>
-                    </div>
-                  )}
+                  ))}
                 </div>
               </div>
+            )}
 
-              {/* Deliverables Checklist */}
-              {doc.sectionVisibility?.deliverables !== false && activeDeliverables.length > 0 && (
-                <div
-                  onClick={() => onSelectSection?.('deliverables', 'deliverables')}
-                  className={`bg-slate-50 border border-slate-200 rounded-lg ${isCompact ? 'p-2 text-[10.5px]' : 'p-2.5 text-[11px]'} ${sectionClass('deliverables')}`}
-                  title={onSelectSection ? 'Click to edit project deliverables' : undefined}
-                >
-                  {renderEditBadge('Deliverables')}
-                  <div className="flex items-center space-x-1.5 pb-1 mb-1.5 border-b border-slate-200/80">
-                    <CheckCircle2 className="w-3 h-3 text-emerald-600 shrink-0" />
-                    <span className="font-bold text-slate-900 uppercase tracking-normal text-[9px] whitespace-nowrap">
-                      {doc.sectionTitles?.deliverablesTitle || 'Included Key Deliverables'}
-                    </span>
-                  </div>
-                  <ul className="space-y-1 text-[10px] text-slate-700">
-                    {activeDeliverables.slice(0, isCompact ? 6 : undefined).map((d) => (
-                      <li key={d.id} className="flex items-start space-x-1.5 leading-tight">
-                        <span className="text-emerald-600 font-bold shrink-0">✓</span>
-                        <span className="break-words">{d.text}</span>
-                      </li>
-                    ))}
-                  </ul>
+            {!isMultiPageScope && (
+              <>
+                {renderPricingTableAndTotals()}
+                <div className="grid grid-cols-2 gap-2.5 mb-2">
+                  {renderPaymentTermsBox()}
+                  {doc.sectionVisibility?.deliverables !== false && activeDeliverables.length > 0 && (
+                    <div
+                      onClick={() => onSelectSection?.('deliverables', 'deliverables')}
+                      className={`bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-[10.5px] ${sectionClass('deliverables')}`}
+                      title={onSelectSection ? 'Click to edit project deliverables' : undefined}
+                    >
+                      {renderEditBadge('Deliverables')}
+                      <div className="flex items-center space-x-1.5 pb-1 mb-1.5 border-b border-slate-200/80">
+                        <CheckCircle2 className="w-3 h-3 text-emerald-600 shrink-0" />
+                        <span className="font-bold text-slate-900 uppercase tracking-normal text-[9px] whitespace-nowrap">
+                          {doc.sectionTitles?.deliverablesTitle || 'Included Key Deliverables'}
+                        </span>
+                      </div>
+                      <ul className="space-y-1 text-[9.5px] text-slate-700">
+                        {activeDeliverables.map((del) => (
+                          <li key={del.id} className="flex items-start space-x-1.5">
+                            <span className="text-emerald-600 font-bold">✓</span>
+                            <span>{del.text}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
+              </>
+            )}
           </div>
-
-          {/* Footer & Page 1 Info */}
-          <div className={`border-t border-slate-200 ${isCompact ? 'pt-1.5' : 'pt-2'} flex items-center justify-between text-[10px] text-slate-400`}>
+          <div className="mt-3 pt-2 border-t border-slate-200 flex items-center justify-between text-[10px] text-slate-400">
             <span>{doc.footerNote || `Confidential Proposal • ${doc.studio.name}`}</span>
-            <span>Page 1 of {hasPage2 ? '2' : '1'}</span>
+            <span className="font-semibold text-slate-600">Page 1 of {totalPages}</span>
           </div>
         </div>
       </div>
 
-      {/* ========================================================= */}
-      {/* PAGE 2: TEAM, GUARANTEES, TERMS & E-SIGNATURE (IF ACTIVE)  */}
-      {/* ========================================================= */}
-      {hasPage2 && (
+      {isMultiPageScope && (
         <div
           className="print-page bg-white shadow-2xl relative transition-all duration-200"
           style={{
@@ -481,33 +492,107 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
           }}
         >
           <WatermarkLayer config={doc.watermark} />
-
-          <div className={`relative z-10 ${isCompact ? 'p-6 sm:p-7' : 'p-10'} text-left text-slate-900 flex flex-col justify-between h-full min-h-[1123px]`}>
+          <div className="relative z-10 p-8 sm:p-9 text-left text-slate-900 flex flex-col justify-between h-full min-h-[1123px]">
             <div>
-              {/* Header Mini */}
-              <div className={`flex items-center justify-between border-b border-slate-200 ${isCompact ? 'pb-2 mb-3' : 'pb-3 mb-4'}`}>
+              <div className="flex items-center justify-between border-b border-slate-200 pb-2 mb-3">
                 <div className="flex items-center space-x-2">
-                  <h2 className="font-bold text-sm tracking-normal uppercase text-slate-950 whitespace-nowrap leading-none">
+                  <h2 className="font-bold text-[13px] tracking-normal uppercase text-slate-950 whitespace-nowrap leading-none">
                     {doc.studio.name}
                   </h2>
                   <span className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono leading-none">
                     Ref: {doc.details.invoiceNo}
                   </span>
                 </div>
-                <span className="text-[10px] text-slate-400 uppercase tracking-normal whitespace-nowrap leading-none">
+                <span className="text-[10px] text-slate-500 uppercase tracking-normal whitespace-nowrap leading-none">
+                  Scope & Investment Schedule (Continued)
+                </span>
+              </div>
+              {page2Milestones.length > 0 && (
+                <div
+                  onClick={() => onSelectSection?.('scope', 'scope')}
+                  className={`mb-3 ${sectionClass('scope')}`}
+                  title={onSelectSection ? 'Click to edit scope milestones' : undefined}
+                >
+                  {renderEditBadge('Phases')}
+                  <div className="flex items-center space-x-2 border-b border-slate-200/90 pb-1 mb-2">
+                    <Layers className="w-3.5 h-3.5 text-amber-700 shrink-0" />
+                    <h4 className="text-[11px] font-bold text-slate-900 uppercase tracking-normal whitespace-nowrap">
+                      {doc.sectionTitles?.scopeTitle || 'Project Phases & SOW Milestones'} (Continued)
+                    </h4>
+                    <span className="text-[9.5px] text-amber-700 font-normal ml-auto">
+                      Phases 4 to {activeMilestones.length}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    {page2Milestones.map((m, idx) => (
+                      <div
+                        key={m.id || idx}
+                        className="bg-white border border-slate-200/90 rounded-lg p-2 shadow-sm text-[10.5px]"
+                      >
+                        <p className="font-bold text-slate-900 flex items-center">
+                          <span className="w-4 h-4 rounded-full bg-amber-100 text-amber-900 text-[9px] font-bold flex items-center justify-center mr-1.5 shrink-0">
+                            {idx + 4}
+                          </span>
+                          <span className="font-['Outfit']">{m.dayTitle}</span>
+                        </p>
+                        <ul className="mt-0.5 space-y-0.5 pl-5 list-disc text-slate-600 text-[9.5px]">
+                          {m.services.map((s, sIdx) => (
+                            <li key={sIdx} className="leading-tight">
+                              {s}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {renderPricingTableAndTotals()}
+              <div className="mt-2">
+                {renderPaymentTermsBox()}
+              </div>
+            </div>
+            <div className="mt-3 pt-2 border-t border-slate-200 flex items-center justify-between text-[10px] text-slate-400">
+              <span>{doc.studio.name} • Proposal Ref: {doc.details.invoiceNo}</span>
+              <span className="font-semibold text-slate-600">Page 2 of {totalPages}</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {hasAnnexure && (
+        <div
+          className="print-page bg-white shadow-2xl relative transition-all duration-200"
+          style={{
+            width: '794px',
+            minHeight: '1123px',
+            boxSizing: 'border-box',
+          }}
+        >
+          <WatermarkLayer config={doc.watermark} />
+          <div className="relative z-10 p-8 sm:p-9 text-left text-slate-900 flex flex-col justify-between h-full min-h-[1123px]">
+            <div>
+              <div className="flex items-center justify-between border-b border-slate-200 pb-2 mb-3">
+                <div className="flex items-center space-x-2">
+                  <h2 className="font-bold text-[13px] tracking-normal uppercase text-slate-950 whitespace-nowrap leading-none">
+                    {doc.studio.name}
+                  </h2>
+                  <span className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono leading-none">
+                    Ref: {doc.details.invoiceNo}
+                  </span>
+                </div>
+                <span className="text-[10px] text-slate-500 uppercase tracking-normal whitespace-nowrap leading-none">
                   Proposal Addendum & Sign-off
                 </span>
               </div>
-
-              {/* Assigned Specialists / Team Section */}
               {doc.sectionVisibility?.crew !== false && doc.includeCrewSection && activeTeam.length > 0 && (
                 <div
                   onClick={() => onSelectSection?.('deliverables', 'crew')}
-                  className={`${isCompact ? 'mb-3' : 'mb-5'} ${sectionClass('deliverables')}`}
+                  className={`mb-3.5 ${sectionClass('deliverables')}`}
                   title={onSelectSection ? 'Click to edit team members' : undefined}
                 >
                   {renderEditBadge('Team')}
-                  <div className="flex items-center space-x-2 border-b border-slate-200/90 pb-1 mb-2">
+                  <div className="flex items-center space-x-2 border-b border-slate-200/90 pb-1 mb-1.5">
                     <Award className="w-3.5 h-3.5 text-amber-700 shrink-0" />
                     <h4 className="text-[11px] font-bold text-slate-900 uppercase tracking-normal whitespace-nowrap">
                       {doc.sectionTitles?.crewTitle || preset.teamSectionTitle || 'Assigned Experts & Key Personnel'}
@@ -515,24 +600,22 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     {activeTeam.map((c) => (
-                      <div key={c.id} className={`bg-slate-50 border border-slate-200 rounded-lg ${isCompact ? 'p-2' : 'p-2.5'} text-[11px]`}>
+                      <div key={c.id} className="bg-slate-50 border border-slate-200 rounded-lg p-2 text-[10.5px]">
                         <p className="font-bold text-slate-900">{c.team}</p>
-                        <p className="text-[10px] text-slate-600 mt-0.5 leading-tight">{c.role}</p>
+                        <p className="text-[9.5px] text-slate-600 mt-0.5 leading-tight">{c.role}</p>
                       </div>
                     ))}
                   </div>
                 </div>
               )}
-
-              {/* Guarantees & Why Work With Us */}
               {doc.sectionVisibility?.whyChooseUs !== false && doc.includeWhyChooseUs && activeWhy.length > 0 && (
                 <div
                   onClick={() => onSelectSection?.('deliverables', 'why-choose-us')}
-                  className={`${isCompact ? 'mb-3' : 'mb-5'} ${sectionClass('deliverables')}`}
+                  className={`mb-3.5 ${sectionClass('deliverables')}`}
                   title={onSelectSection ? 'Click to edit guarantees & why choose us' : undefined}
                 >
                   {renderEditBadge('Guarantees')}
-                  <div className="flex items-center space-x-2 border-b border-slate-200/90 pb-1 mb-2">
+                  <div className="flex items-center space-x-2 border-b border-slate-200/90 pb-1 mb-1.5">
                     <ShieldCheck className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
                     <h4 className="text-[11px] font-bold text-slate-900 uppercase tracking-normal whitespace-nowrap">
                       {doc.sectionTitles?.whyChooseUsTitle || 'Why Partner With Us & Quality Commitments'}
@@ -540,33 +623,31 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     {activeWhy.map((w) => (
-                      <div key={w.id} className={`bg-slate-50 border border-slate-200 rounded-lg ${isCompact ? 'p-2' : 'p-2.5'} text-[11px]`}>
+                      <div key={w.id} className="bg-slate-50 border border-slate-200 rounded-lg p-2 text-[10.5px]">
                         <p className="font-bold text-slate-900 flex items-center">
                           {w.icon ? <span className="mr-1.5 text-sm">{w.icon}</span> : null}
-                          <span>{w.title}</span>
+                          <span className="font-['Outfit']">{w.title}</span>
                         </p>
-                        <p className="text-[10px] text-slate-600 mt-0.5 leading-tight">{w.description}</p>
+                        <p className="text-[9.5px] text-slate-600 mt-0.5 leading-tight">{w.description}</p>
                       </div>
                     ))}
                   </div>
                 </div>
               )}
-
-              {/* Commercial Terms & Conditions */}
               {doc.sectionVisibility?.terms !== false && doc.termsAndConditions && doc.termsAndConditions.length > 0 && (
                 <div
                   onClick={() => onSelectSection?.('watermark-terms', 'terms')}
-                  className={`${isCompact ? 'mb-3' : 'mb-5'} ${sectionClass('watermark-terms')}`}
+                  className={`mb-3.5 ${sectionClass('watermark-terms')}`}
                   title={onSelectSection ? 'Click to edit commercial terms & clauses' : undefined}
                 >
                   {renderEditBadge('Terms')}
-                  <div className="flex items-center space-x-2 border-b border-slate-200/90 pb-1 mb-2">
+                  <div className="flex items-center space-x-2 border-b border-slate-200/90 pb-1 mb-1.5">
                     <FileText className="w-3.5 h-3.5 text-slate-700 shrink-0" />
                     <h4 className="text-[11px] font-bold text-slate-900 uppercase tracking-normal whitespace-nowrap">
                       {doc.sectionTitles?.termsTitle || 'Terms of Engagement & Acceptance Criteria'}
                     </h4>
                   </div>
-                  <ul className="space-y-1 text-[10px] text-slate-600 pl-4 list-decimal">
+                  <ul className="space-y-1 text-[9.5px] text-slate-600 pl-4 list-decimal">
                     {doc.termsAndConditions.map((term, tIdx) => (
                       <li key={tIdx} className="leading-tight">
                         {term}
@@ -575,64 +656,59 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
                   </ul>
                 </div>
               )}
-
-              {/* E-Signature & Formal Approval Sign-Off Block */}
               {doc.sectionVisibility?.signatory !== false && doc.signatory?.enabled !== false && (
                 <div
                   onClick={() => onSelectSection?.('watermark-terms', 'signatory')}
-                  className={`mt-4 pt-3 border-t-2 border-slate-900 grid grid-cols-2 gap-8 ${sectionClass('watermark-terms')}`}
+                  className={`mt-3 pt-2.5 border-t-2 border-slate-900 grid grid-cols-2 gap-8 ${sectionClass('watermark-terms')}`}
                   title={onSelectSection ? 'Click to edit signatory details & contract sign-off' : undefined}
                 >
                   {renderEditBadge('Signatures')}
-                  {/* Service Provider Signature */}
                   <div>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal mb-1 whitespace-nowrap">
+                    <p className="text-[9.5px] font-bold text-slate-400 uppercase tracking-normal mb-0.5 whitespace-nowrap">
                       ISSUED BY:
                     </p>
                     <p className="font-bold text-xs text-slate-900">{doc.studio.name}</p>
-                    <div className="h-14 border-b border-slate-300 flex items-end pb-1 my-1">
+                    <div className="h-12 border-b border-slate-300 flex items-end pb-1 my-1">
                       {doc.signatory?.signatureDataUrl ? (
                         <img
                           src={doc.signatory.signatureDataUrl}
                           alt="Signature"
-                          className="max-h-12 object-contain"
+                          className="max-h-10 object-contain"
                         />
                       ) : (
-                        <span className="text-[11px] font-mono text-slate-400 italic">
+                        <span className="text-[10px] font-mono text-slate-400 italic">
                           {doc.signatory?.signerName || 'Authorized Signatory'}
                         </span>
                       )}
                     </div>
-                    <div className="flex justify-between text-[10px] text-slate-500">
+                    <div className="flex justify-between text-[9.5px] text-slate-500">
                       <span>{doc.signatory?.signerTitle || 'Managing Director'}</span>
                       <span>Date: {doc.signatory?.signatureDate || doc.details.invoiceDate}</span>
                     </div>
                   </div>
-
-                  {/* Client Acceptance Signature */}
                   <div>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal mb-1 whitespace-nowrap">
+                    <p className="text-[9.5px] font-bold text-slate-400 uppercase tracking-normal mb-0.5 whitespace-nowrap">
                       ACCEPTED & APPROVED BY CLIENT:
                     </p>
                     <p className="font-bold text-xs text-slate-900">
                       {doc.client.clientName || doc.client.nameOfEvent || 'Authorized Client Representative'}
                     </p>
-                    <div className="h-14 border-b border-slate-300 flex items-end pb-1 my-1">
+                    <div className="h-12 border-b border-slate-300 flex items-end pb-1 my-1">
                       {doc.signatory?.clientSignatureDataUrl ? (
                         <img
                           src={doc.signatory.clientSignatureDataUrl}
                           alt="Client Signature"
-                          className="max-h-12 object-contain"
+                          className="max-h-10 object-contain"
                         />
                       ) : doc.signatory?.clientSignedName ? (
                         <span className="text-xs font-serif text-emerald-800 font-bold italic">
                           Digitally Signed: {doc.signatory.clientSignedName}
                         </span>
                       ) : (
-                        <span className="text-[10px] text-slate-400 italic">Sign / Draw here to approve</span>
+                        <span className="text-[9.5px] text-slate-400 italic">Sign / Draw here to approve</span>
                       )}
                     </div>
-                    <div className="flex justify-between text-[10px] text-slate-500">
+                    <div className="flex justify-between text-[9.5px] text-slate-500">
                       <span>Date: {doc.signatory?.clientSignedDate || '___/___/______'}</span>
                       <span>Status: {doc.signatory?.clientSignedName ? 'APPROVED' : 'AWAITING APPROVAL'}</span>
                     </div>
@@ -640,11 +716,9 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
                 </div>
               )}
             </div>
-
-            {/* Page 2 Footer */}
             <div className="border-t border-slate-200 pt-2 flex items-center justify-between text-[10px] text-slate-400">
               <span>{doc.footerNote || `Confidential Proposal • ${doc.studio.name}`}</span>
-              <span>Page 2 of 2</span>
+              <span className="font-semibold text-slate-600">Page {totalPages} of {totalPages} • End of Document</span>
             </div>
           </div>
         </div>

@@ -127,7 +127,30 @@ Each of these shipped once and cost real debugging time.
 
 ## Handoff log
 
-### 2026-08-30 (latest) — Antigravity · A4 Page Overflow Detection, Density Engine & Single-Sheet PDF Fit
+### 2026-08-30 (latest) — Antigravity · Dynamic Multi-Page Proposal Pagination Architecture
+
+**Delivered Dynamic Multi-Page Pagination for High-Density Proposals:**
+
+1. **Root Cause of Compressed / Squashed Multi-Phase PDF**:
+   - When a proposal had 4+ SOW phases (e.g. 8 phases), all phases were hardcoded into Page 1's JSX, forcing Page 1 to grow to ~1,400px.
+   - When exported or viewed, either it sliced arbitrarily across sheets or squished text to fit onto one page with large margins.
+2. **Dynamic Multi-Page Flow Across Views ([`ModernProposalView.tsx`](file:///d:/Product%20build/src/components/ModernProposalView.tsx) & [`CreativeProposalView.tsx`](file:///d:/Product%20build/src/components/CreativeProposalView.tsx))**:
+   - **When Phases <= 3**:
+     - Page 1: Brand Header + Client & Scope Metadata + Phases 1..3 + Deliverables + Investment & Milestone Payment Terms + Footer (`Page 1 of 2`).
+     - Page 2 (Annexure): Header Mini + Dedicated Team + Quality Guarantees + Commercial Terms & Conditions + Formal E-Signatures + Footer (`Page 2 of 2 • End of Document`).
+   - **When Phases > 3 (e.g. 4 to 8 phases)**:
+     - Page 1: Brand Header + Client Metadata + Phases 1..3 + Deliverables Checklist + Footer (`Page 1 of 3`).
+     - Page 2: Header Mini (`{studio.name} — Scope & Investment (Continued)`) + Phases 4..end (with continuous numbering 4, 5, 6, 7, 8...) + Full Itemized Pricing Schedule Table + Financial Totals + Milestone Payment Terms + Footer (`Page 2 of 3`).
+     - Page 3 (Annexure): Header Mini (`{studio.name} — Proposal Addendum & Sign-off`) + Dedicated Team + Quality Guarantees + Commercial Terms & Conditions + Formal E-Signatures + Footer (`Page 3 of 3 • End of Document`).
+3. **Identical Standard Format on Every Page**:
+   - Every page is a standalone `.print-page` container rendered at standard 100% scale without shrinking text.
+   - Headers, watermarks, typography, and page numbers (`Page X of Y`) maintain uniform formatting on all pages.
+4. **1:1 Full-Width PDF Exporter ([`pdfGenerator.ts`](file:///d:/Product%20build/src/utils/pdfGenerator.ts))**:
+   - Each `.print-page` is placed onto its own A4 sheet at full 210mm × 297mm without shrinking or orphan trailing sheets.
+- **Verification**: `npm run lint` = **0 warnings, 0 errors**. `npm run build` = **Clean compile (exit 0)**.
+- **Target Branch**: `staging` and `main`.
+
+### 2026-08-30 — Antigravity · A4 Page Overflow Detection, Density Engine & Single-Sheet PDF Fit
 
 **Delivered Comprehensive A4 Overflow Prevention & Visual Warning System:**
 
