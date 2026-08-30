@@ -6,7 +6,7 @@ import { CheckCircle2, AlertCircle, Clock } from 'lucide-react';
 
 interface FormalInvoiceViewProps {
   document: QuotationDocument;
-  onSelectSection?: (tabId: string) => void;
+  onSelectSection?: (tabId: string, sectionKey?: string) => void;
 }
 
 export const FormalInvoiceView: React.FC<FormalInvoiceViewProps> = ({ document: doc, onSelectSection }) => {
@@ -122,7 +122,7 @@ export const FormalInvoiceView: React.FC<FormalInvoiceViewProps> = ({ document: 
       {/* Top Header */}
       <div>
         <div
-          onClick={() => onSelectSection?.('business')}
+          onClick={() => onSelectSection?.('business', 'branding')}
           className={`flex items-start justify-between border-b-2 border-slate-900 pb-4 ${sectionClass('business')}`}
           title={onSelectSection ? 'Click to edit business branding' : undefined}
         >
@@ -214,7 +214,7 @@ export const FormalInvoiceView: React.FC<FormalInvoiceViewProps> = ({ document: 
 
         {/* Bill To / Client Section */}
         <div
-          onClick={() => onSelectSection?.('client')}
+          onClick={() => onSelectSection?.('client', 'client')}
           className={`grid grid-cols-2 gap-6 my-4 bg-slate-50 border border-slate-200/90 rounded-xl p-3.5 text-xs ${sectionClass('client')}`}
           title={onSelectSection ? 'Click to edit client & project summary' : undefined}
         >
@@ -268,7 +268,7 @@ export const FormalInvoiceView: React.FC<FormalInvoiceViewProps> = ({ document: 
 
         {/* Itemized Invoice Table */}
         <div
-          onClick={() => onSelectSection?.('pricing')}
+          onClick={() => onSelectSection?.('pricing', 'pricing')}
           className={`mt-3 border border-slate-200 rounded-lg overflow-hidden ${sectionClass('pricing')}`}
           title={onSelectSection ? 'Click to edit line items & rates' : undefined}
         >
@@ -318,7 +318,7 @@ export const FormalInvoiceView: React.FC<FormalInvoiceViewProps> = ({ document: 
           {/* Left: Payment Banking & Offline QR Code */}
           {doc.sectionVisibility?.bankDetails !== false ? (
             <div
-              onClick={() => onSelectSection?.('tax-payment')}
+              onClick={() => onSelectSection?.('tax-payment', 'bank')}
               className={`flex-1 bg-slate-50 border border-slate-200/90 rounded-xl p-3 text-xs ${sectionClass('tax-payment')}`}
               title={onSelectSection ? 'Click to edit bank & payment instructions' : undefined}
             >
@@ -374,7 +374,7 @@ export const FormalInvoiceView: React.FC<FormalInvoiceViewProps> = ({ document: 
 
           {/* Right: Subtotal, Tax & Net Due Totals */}
           <div
-            onClick={() => onSelectSection?.('tax-payment')}
+            onClick={() => onSelectSection?.('tax-payment', 'tax')}
             className={`w-80 bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-1.5 text-xs shrink-0 ${sectionClass('tax-payment')}`}
             title={onSelectSection ? 'Click to edit taxes, discount & settlement' : undefined}
           >
@@ -424,7 +424,7 @@ export const FormalInvoiceView: React.FC<FormalInvoiceViewProps> = ({ document: 
       <div>
         <div className="border-t border-slate-200 pt-3 grid grid-cols-2 gap-6 text-[10px] text-slate-500">
           <div
-            onClick={() => onSelectSection?.('watermark-terms')}
+            onClick={() => onSelectSection?.('watermark-terms', 'terms')}
             className={sectionClass('watermark-terms')}
             title={onSelectSection ? 'Click to edit invoice terms' : undefined}
           >
@@ -454,7 +454,7 @@ export const FormalInvoiceView: React.FC<FormalInvoiceViewProps> = ({ document: 
           </div>
 
           <div
-            onClick={() => onSelectSection?.('watermark-terms')}
+            onClick={() => onSelectSection?.('watermark-terms', 'signatory')}
             className={`text-right flex flex-col items-end justify-end ${sectionClass('watermark-terms')}`}
             title={onSelectSection ? 'Click to edit signatory details' : undefined}
           >

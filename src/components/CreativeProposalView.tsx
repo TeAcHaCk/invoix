@@ -7,7 +7,7 @@ import { Users, ShieldCheck } from 'lucide-react';
 
 interface CreativeProposalViewProps {
   document: QuotationDocument;
-  onSelectSection?: (tabId: string) => void;
+  onSelectSection?: (tabId: string, sectionKey?: string) => void;
 }
 
 export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ document: doc, onSelectSection }) => {
@@ -111,7 +111,7 @@ export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ docu
           <div>
             {/* TOP HEADER SECTION */}
             <div
-              onClick={() => onSelectSection?.('business')}
+              onClick={() => onSelectSection?.('business', 'branding')}
               className={`w-full text-center pb-1 ${sectionClass('business')}`}
               title={onSelectSection ? 'Click to edit business branding' : undefined}
             >
@@ -158,7 +158,7 @@ export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ docu
 
             {/* CLIENT & PROPOSAL METADATA BAR */}
             <div
-              onClick={() => onSelectSection?.('client')}
+              onClick={() => onSelectSection?.('client', 'client')}
               className={`grid grid-cols-2 gap-4 mt-3 mb-4 bg-slate-50/80 border border-slate-200/90 rounded-lg p-3 text-[11.5px] leading-relaxed ${sectionClass('client')}`}
               title={onSelectSection ? 'Click to edit client & project metadata' : undefined}
             >
@@ -206,7 +206,7 @@ export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ docu
 
             {/* PACKAGE BANNER TITLE */}
             <div
-              onClick={() => onSelectSection?.('client')}
+              onClick={() => onSelectSection?.('client', 'client')}
               className={`bg-[#111111] text-amber-300 py-2.5 px-4 text-center rounded-sm font-bold tracking-[0.12em] text-[13px] uppercase shadow-md my-3 ${sectionClass('client')}`}
             >
               {doc.packageBannerTitle || preset.defaultPackageTitle}
@@ -215,7 +215,7 @@ export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ docu
             {/* SCOPE & SCHEDULE MATRIX SECTION */}
             {doc.sectionVisibility?.scope !== false && doc.includeScopeSection !== false && doc.eventCoverage && doc.eventCoverage.length > 0 && (
               <div
-                onClick={() => onSelectSection?.('scope')}
+                onClick={() => onSelectSection?.('scope', 'scope')}
                 className={`my-3 ${sectionClass('scope')}`}
                 title={onSelectSection ? 'Click to edit event coverage & phases' : undefined}
               >
@@ -258,7 +258,7 @@ export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ docu
             {/* DELIVERABLES INCLUDED SECTION */}
             {doc.sectionVisibility?.deliverables !== false && doc.deliverables && doc.deliverables.length > 0 && (
               <div
-                onClick={() => onSelectSection?.('deliverables')}
+                onClick={() => onSelectSection?.('deliverables', 'deliverables')}
                 className={`my-3 ${sectionClass('deliverables')}`}
                 title={onSelectSection ? 'Click to edit deliverables' : undefined}
               >
@@ -281,7 +281,7 @@ export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ docu
 
             {/* TOTAL INVESTMENT & PAYMENT TERMS SUMMARY */}
             <div
-              onClick={() => onSelectSection?.('pricing')}
+              onClick={() => onSelectSection?.('pricing', 'pricing')}
               className={`mt-4 border-2 border-slate-900 rounded-lg overflow-hidden bg-white shadow-sm ${sectionClass('pricing')}`}
               title={onSelectSection ? 'Click to edit pricing & discount' : undefined}
             >
@@ -302,7 +302,7 @@ export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ docu
               <div
                 onClick={(e) => {
                   e.stopPropagation();
-                  onSelectSection?.('tax-payment');
+                  onSelectSection?.('tax-payment', 'payment-milestones');
                 }}
                 className="grid grid-cols-3 divide-x divide-slate-200 bg-slate-50 p-3 text-center text-[10.5px] cursor-pointer hover:bg-amber-50/40 transition-colors"
                 title={onSelectSection ? 'Click to edit payment milestones' : undefined}
@@ -374,7 +374,7 @@ export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ docu
               {/* CREW / TEAM ALLOCATION SECTION */}
               {doc.sectionVisibility?.crew !== false && doc.includeCrewSection !== false && activeCrew.length > 0 && (
                 <div
-                  onClick={() => onSelectSection?.('deliverables')}
+                  onClick={() => onSelectSection?.('deliverables', 'crew')}
                   className={`mb-4 ${sectionClass('deliverables')}`}
                   title={onSelectSection ? 'Click to edit team allocation' : undefined}
                 >
@@ -408,7 +408,7 @@ export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ docu
               {/* WHY WORK WITH US SECTION */}
               {doc.sectionVisibility?.whyChooseUs !== false && doc.includeWhyChooseUs !== false && activeWhyChoose.length > 0 && (
                 <div
-                  onClick={() => onSelectSection?.('deliverables')}
+                  onClick={() => onSelectSection?.('deliverables', 'why-choose-us')}
                   className={`mb-4 ${sectionClass('deliverables')}`}
                   title={onSelectSection ? 'Click to edit guarantees & value proposition' : undefined}
                 >
@@ -440,7 +440,7 @@ export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ docu
               {/* TERMS & CONDITIONS (2-Column Layout) */}
               {doc.sectionVisibility?.terms !== false && (
                 <div
-                  onClick={() => onSelectSection?.('watermark-terms')}
+                  onClick={() => onSelectSection?.('watermark-terms', 'terms')}
                   className={`mb-4 ${sectionClass('watermark-terms')}`}
                   title={onSelectSection ? 'Click to edit terms & conditions' : undefined}
                 >
@@ -471,7 +471,7 @@ export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ docu
 
               {/* SIGNATURE & CLIENT APPROVAL SECTION */}
               <div
-                onClick={() => onSelectSection?.('watermark-terms')}
+                onClick={() => onSelectSection?.('watermark-terms', 'signatory')}
                 className={`mt-4 pt-3 border-t-2 border-slate-900 grid grid-cols-2 gap-6 ${sectionClass('watermark-terms')}`}
                 title={onSelectSection ? 'Click to edit signatory details' : undefined}
               >

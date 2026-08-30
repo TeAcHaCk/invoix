@@ -127,23 +127,35 @@ Each of these shipped once and cost real debugging time.
 
 ## Handoff log
 
-### 2026-08-30 (latest) — Antigravity · Accurate Bi-Directional Canvas-to-Field Jump & Inline Section Titles
+### 2026-08-30 (latest) — Antigravity · Precision Canvas-to-Field Auto-Scroll & Visual Focus Pulse
 
-**Delivered Accurate Canvas-to-Field Redirection & Section Management Polish:**
+**Delivered Precision Deep-Linking & Auto-Scroll Highlight Engine:**
 
-1. **Fixed Canvas-to-Tab Redirection Targets Across All Views**:
-   - In [`ModernProposalView.tsx`](file:///d:/Product%20build/src/components/ModernProposalView.tsx) and [`CreativeProposalView.tsx`](file:///d:/Product%20build/src/components/CreativeProposalView.tsx):
-     - Clicking **Assigned Specialists / Team** now directly redirects to the `deliverables` tab where team members are edited (was previously mistakenly opening `industry`).
-     - Clicking **Guarantees & Why Choose Us** now directly redirects to the `deliverables` tab where guarantees are edited (was previously opening `industry`).
-     - Clicking **Commercial Terms & Conditions** across [`ModernProposalView.tsx`](file:///d:/Product%20build/src/components/ModernProposalView.tsx), [`CreativeProposalView.tsx`](file:///d:/Product%20build/src/components/CreativeProposalView.tsx), and [`FormalInvoiceView.tsx`](file:///d:/Product%20build/src/components/FormalInvoiceView.tsx) now directly redirects to the `watermark-terms` tab where terms and SLA clauses are edited.
-2. **Added 1-Click `[Edit ➔]` Jump Shortcuts in Modular Section Organizer**:
-   - In [`FormEditor.tsx`](file:///d:/Product%20build/src/components/FormEditor.tsx) Tab 1 (Preset & Style), added direct `[Edit ➔]` buttons on every section row (Banner, Scope, Deliverables, Team, Guarantees, Pricing, Payments, Bank, Terms, Signatory), allowing 1-click jumps from the organizer straight into the corresponding field editor.
-3. **Inline Section Heading & Visibility Customization Across All Tabs**:
-   - Added inline custom heading input boxes & eye visibility toggles directly inside the respective editor tabs:
-     - `Scope & Milestones` tab: Custom Scope Heading input + visibility toggle.
-     - `Deliverables` tab: Custom Deliverables Heading, Team Heading, and Guarantees Heading inputs + visibility toggles.
-     - `Pricing & Items` tab: Custom Pricing Table Heading input + visibility toggle.
-     - `Contract & Sign` tab: Custom Commercial Terms Heading input + visibility toggle.
+1. **Precision Card-Level Deep Linking (`onSelectSection(tabId, sectionKey)`)**:
+   - Upgraded `onSelectSection` signature across [`StudioWorkspace.tsx`](file:///d:/Product%20build/src/components/StudioWorkspace.tsx), [`InvoiceDocumentView.tsx`](file:///d:/Product%20build/src/components/InvoiceDocumentView.tsx), [`ModernProposalView.tsx`](file:///d:/Product%20build/src/components/ModernProposalView.tsx), [`CreativeProposalView.tsx`](file:///d:/Product%20build/src/components/CreativeProposalView.tsx), and [`FormalInvoiceView.tsx`](file:///d:/Product%20build/src/components/FormalInvoiceView.tsx) to pass granular sub-section keys.
+   - Assigned dedicated container IDs across all 8 tabs in [`FormEditor.tsx`](file:///d:/Product%20build/src/components/FormEditor.tsx):
+     - `editor-section-branding` (Tab 2: Company Logo & Details)
+     - `editor-section-bank` (Tab 2: Payment & Banking Details)
+     - `editor-section-client` (Tab 3: Client Info & Ref)
+     - `editor-section-scope` (Tab 4: Scope & Milestones)
+     - `editor-section-pricing` (Tab 5: Pricing Table)
+     - `editor-section-deliverables` (Tab 6: Deliverables Checklist)
+     - `editor-section-crew` (Tab 6: Assigned Specialists)
+     - `editor-section-why-choose-us` (Tab 6: Guarantees & Why Choose Us)
+     - `editor-section-tax` (Tab 7: Tax Engine)
+     - `editor-section-payment-milestones` (Tab 7: Payment Tranches / Settlement)
+     - `editor-section-terms` (Tab 8: Terms Clauses)
+     - `editor-section-signatory` (Tab 8: Formal Signatures)
+2. **Smooth Center Scrolling & Amber Glow Pulse**:
+   - In [`StudioWorkspace.tsx`](file:///d:/Product%20build/src/components/StudioWorkspace.tsx), clicking any canvas section automatically:
+     - Activates target tab and switches view to `split` (if in full preview).
+     - Smoothly centers the exact card into view using `window.document.getElementById('editor-section-' + sectionKey).scrollIntoView({ behavior: 'smooth', block: 'center' })`.
+     - Applies a prominent 1.8s amber glow ring (`ring-2 ring-amber-400 ring-offset-2 ring-offset-slate-950`) to visually guide the user's attention straight to the field.
+3. **Accurate Redirection Targets Across All Views**:
+   - Clicking **Why Partner With Us / Guarantees** on proposal canvas now directly scrolls to and highlights the Guarantees card in Tab 6.
+   - Clicking **Assigned Specialists / Team** on proposal canvas directly scrolls to and highlights the Team card in Tab 6.
+   - Clicking **Bank Details** on invoice canvas scrolls to and highlights the Bank Details card in Tab 2.
+   - Clicking **Terms** or **Signature** scrolls to and highlights the respective card in Tab 8.
 - **Verification**: `npm run lint` = **0 warnings, 0 errors**. `npm run build` = **Clean compile (exit 0)**.
 - **Target Branch**: `staging`.
 

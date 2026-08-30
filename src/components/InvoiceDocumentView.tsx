@@ -8,7 +8,7 @@ interface InvoiceDocumentViewProps {
   document: QuotationDocument;
   elementId?: string;
   zoomScale?: number;
-  onSelectSection?: (tabId: string) => void;
+  onSelectSection?: (tabId: string, sectionKey?: string) => void;
 }
 
 export const InvoiceDocumentView: React.FC<InvoiceDocumentViewProps> = ({

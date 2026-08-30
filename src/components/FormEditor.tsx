@@ -1396,7 +1396,7 @@ export const FormEditor: React.FC<FormEditorProps> = ({
         {activeTab === 'business' && (
           <div className="space-y-4 animate-fadeIn">
             {/* Logo Upload & Size Controls */}
-            <div className="bg-slate-950/70 border border-slate-800/80 rounded-2xl p-4 space-y-4">
+            <div id="editor-section-branding" className="bg-slate-950/70 border border-slate-800/80 rounded-2xl p-4 space-y-4">
               <div className="flex items-center justify-between">
                 <label className="text-xs font-bold text-slate-200 uppercase tracking-wider block font-['Outfit']">
                   Company Brand Logo
@@ -1614,7 +1614,7 @@ export const FormEditor: React.FC<FormEditorProps> = ({
             </div>
 
             {/* Banking & UPI / Payment Link */}
-            <div className="bg-slate-950/70 border border-slate-800/80 rounded-2xl p-4 space-y-3">
+            <div id="editor-section-bank" className="bg-slate-950/70 border border-slate-800/80 rounded-2xl p-4 space-y-3">
               <label className="text-xs font-bold text-slate-200 uppercase tracking-wider block font-['Outfit'] flex items-center space-x-1.5">
                 <CreditCard className="w-3.5 h-3.5 text-amber-400" />
                 <span>Payment & Banking Details</span>
@@ -1699,7 +1699,7 @@ export const FormEditor: React.FC<FormEditorProps> = ({
         {activeTab === 'client' && (
           <div className="space-y-4 animate-fadeIn">
             {/* Document Reference Info */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 bg-slate-950/70 border border-slate-800/80 rounded-2xl p-4">
+            <div id="editor-section-client" className="grid grid-cols-2 sm:grid-cols-3 gap-3 bg-slate-950/70 border border-slate-800/80 rounded-2xl p-4">
               <div>
                 <label className="text-[11px] font-semibold text-slate-300 block mb-1">
                   {doc.type === 'INVOICE' ? 'Invoice Number' : 'Quotation Reference'}
@@ -1832,7 +1832,7 @@ export const FormEditor: React.FC<FormEditorProps> = ({
         {/* TAB 4: SCOPE & PROJECT PHASES                             */}
         {/* ========================================================= */}
         {activeTab === 'scope' && (
-          <div className="space-y-4 animate-fadeIn">
+          <div id="editor-section-scope" className="space-y-4 animate-fadeIn">
             {/* Inline Section Title & Visibility Control */}
             <div className="bg-slate-950/70 border border-slate-800/80 rounded-2xl p-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5">
               <div className="flex-1 w-full">
@@ -1941,7 +1941,7 @@ export const FormEditor: React.FC<FormEditorProps> = ({
         {/* TAB 5: ITEMIZED PRICING & SCOPE ADD-ONS                   */}
         {/* ========================================================= */}
         {activeTab === 'pricing' && (
-          <div className="space-y-4 animate-fadeIn">
+          <div id="editor-section-pricing" className="space-y-4 animate-fadeIn">
             {/* Inline Section Title & Visibility Control */}
             <div className="bg-slate-950/70 border border-slate-800/80 rounded-2xl p-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5">
               <div className="flex-1 w-full">
@@ -2163,7 +2163,7 @@ export const FormEditor: React.FC<FormEditorProps> = ({
             </div>
 
             {/* 1. Deliverables Checklist */}
-            <div className="bg-slate-950/70 border border-slate-800/80 rounded-2xl p-4 space-y-3">
+            <div id="editor-section-deliverables" className="bg-slate-950/70 border border-slate-800/80 rounded-2xl p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <label className="text-xs font-bold text-amber-300 uppercase tracking-wider flex items-center space-x-1.5 font-['Outfit']">
                   <CheckSquare className="w-3.5 h-3.5" />
@@ -2231,7 +2231,7 @@ export const FormEditor: React.FC<FormEditorProps> = ({
             </div>
 
             {/* 2. Assigned Specialists & Key Personnel */}
-            <div className="bg-slate-950/70 border border-slate-800/80 rounded-2xl p-4 space-y-3">
+            <div id="editor-section-crew" className="bg-slate-950/70 border border-slate-800/80 rounded-2xl p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <Award className="w-3.5 h-3.5 text-amber-400" />
@@ -2327,7 +2327,7 @@ export const FormEditor: React.FC<FormEditorProps> = ({
             </div>
 
             {/* 3. Quality Commitments & Why Partner With Us */}
-            <div className="bg-slate-950/70 border border-slate-800/80 rounded-2xl p-4 space-y-3">
+            <div id="editor-section-why-choose-us" className="bg-slate-950/70 border border-slate-800/80 rounded-2xl p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
@@ -2439,7 +2439,7 @@ export const FormEditor: React.FC<FormEditorProps> = ({
         {activeTab === 'tax-payment' && (
           <div className="space-y-4 animate-fadeIn">
             {/* Tax Settings */}
-            <div className="bg-slate-950/70 border border-slate-800/80 rounded-2xl p-4 space-y-3">
+            <div id="editor-section-tax" className="bg-slate-950/70 border border-slate-800/80 rounded-2xl p-4 space-y-3">
               <label className="text-xs font-bold text-slate-200 uppercase tracking-wider block font-['Outfit']">
                 Tax Engine & Rates
               </label>
@@ -2489,7 +2489,7 @@ export const FormEditor: React.FC<FormEditorProps> = ({
 
             {/* Payment Milestone Structure for Proposals VS Payment Tracking for Invoices */}
             {doc.type === 'INVOICE' ? (
-              <div className="bg-slate-950/70 border border-slate-800/80 rounded-2xl p-4 space-y-4">
+              <div id="editor-section-payment-milestones" className="bg-slate-950/70 border border-slate-800/80 rounded-2xl p-4 space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
                     <CreditCard className="w-3.5 h-3.5 text-blue-400" />
@@ -2652,7 +2652,7 @@ export const FormEditor: React.FC<FormEditorProps> = ({
                 </div>
               </div>
             ) : (
-              <div className="bg-slate-950/70 border border-slate-800/80 rounded-2xl p-4 space-y-3">
+              <div id="editor-section-payment-milestones" className="bg-slate-950/70 border border-slate-800/80 rounded-2xl p-4 space-y-3">
                 <label className="text-xs font-bold text-slate-200 uppercase tracking-wider block font-['Outfit']">
                   Milestone Payment Tranches
                 </label>
@@ -2721,7 +2721,7 @@ export const FormEditor: React.FC<FormEditorProps> = ({
             </div>
 
             {/* 2. Terms of Engagement & Policy Clauses */}
-            <div className="bg-slate-950/70 border border-slate-800/80 rounded-2xl p-4 space-y-3.5">
+            <div id="editor-section-terms" className="bg-slate-950/70 border border-slate-800/80 rounded-2xl p-4 space-y-3.5">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <FileText className="w-3.5 h-3.5 text-amber-400" />
@@ -2858,7 +2858,7 @@ export const FormEditor: React.FC<FormEditorProps> = ({
             </div>
 
             {/* 3. Formal Signatory & Approval Sign-Off Block */}
-            <div className="bg-slate-950/70 border border-slate-800/80 rounded-2xl p-4 space-y-3.5">
+            <div id="editor-section-signatory" className="bg-slate-950/70 border border-slate-800/80 rounded-2xl p-4 space-y-3.5">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <FileSignature className="w-3.5 h-3.5 text-amber-400" />

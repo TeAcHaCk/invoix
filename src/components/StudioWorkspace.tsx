@@ -644,13 +644,30 @@ export default function StudioWorkspace({ initialIndustry, onNavigateToAdmin, on
             <div id="quotation-preview-container">
               <InvoiceDocumentView
                 document={document}
-                onSelectSection={(tabId) => {
+                onSelectSection={(tabId, sectionKey) => {
                   setEditorActiveTab(tabId);
                   if (viewMode === 'preview') {
                     setViewMode('split');
-                    localStorage.setItem('invoix_view_mode', 'split');
+                    try {
+                      localStorage.setItem('invoix_view_mode', 'split');
+                    } catch {
+                      /* ignore */
+                    }
                   }
                   setMobileActiveView('editor');
+
+                  if (sectionKey) {
+                    setTimeout(() => {
+                      const el = window.document.getElementById(`editor-section-${sectionKey}`);
+                      if (el) {
+                        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        el.classList.add('ring-2', 'ring-amber-400', 'ring-offset-2', 'ring-offset-slate-950', 'transition-all', 'duration-500');
+                        setTimeout(() => {
+                          el.classList.remove('ring-2', 'ring-amber-400', 'ring-offset-2', 'ring-offset-slate-950');
+                        }, 1800);
+                      }
+                    }, 100);
+                  }
                 }}
               />
             </div>

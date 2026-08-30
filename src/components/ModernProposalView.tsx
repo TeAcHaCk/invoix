@@ -16,7 +16,7 @@ import {
 
 interface ModernProposalViewProps {
   document: QuotationDocument;
-  onSelectSection?: (tabId: string) => void;
+  onSelectSection?: (tabId: string, sectionKey?: string) => void;
 }
 
 export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document: doc, onSelectSection }) => {
@@ -111,7 +111,7 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
           <div>
             {/* Header / Brand Block */}
             <div
-              onClick={() => onSelectSection?.('business')}
+              onClick={() => onSelectSection?.('business', 'branding')}
               className={`flex items-start justify-between border-b-2 border-slate-900 pb-5 ${sectionClass('business')}`}
               title={onSelectSection ? 'Click to edit business branding' : undefined}
             >
@@ -187,7 +187,7 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
 
             {/* Client & Project Banner */}
             <div
-              onClick={() => onSelectSection?.('client')}
+              onClick={() => onSelectSection?.('client', 'client')}
               className={`grid grid-cols-2 gap-4 my-4 bg-slate-50 border border-slate-200/80 rounded-xl p-3.5 ${sectionClass('client')}`}
               title={onSelectSection ? 'Click to edit client and project details' : undefined}
             >
@@ -225,7 +225,7 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
             {/* Project Scope / Phases (If present) */}
             {doc.sectionVisibility?.scope !== false && doc.includeScopeSection !== false && activeMilestones.length > 0 && (
               <div
-                onClick={() => onSelectSection?.('scope')}
+                onClick={() => onSelectSection?.('scope', 'scope')}
                 className={`mb-4 ${sectionClass('scope')}`}
                 title={onSelectSection ? 'Click to edit SOW phases and milestones' : undefined}
               >
@@ -265,7 +265,7 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
             {/* Itemized Investment & Pricing Table */}
             {doc.sectionVisibility?.pricingTable !== false && (
               <div
-                onClick={() => onSelectSection?.('pricing')}
+                onClick={() => onSelectSection?.('pricing', 'pricing')}
                 className={`mb-4 ${sectionClass('pricing')}`}
                 title={onSelectSection ? 'Click to edit pricing items and discount' : undefined}
               >
@@ -392,7 +392,7 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
             <div className="grid grid-cols-2 gap-3 mb-2">
               {/* Payment Terms Milestones */}
               <div
-                onClick={() => onSelectSection?.('tax-payment')}
+                onClick={() => onSelectSection?.('tax-payment', 'payment-milestones')}
                 className={`bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-[11px] ${sectionClass('tax-payment')}`}
                 title={onSelectSection ? 'Click to edit payment terms & milestones' : undefined}
               >
@@ -426,7 +426,7 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
               {/* Deliverables Checklist */}
               {doc.sectionVisibility?.deliverables !== false && activeDeliverables.length > 0 && (
                 <div
-                  onClick={() => onSelectSection?.('deliverables')}
+                  onClick={() => onSelectSection?.('deliverables', 'deliverables')}
                   className={`bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-[11px] ${sectionClass('deliverables')}`}
                   title={onSelectSection ? 'Click to edit project deliverables' : undefined}
                 >
@@ -492,7 +492,7 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
               {/* Assigned Specialists / Team Section */}
               {doc.sectionVisibility?.crew !== false && doc.includeCrewSection && activeTeam.length > 0 && (
                 <div
-                  onClick={() => onSelectSection?.('deliverables')}
+                  onClick={() => onSelectSection?.('deliverables', 'crew')}
                   className={`mb-5 ${sectionClass('deliverables')}`}
                   title={onSelectSection ? 'Click to edit team members' : undefined}
                 >
@@ -517,7 +517,7 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
               {/* Guarantees & Why Work With Us */}
               {doc.sectionVisibility?.whyChooseUs !== false && doc.includeWhyChooseUs && activeWhy.length > 0 && (
                 <div
-                  onClick={() => onSelectSection?.('deliverables')}
+                  onClick={() => onSelectSection?.('deliverables', 'why-choose-us')}
                   className={`mb-5 ${sectionClass('deliverables')}`}
                   title={onSelectSection ? 'Click to edit guarantees & why choose us' : undefined}
                 >
@@ -545,7 +545,7 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
               {/* Commercial Terms & Conditions */}
               {doc.sectionVisibility?.terms !== false && doc.termsAndConditions && doc.termsAndConditions.length > 0 && (
                 <div
-                  onClick={() => onSelectSection?.('watermark-terms')}
+                  onClick={() => onSelectSection?.('watermark-terms', 'terms')}
                   className={`mb-5 ${sectionClass('watermark-terms')}`}
                   title={onSelectSection ? 'Click to edit commercial terms & clauses' : undefined}
                 >
@@ -569,7 +569,7 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
               {/* E-Signature & Formal Approval Sign-Off Block */}
               {doc.sectionVisibility?.signatory !== false && doc.signatory?.enabled !== false && (
                 <div
-                  onClick={() => onSelectSection?.('watermark-terms')}
+                  onClick={() => onSelectSection?.('watermark-terms', 'signatory')}
                   className={`mt-4 pt-3 border-t-2 border-slate-900 grid grid-cols-2 gap-8 ${sectionClass('watermark-terms')}`}
                   title={onSelectSection ? 'Click to edit signatory details & contract sign-off' : undefined}
                 >
