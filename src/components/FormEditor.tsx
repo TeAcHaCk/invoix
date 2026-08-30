@@ -12,7 +12,9 @@ import type {
   CustomTemplatePreset,
   SectionVisibilityConfig,
   SectionTitlesConfig,
+  ProposalSectionKey,
 } from '../types';
+import { DEFAULT_PROPOSAL_SECTION_ORDER } from '../types';
 import { sanitizeContactNumber } from '../utils/formatters';
 import {
   saveStudioProfileToStorage,
@@ -245,6 +247,27 @@ export const FormEditor: React.FC<FormEditorProps> = ({
       includeCrewSection: updated.crew,
       includeWhyChooseUs: updated.whyChooseUs,
     });
+  };
+
+  const currentSectionOrder: ProposalSectionKey[] =
+    doc.sectionOrder && doc.sectionOrder.length === DEFAULT_PROPOSAL_SECTION_ORDER.length
+      ? doc.sectionOrder
+      : DEFAULT_PROPOSAL_SECTION_ORDER;
+
+  const handleMoveSectionOrder = (index: number, direction: 'up' | 'down') => {
+    const targetIdx = direction === 'up' ? index - 1 : index + 1;
+    if (targetIdx < 0 || targetIdx >= currentSectionOrder.length) return;
+    const nextOrder = [...currentSectionOrder];
+    const temp = nextOrder[index];
+    nextOrder[index] = nextOrder[targetIdx];
+    nextOrder[targetIdx] = temp;
+    update({ sectionOrder: nextOrder });
+    toast.info(`Moved section ${direction}`);
+  };
+
+  const handleResetSectionOrder = () => {
+    update({ sectionOrder: DEFAULT_PROPOSAL_SECTION_ORDER });
+    toast.success('Reset sections to standard proposal sequence');
   };
 
   const handleSectionTitleChange = (key: keyof SectionTitlesConfig, val: string) => {
@@ -962,29 +985,39 @@ export const FormEditor: React.FC<FormEditorProps> = ({
               onOpenCreateTemplate={() => setIsSaveTemplateModalOpen(true)}
             />
 
-            {/* Modular Section Organizer & Custom Titles */}
+            {/* Modular Section Sequence & Custom Titles */}
             <div className="bg-slate-950/70 border border-slate-800/80 rounded-2xl p-4 space-y-3.5">
               <div className="flex items-center justify-between">
                 <label className="text-xs font-bold text-slate-200 uppercase tracking-wider block font-['Outfit'] flex items-center space-x-1.5">
                   <Sliders className="w-3.5 h-3.5 text-amber-400" />
-                  <span>Modular Section Organizer & Titles</span>
+                  <span>Proposal Section Flow & Sequence</span>
                 </label>
-                <button
-                  type="button"
-                  onClick={() => setIsSaveTemplateModalOpen(true)}
-                  className="px-2.5 py-1 bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/40 rounded-lg text-xs font-bold flex items-center space-x-1.5 transition-colors cursor-pointer"
-                >
-                  <Save className="w-3 h-3" />
-                  <span>Save as Template</span>
-                </button>
+                <div className="flex items-center space-x-2">
+                  <button
+                    type="button"
+                    onClick={handleResetSectionOrder}
+                    className="px-2 py-0.5 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-amber-300 border border-slate-700/60 rounded-lg text-[10px] font-semibold transition-colors cursor-pointer"
+                    title="Reset to default sequence"
+                  >
+                    Reset Flow
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsSaveTemplateModalOpen(true)}
+                    className="px-2.5 py-1 bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/40 rounded-lg text-xs font-bold flex items-center space-x-1.5 transition-colors cursor-pointer"
+                  >
+                    <Save className="w-3 h-3" />
+                    <span>Save as Template</span>
+                  </button>
+                </div>
               </div>
 
               <p className="text-[11px] text-slate-400">
-                Toggle visibility and rename section titles to match your tailored business workflow.
+                Use <strong>[ ↑ ]</strong> and <strong>[ ↓ ]</strong> to shuffle sections or adjust their sequence in the proposal.
               </p>
 
               <div className="space-y-2">
-                {/* 1. Client & Project Banner */}
+                {/* 1. Client & Project Banner (Always on Page 1 Header) */}
                 <div className="p-2.5 bg-slate-900/60 border border-slate-800/80 rounded-xl space-y-2">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
@@ -1015,238 +1048,463 @@ export const FormEditor: React.FC<FormEditorProps> = ({
                   </div>
                 </div>
 
-                {/* 2. Scope & Milestones */}
-                <div className="p-2.5 bg-slate-900/60 border border-slate-800/80 rounded-xl space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <Layers className="w-3.5 h-3.5 text-amber-400" />
-                      <span className="text-xs font-semibold text-slate-200">Scope of Work & Milestones</span>
-                    </div>
-                    <div className="flex items-center space-x-1.5">
-                      <button
-                        type="button"
-                        onClick={() => setActiveTab('scope')}
-                        className="text-[10px] text-amber-400 hover:text-amber-300 font-semibold px-2 py-0.5 rounded-md bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 transition-all cursor-pointer flex items-center space-x-1"
-                        title="Jump to Scope & Milestones Editor"
-                      >
-                        <span>Edit</span>
-                        <ArrowRight className="w-2.5 h-2.5" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => toggleSectionVisibility('scope')}
-                        className={`p-1 rounded-lg transition-colors cursor-pointer ${
-                          currentVisibility.scope ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-500 bg-slate-800'
-                        }`}
-                        title={currentVisibility.scope ? 'Hide section' : 'Show section'}
-                      >
-                        {currentVisibility.scope ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-                      </button>
-                    </div>
-                  </div>
-                  {currentVisibility.scope && (
-                    <input
-                      type="text"
-                      placeholder="Custom Scope Title (e.g. Project Phases & SOW)"
-                      value={doc.sectionTitles?.scopeTitle || ''}
-                      onChange={(e) => handleSectionTitleChange('scopeTitle', e.target.value)}
-                      className="w-full bg-slate-950/80 border border-slate-700/60 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-amber-500"
-                    />
-                  )}
-                </div>
+                {/* Dynamic Reorderable Proposal Sections */}
+                {currentSectionOrder.map((sectionKey, idx) => {
+                  if (sectionKey === 'scope') {
+                    return (
+                      <div key="scope" className="p-2.5 bg-slate-900/60 border border-slate-800/80 rounded-xl space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-2">
+                            <span className="w-5 h-5 rounded-md bg-amber-500/20 text-amber-400 font-mono text-[10px] font-bold flex items-center justify-center border border-amber-500/30 shrink-0">
+                              #{idx + 1}
+                            </span>
+                            <div className="flex items-center space-x-0.5 shrink-0">
+                              <button
+                                type="button"
+                                disabled={idx === 0}
+                                onClick={() => handleMoveSectionOrder(idx, 'up')}
+                                className="p-1 rounded bg-slate-800 hover:bg-amber-500 text-slate-400 hover:text-slate-950 disabled:opacity-30 disabled:pointer-events-none cursor-pointer transition-colors"
+                                title="Move Up in Proposal"
+                              >
+                                <ArrowUp className="w-2.5 h-2.5" />
+                              </button>
+                              <button
+                                type="button"
+                                disabled={idx === currentSectionOrder.length - 1}
+                                onClick={() => handleMoveSectionOrder(idx, 'down')}
+                                className="p-1 rounded bg-slate-800 hover:bg-amber-500 text-slate-400 hover:text-slate-950 disabled:opacity-30 disabled:pointer-events-none cursor-pointer transition-colors"
+                                title="Move Down in Proposal"
+                              >
+                                <ArrowDown className="w-2.5 h-2.5" />
+                              </button>
+                            </div>
+                            <Layers className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                            <span className="text-xs font-semibold text-slate-200">Scope of Work & Milestones</span>
+                          </div>
+                          <div className="flex items-center space-x-1.5">
+                            <button
+                              type="button"
+                              onClick={() => setActiveTab('scope')}
+                              className="text-[10px] text-amber-400 hover:text-amber-300 font-semibold px-2 py-0.5 rounded-md bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 transition-all cursor-pointer flex items-center space-x-1"
+                              title="Jump to Scope & Milestones Editor"
+                            >
+                              <span>Edit</span>
+                              <ArrowRight className="w-2.5 h-2.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => toggleSectionVisibility('scope')}
+                              className={`p-1 rounded-lg transition-colors cursor-pointer ${
+                                currentVisibility.scope ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-500 bg-slate-800'
+                              }`}
+                              title={currentVisibility.scope ? 'Hide section' : 'Show section'}
+                            >
+                              {currentVisibility.scope ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                            </button>
+                          </div>
+                        </div>
+                        {currentVisibility.scope && (
+                          <input
+                            type="text"
+                            placeholder="Custom Scope Title (e.g. Project Phases & SOW)"
+                            value={doc.sectionTitles?.scopeTitle || ''}
+                            onChange={(e) => handleSectionTitleChange('scopeTitle', e.target.value)}
+                            className="w-full bg-slate-950/80 border border-slate-700/60 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-amber-500"
+                          />
+                        )}
+                      </div>
+                    );
+                  }
 
-                {/* 3. Deliverables Checklist */}
-                <div className="p-2.5 bg-slate-900/60 border border-slate-800/80 rounded-xl space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                      <span className="text-xs font-semibold text-slate-200">Deliverables & Specifications</span>
-                    </div>
-                    <div className="flex items-center space-x-1.5">
-                      <button
-                        type="button"
-                        onClick={() => setActiveTab('deliverables')}
-                        className="text-[10px] text-amber-400 hover:text-amber-300 font-semibold px-2 py-0.5 rounded-md bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 transition-all cursor-pointer flex items-center space-x-1"
-                        title="Jump to Deliverables Editor"
-                      >
-                        <span>Edit</span>
-                        <ArrowRight className="w-2.5 h-2.5" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => toggleSectionVisibility('deliverables')}
-                        className={`p-1 rounded-lg transition-colors cursor-pointer ${
-                          currentVisibility.deliverables ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-500 bg-slate-800'
-                        }`}
-                        title={currentVisibility.deliverables ? 'Hide section' : 'Show section'}
-                      >
-                        {currentVisibility.deliverables ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-                      </button>
-                    </div>
-                  </div>
-                  {currentVisibility.deliverables && (
-                    <input
-                      type="text"
-                      placeholder="Custom Deliverables Title (e.g. Included Final Assets)"
-                      value={doc.sectionTitles?.deliverablesTitle || ''}
-                      onChange={(e) => handleSectionTitleChange('deliverablesTitle', e.target.value)}
-                      className="w-full bg-slate-950/80 border border-slate-700/60 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-amber-500"
-                    />
-                  )}
-                </div>
+                  if (sectionKey === 'deliverables') {
+                    return (
+                      <div key="deliverables" className="p-2.5 bg-slate-900/60 border border-slate-800/80 rounded-xl space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-2">
+                            <span className="w-5 h-5 rounded-md bg-amber-500/20 text-amber-400 font-mono text-[10px] font-bold flex items-center justify-center border border-amber-500/30 shrink-0">
+                              #{idx + 1}
+                            </span>
+                            <div className="flex items-center space-x-0.5 shrink-0">
+                              <button
+                                type="button"
+                                disabled={idx === 0}
+                                onClick={() => handleMoveSectionOrder(idx, 'up')}
+                                className="p-1 rounded bg-slate-800 hover:bg-amber-500 text-slate-400 hover:text-slate-950 disabled:opacity-30 disabled:pointer-events-none cursor-pointer transition-colors"
+                                title="Move Up in Proposal"
+                              >
+                                <ArrowUp className="w-2.5 h-2.5" />
+                              </button>
+                              <button
+                                type="button"
+                                disabled={idx === currentSectionOrder.length - 1}
+                                onClick={() => handleMoveSectionOrder(idx, 'down')}
+                                className="p-1 rounded bg-slate-800 hover:bg-amber-500 text-slate-400 hover:text-slate-950 disabled:opacity-30 disabled:pointer-events-none cursor-pointer transition-colors"
+                                title="Move Down in Proposal"
+                              >
+                                <ArrowDown className="w-2.5 h-2.5" />
+                              </button>
+                            </div>
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                            <span className="text-xs font-semibold text-slate-200">Deliverables & Specifications</span>
+                          </div>
+                          <div className="flex items-center space-x-1.5">
+                            <button
+                              type="button"
+                              onClick={() => setActiveTab('deliverables')}
+                              className="text-[10px] text-amber-400 hover:text-amber-300 font-semibold px-2 py-0.5 rounded-md bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 transition-all cursor-pointer flex items-center space-x-1"
+                              title="Jump to Deliverables Editor"
+                            >
+                              <span>Edit</span>
+                              <ArrowRight className="w-2.5 h-2.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => toggleSectionVisibility('deliverables')}
+                              className={`p-1 rounded-lg transition-colors cursor-pointer ${
+                                currentVisibility.deliverables ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-500 bg-slate-800'
+                              }`}
+                              title={currentVisibility.deliverables ? 'Hide section' : 'Show section'}
+                            >
+                              {currentVisibility.deliverables ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                            </button>
+                          </div>
+                        </div>
+                        {currentVisibility.deliverables && (
+                          <input
+                            type="text"
+                            placeholder="Custom Deliverables Title (e.g. Included Final Assets)"
+                            value={doc.sectionTitles?.deliverablesTitle || ''}
+                            onChange={(e) => handleSectionTitleChange('deliverablesTitle', e.target.value)}
+                            className="w-full bg-slate-950/80 border border-slate-700/60 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-amber-500"
+                          />
+                        )}
+                      </div>
+                    );
+                  }
 
-                {/* 4. Assigned Specialists / Team */}
-                <div className="p-2.5 bg-slate-900/60 border border-slate-800/80 rounded-xl space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <Award className="w-3.5 h-3.5 text-purple-400" />
-                      <span className="text-xs font-semibold text-slate-200">Assigned Specialists & Crew</span>
-                    </div>
-                    <div className="flex items-center space-x-1.5">
-                      <button
-                        type="button"
-                        onClick={() => setActiveTab('deliverables')}
-                        className="text-[10px] text-amber-400 hover:text-amber-300 font-semibold px-2 py-0.5 rounded-md bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 transition-all cursor-pointer flex items-center space-x-1"
-                        title="Jump to Team & Crew Editor"
-                      >
-                        <span>Edit</span>
-                        <ArrowRight className="w-2.5 h-2.5" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => toggleSectionVisibility('crew')}
-                        className={`p-1 rounded-lg transition-colors cursor-pointer ${
-                          currentVisibility.crew ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-500 bg-slate-800'
-                        }`}
-                        title={currentVisibility.crew ? 'Hide section' : 'Show section'}
-                      >
-                        {currentVisibility.crew ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-                      </button>
-                    </div>
-                  </div>
-                  {currentVisibility.crew && (
-                    <input
-                      type="text"
-                      placeholder="Custom Team Title (e.g. Lead Engineers & Key Personnel)"
-                      value={doc.sectionTitles?.crewTitle || ''}
-                      onChange={(e) => handleSectionTitleChange('crewTitle', e.target.value)}
-                      className="w-full bg-slate-950/80 border border-slate-700/60 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-amber-500"
-                    />
-                  )}
-                </div>
+                  if (sectionKey === 'pricing') {
+                    return (
+                      <div key="pricing" className="p-2.5 bg-slate-900/60 border border-slate-800/80 rounded-xl space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-2">
+                            <span className="w-5 h-5 rounded-md bg-amber-500/20 text-amber-400 font-mono text-[10px] font-bold flex items-center justify-center border border-amber-500/30 shrink-0">
+                              #{idx + 1}
+                            </span>
+                            <div className="flex items-center space-x-0.5 shrink-0">
+                              <button
+                                type="button"
+                                disabled={idx === 0}
+                                onClick={() => handleMoveSectionOrder(idx, 'up')}
+                                className="p-1 rounded bg-slate-800 hover:bg-amber-500 text-slate-400 hover:text-slate-950 disabled:opacity-30 disabled:pointer-events-none cursor-pointer transition-colors"
+                                title="Move Up in Proposal"
+                              >
+                                <ArrowUp className="w-2.5 h-2.5" />
+                              </button>
+                              <button
+                                type="button"
+                                disabled={idx === currentSectionOrder.length - 1}
+                                onClick={() => handleMoveSectionOrder(idx, 'down')}
+                                className="p-1 rounded bg-slate-800 hover:bg-amber-500 text-slate-400 hover:text-slate-950 disabled:opacity-30 disabled:pointer-events-none cursor-pointer transition-colors"
+                                title="Move Down in Proposal"
+                              >
+                                <ArrowDown className="w-2.5 h-2.5" />
+                              </button>
+                            </div>
+                            <DollarSign className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                            <span className="text-xs font-semibold text-slate-200">Pricing & Commercial Investment</span>
+                          </div>
+                          <div className="flex items-center space-x-1.5">
+                            <button
+                              type="button"
+                              onClick={() => setActiveTab('pricing')}
+                              className="text-[10px] text-amber-400 hover:text-amber-300 font-semibold px-2 py-0.5 rounded-md bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 transition-all cursor-pointer flex items-center space-x-1"
+                              title="Jump to Pricing & Line Items Editor"
+                            >
+                              <span>Edit</span>
+                              <ArrowRight className="w-2.5 h-2.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => toggleSectionVisibility('pricingTable')}
+                              className={`p-1 rounded-lg transition-colors cursor-pointer ${
+                                currentVisibility.pricingTable ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-500 bg-slate-800'
+                              }`}
+                              title={currentVisibility.pricingTable ? 'Hide section' : 'Show section'}
+                            >
+                              {currentVisibility.pricingTable ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                            </button>
+                          </div>
+                        </div>
+                        {currentVisibility.pricingTable && (
+                          <input
+                            type="text"
+                            placeholder="Custom Pricing Title (e.g. Commercial Fee Structure)"
+                            value={doc.sectionTitles?.pricingTitle || ''}
+                            onChange={(e) => handleSectionTitleChange('pricingTitle', e.target.value)}
+                            className="w-full bg-slate-950/80 border border-slate-700/60 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-amber-500"
+                          />
+                        )}
+                      </div>
+                    );
+                  }
 
-                {/* 5. Why Partner With Us */}
-                <div className="p-2.5 bg-slate-900/60 border border-slate-800/80 rounded-xl space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <ShieldCheck className="w-3.5 h-3.5 text-blue-400" />
-                      <span className="text-xs font-semibold text-slate-200">Why Choose Us & Guarantees</span>
-                    </div>
-                    <div className="flex items-center space-x-1.5">
-                      <button
-                        type="button"
-                        onClick={() => setActiveTab('deliverables')}
-                        className="text-[10px] text-amber-400 hover:text-amber-300 font-semibold px-2 py-0.5 rounded-md bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 transition-all cursor-pointer flex items-center space-x-1"
-                        title="Jump to Guarantees & Why Choose Us"
-                      >
-                        <span>Edit</span>
-                        <ArrowRight className="w-2.5 h-2.5" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => toggleSectionVisibility('whyChooseUs')}
-                        className={`p-1 rounded-lg transition-colors cursor-pointer ${
-                          currentVisibility.whyChooseUs ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-500 bg-slate-800'
-                        }`}
-                        title={currentVisibility.whyChooseUs ? 'Hide section' : 'Show section'}
-                      >
-                        {currentVisibility.whyChooseUs ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-                      </button>
-                    </div>
-                  </div>
-                  {currentVisibility.whyChooseUs && (
-                    <input
-                      type="text"
-                      placeholder="Custom Commitments Title (e.g. Our Safety & Quality Standards)"
-                      value={doc.sectionTitles?.whyChooseUsTitle || ''}
-                      onChange={(e) => handleSectionTitleChange('whyChooseUsTitle', e.target.value)}
-                      className="w-full bg-slate-950/80 border border-slate-700/60 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-amber-500"
-                    />
-                  )}
-                </div>
+                  if (sectionKey === 'crew') {
+                    return (
+                      <div key="crew" className="p-2.5 bg-slate-900/60 border border-slate-800/80 rounded-xl space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-2">
+                            <span className="w-5 h-5 rounded-md bg-amber-500/20 text-amber-400 font-mono text-[10px] font-bold flex items-center justify-center border border-amber-500/30 shrink-0">
+                              #{idx + 1}
+                            </span>
+                            <div className="flex items-center space-x-0.5 shrink-0">
+                              <button
+                                type="button"
+                                disabled={idx === 0}
+                                onClick={() => handleMoveSectionOrder(idx, 'up')}
+                                className="p-1 rounded bg-slate-800 hover:bg-amber-500 text-slate-400 hover:text-slate-950 disabled:opacity-30 disabled:pointer-events-none cursor-pointer transition-colors"
+                                title="Move Up in Proposal"
+                              >
+                                <ArrowUp className="w-2.5 h-2.5" />
+                              </button>
+                              <button
+                                type="button"
+                                disabled={idx === currentSectionOrder.length - 1}
+                                onClick={() => handleMoveSectionOrder(idx, 'down')}
+                                className="p-1 rounded bg-slate-800 hover:bg-amber-500 text-slate-400 hover:text-slate-950 disabled:opacity-30 disabled:pointer-events-none cursor-pointer transition-colors"
+                                title="Move Down in Proposal"
+                              >
+                                <ArrowDown className="w-2.5 h-2.5" />
+                              </button>
+                            </div>
+                            <Award className="w-3.5 h-3.5 text-purple-400 shrink-0" />
+                            <span className="text-xs font-semibold text-slate-200">Assigned Specialists & Crew</span>
+                          </div>
+                          <div className="flex items-center space-x-1.5">
+                            <button
+                              type="button"
+                              onClick={() => setActiveTab('deliverables')}
+                              className="text-[10px] text-amber-400 hover:text-amber-300 font-semibold px-2 py-0.5 rounded-md bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 transition-all cursor-pointer flex items-center space-x-1"
+                              title="Jump to Team & Crew Editor"
+                            >
+                              <span>Edit</span>
+                              <ArrowRight className="w-2.5 h-2.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => toggleSectionVisibility('crew')}
+                              className={`p-1 rounded-lg transition-colors cursor-pointer ${
+                                currentVisibility.crew ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-500 bg-slate-800'
+                              }`}
+                              title={currentVisibility.crew ? 'Hide section' : 'Show section'}
+                            >
+                              {currentVisibility.crew ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                            </button>
+                          </div>
+                        </div>
+                        {currentVisibility.crew && (
+                          <input
+                            type="text"
+                            placeholder="Custom Team Title (e.g. Lead Engineers & Key Personnel)"
+                            value={doc.sectionTitles?.crewTitle || ''}
+                            onChange={(e) => handleSectionTitleChange('crewTitle', e.target.value)}
+                            className="w-full bg-slate-950/80 border border-slate-700/60 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-amber-500"
+                          />
+                        )}
+                      </div>
+                    );
+                  }
 
-                {/* 6. Pricing Schedule */}
-                <div className="p-2.5 bg-slate-900/60 border border-slate-800/80 rounded-xl space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <DollarSign className="w-3.5 h-3.5 text-emerald-400" />
-                      <span className="text-xs font-semibold text-slate-200">Itemized Commercial Investment</span>
-                    </div>
-                    <div className="flex items-center space-x-1.5">
-                      <button
-                        type="button"
-                        onClick={() => setActiveTab('pricing')}
-                        className="text-[10px] text-amber-400 hover:text-amber-300 font-semibold px-2 py-0.5 rounded-md bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 transition-all cursor-pointer flex items-center space-x-1"
-                        title="Jump to Pricing & Line Items Editor"
-                      >
-                        <span>Edit</span>
-                        <ArrowRight className="w-2.5 h-2.5" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => toggleSectionVisibility('pricingTable')}
-                        className={`p-1 rounded-lg transition-colors cursor-pointer ${
-                          currentVisibility.pricingTable ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-500 bg-slate-800'
-                        }`}
-                        title={currentVisibility.pricingTable ? 'Hide section' : 'Show section'}
-                      >
-                        {currentVisibility.pricingTable ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-                      </button>
-                    </div>
-                  </div>
-                  {currentVisibility.pricingTable && (
-                    <input
-                      type="text"
-                      placeholder="Custom Pricing Title (e.g. Commercial Fee Structure)"
-                      value={doc.sectionTitles?.pricingTitle || ''}
-                      onChange={(e) => handleSectionTitleChange('pricingTitle', e.target.value)}
-                      className="w-full bg-slate-950/80 border border-slate-700/60 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-amber-500"
-                    />
-                  )}
-                </div>
+                  if (sectionKey === 'whyChooseUs') {
+                    return (
+                      <div key="whyChooseUs" className="p-2.5 bg-slate-900/60 border border-slate-800/80 rounded-xl space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-2">
+                            <span className="w-5 h-5 rounded-md bg-amber-500/20 text-amber-400 font-mono text-[10px] font-bold flex items-center justify-center border border-amber-500/30 shrink-0">
+                              #{idx + 1}
+                            </span>
+                            <div className="flex items-center space-x-0.5 shrink-0">
+                              <button
+                                type="button"
+                                disabled={idx === 0}
+                                onClick={() => handleMoveSectionOrder(idx, 'up')}
+                                className="p-1 rounded bg-slate-800 hover:bg-amber-500 text-slate-400 hover:text-slate-950 disabled:opacity-30 disabled:pointer-events-none cursor-pointer transition-colors"
+                                title="Move Up in Proposal"
+                              >
+                                <ArrowUp className="w-2.5 h-2.5" />
+                              </button>
+                              <button
+                                type="button"
+                                disabled={idx === currentSectionOrder.length - 1}
+                                onClick={() => handleMoveSectionOrder(idx, 'down')}
+                                className="p-1 rounded bg-slate-800 hover:bg-amber-500 text-slate-400 hover:text-slate-950 disabled:opacity-30 disabled:pointer-events-none cursor-pointer transition-colors"
+                                title="Move Down in Proposal"
+                              >
+                                <ArrowDown className="w-2.5 h-2.5" />
+                              </button>
+                            </div>
+                            <ShieldCheck className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                            <span className="text-xs font-semibold text-slate-200">Why Choose Us & Guarantees</span>
+                          </div>
+                          <div className="flex items-center space-x-1.5">
+                            <button
+                              type="button"
+                              onClick={() => setActiveTab('deliverables')}
+                              className="text-[10px] text-amber-400 hover:text-amber-300 font-semibold px-2 py-0.5 rounded-md bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 transition-all cursor-pointer flex items-center space-x-1"
+                              title="Jump to Guarantees & Why Choose Us"
+                            >
+                              <span>Edit</span>
+                              <ArrowRight className="w-2.5 h-2.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => toggleSectionVisibility('whyChooseUs')}
+                              className={`p-1 rounded-lg transition-colors cursor-pointer ${
+                                currentVisibility.whyChooseUs ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-500 bg-slate-800'
+                              }`}
+                              title={currentVisibility.whyChooseUs ? 'Hide section' : 'Show section'}
+                            >
+                              {currentVisibility.whyChooseUs ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                            </button>
+                          </div>
+                        </div>
+                        {currentVisibility.whyChooseUs && (
+                          <input
+                            type="text"
+                            placeholder="Custom Commitments Title (e.g. Our Safety & Quality Standards)"
+                            value={doc.sectionTitles?.whyChooseUsTitle || ''}
+                            onChange={(e) => handleSectionTitleChange('whyChooseUsTitle', e.target.value)}
+                            className="w-full bg-slate-950/80 border border-slate-700/60 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-amber-500"
+                          />
+                        )}
+                      </div>
+                    );
+                  }
 
-                {/* 7. Milestone Payment Terms */}
-                <div className="p-2.5 bg-slate-900/60 border border-slate-800/80 rounded-xl space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <CreditCard className="w-3.5 h-3.5 text-amber-400" />
-                      <span className="text-xs font-semibold text-slate-200">Milestone Payment Schedule</span>
-                    </div>
-                    <div className="flex items-center space-x-1.5">
-                      <button
-                        type="button"
-                        onClick={() => setActiveTab('tax-payment')}
-                        className="text-[10px] text-amber-400 hover:text-amber-300 font-semibold px-2 py-0.5 rounded-md bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 transition-all cursor-pointer flex items-center space-x-1"
-                        title="Jump to Payment Terms Editor"
-                      >
-                        <span>Edit</span>
-                        <ArrowRight className="w-2.5 h-2.5" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => toggleSectionVisibility('paymentMilestones')}
-                        className={`p-1 rounded-lg transition-colors cursor-pointer ${
-                          currentVisibility.paymentMilestones ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-500 bg-slate-800'
-                        }`}
-                        title={currentVisibility.paymentMilestones ? 'Hide section' : 'Show section'}
-                      >
-                        {currentVisibility.paymentMilestones ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-                      </button>
-                    </div>
-                  </div>
-                </div>
+                  if (sectionKey === 'terms') {
+                    return (
+                      <div key="terms" className="p-2.5 bg-slate-900/60 border border-slate-800/80 rounded-xl space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-2">
+                            <span className="w-5 h-5 rounded-md bg-amber-500/20 text-amber-400 font-mono text-[10px] font-bold flex items-center justify-center border border-amber-500/30 shrink-0">
+                              #{idx + 1}
+                            </span>
+                            <div className="flex items-center space-x-0.5 shrink-0">
+                              <button
+                                type="button"
+                                disabled={idx === 0}
+                                onClick={() => handleMoveSectionOrder(idx, 'up')}
+                                className="p-1 rounded bg-slate-800 hover:bg-amber-500 text-slate-400 hover:text-slate-950 disabled:opacity-30 disabled:pointer-events-none cursor-pointer transition-colors"
+                                title="Move Up in Proposal"
+                              >
+                                <ArrowUp className="w-2.5 h-2.5" />
+                              </button>
+                              <button
+                                type="button"
+                                disabled={idx === currentSectionOrder.length - 1}
+                                onClick={() => handleMoveSectionOrder(idx, 'down')}
+                                className="p-1 rounded bg-slate-800 hover:bg-amber-500 text-slate-400 hover:text-slate-950 disabled:opacity-30 disabled:pointer-events-none cursor-pointer transition-colors"
+                                title="Move Down in Proposal"
+                              >
+                                <ArrowDown className="w-2.5 h-2.5" />
+                              </button>
+                            </div>
+                            <FileText className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                            <span className="text-xs font-semibold text-slate-200">Commercial Terms & Conditions</span>
+                          </div>
+                          <div className="flex items-center space-x-1.5">
+                            <button
+                              type="button"
+                              onClick={() => setActiveTab('watermark-terms')}
+                              className="text-[10px] text-amber-400 hover:text-amber-300 font-semibold px-2 py-0.5 rounded-md bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 transition-all cursor-pointer flex items-center space-x-1"
+                              title="Jump to Commercial Terms Editor"
+                            >
+                              <span>Edit</span>
+                              <ArrowRight className="w-2.5 h-2.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => toggleSectionVisibility('terms')}
+                              className={`p-1 rounded-lg transition-colors cursor-pointer ${
+                                currentVisibility.terms ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-500 bg-slate-800'
+                              }`}
+                              title={currentVisibility.terms ? 'Hide section' : 'Show section'}
+                            >
+                              {currentVisibility.terms ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                            </button>
+                          </div>
+                        </div>
+                        {currentVisibility.terms && (
+                          <input
+                            type="text"
+                            placeholder="Custom Terms Title (e.g. SLA Clauses & Acceptance Agreement)"
+                            value={doc.sectionTitles?.termsTitle || ''}
+                            onChange={(e) => handleSectionTitleChange('termsTitle', e.target.value)}
+                            className="w-full bg-slate-950/80 border border-slate-700/60 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-amber-500"
+                          />
+                        )}
+                      </div>
+                    );
+                  }
 
-                {/* 8. Bank Account & Payment QR */}
+                  if (sectionKey === 'signatory') {
+                    return (
+                      <div key="signatory" className="p-2.5 bg-slate-900/60 border border-slate-800/80 rounded-xl flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          <span className="w-5 h-5 rounded-md bg-amber-500/20 text-amber-400 font-mono text-[10px] font-bold flex items-center justify-center border border-amber-500/30 shrink-0">
+                            #{idx + 1}
+                          </span>
+                          <div className="flex items-center space-x-0.5 shrink-0">
+                            <button
+                              type="button"
+                              disabled={idx === 0}
+                              onClick={() => handleMoveSectionOrder(idx, 'up')}
+                              className="p-1 rounded bg-slate-800 hover:bg-amber-500 text-slate-400 hover:text-slate-950 disabled:opacity-30 disabled:pointer-events-none cursor-pointer transition-colors"
+                              title="Move Up in Proposal"
+                            >
+                              <ArrowUp className="w-2.5 h-2.5" />
+                            </button>
+                            <button
+                              type="button"
+                              disabled={idx === currentSectionOrder.length - 1}
+                              onClick={() => handleMoveSectionOrder(idx, 'down')}
+                              className="p-1 rounded bg-slate-800 hover:bg-amber-500 text-slate-400 hover:text-slate-950 disabled:opacity-30 disabled:pointer-events-none cursor-pointer transition-colors"
+                              title="Move Down in Proposal"
+                            >
+                              <ArrowDown className="w-2.5 h-2.5" />
+                            </button>
+                          </div>
+                          <FileSignature className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+                          <span className="text-xs font-semibold text-slate-200">Signatures & Client Approval</span>
+                        </div>
+                        <div className="flex items-center space-x-1.5">
+                          <button
+                            type="button"
+                            onClick={() => setActiveTab('watermark-terms')}
+                            className="text-[10px] text-amber-400 hover:text-amber-300 font-semibold px-2 py-0.5 rounded-md bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 transition-all cursor-pointer flex items-center space-x-1"
+                            title="Jump to Signatory & Approval Editor"
+                          >
+                            <span>Edit</span>
+                            <ArrowRight className="w-2.5 h-2.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => toggleSectionVisibility('signatory')}
+                            className={`p-1 rounded-lg transition-colors cursor-pointer ${
+                              currentVisibility.signatory ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-500 bg-slate-800'
+                            }`}
+                            title={currentVisibility.signatory ? 'Hide section' : 'Show section'}
+                          >
+                            {currentVisibility.signatory ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  return null;
+                })}
+
+                {/* Additional Settings: Payment QR & Bank Details */}
                 <div className="p-2.5 bg-slate-900/60 border border-slate-800/80 rounded-xl space-y-2">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
@@ -1274,75 +1532,6 @@ export const FormEditor: React.FC<FormEditorProps> = ({
                         {currentVisibility.bankDetails ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
                       </button>
                     </div>
-                  </div>
-                </div>
-
-                {/* 9. Terms & SLA */}
-                <div className="p-2.5 bg-slate-900/60 border border-slate-800/80 rounded-xl space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <FileText className="w-3.5 h-3.5 text-amber-400" />
-                      <span className="text-xs font-semibold text-slate-200">Commercial Terms & Conditions</span>
-                    </div>
-                    <div className="flex items-center space-x-1.5">
-                      <button
-                        type="button"
-                        onClick={() => setActiveTab('tax-payment')}
-                        className="text-[10px] text-amber-400 hover:text-amber-300 font-semibold px-2 py-0.5 rounded-md bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 transition-all cursor-pointer flex items-center space-x-1"
-                        title="Jump to Commercial Terms Editor"
-                      >
-                        <span>Edit</span>
-                        <ArrowRight className="w-2.5 h-2.5" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => toggleSectionVisibility('terms')}
-                        className={`p-1 rounded-lg transition-colors cursor-pointer ${
-                          currentVisibility.terms ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-500 bg-slate-800'
-                        }`}
-                        title={currentVisibility.terms ? 'Hide section' : 'Show section'}
-                      >
-                        {currentVisibility.terms ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-                      </button>
-                    </div>
-                  </div>
-                  {currentVisibility.terms && (
-                    <input
-                      type="text"
-                      placeholder="Custom Terms Title (e.g. SLA Clauses & Acceptance Agreement)"
-                      value={doc.sectionTitles?.termsTitle || ''}
-                      onChange={(e) => handleSectionTitleChange('termsTitle', e.target.value)}
-                      className="w-full bg-slate-950/80 border border-slate-700/60 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-amber-500"
-                    />
-                  )}
-                </div>
-
-                {/* 10. Signatory Block */}
-                <div className="p-2.5 bg-slate-900/60 border border-slate-800/80 rounded-xl flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <FileSignature className="w-3.5 h-3.5 text-indigo-400" />
-                    <span className="text-xs font-semibold text-slate-200">Authorized Signatory & Approval Block</span>
-                  </div>
-                  <div className="flex items-center space-x-1.5">
-                    <button
-                      type="button"
-                      onClick={() => setActiveTab('watermark-terms')}
-                      className="text-[10px] text-amber-400 hover:text-amber-300 font-semibold px-2 py-0.5 rounded-md bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 transition-all cursor-pointer flex items-center space-x-1"
-                      title="Jump to Signatory & Approval Editor"
-                    >
-                      <span>Edit</span>
-                      <ArrowRight className="w-2.5 h-2.5" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => toggleSectionVisibility('signatory')}
-                      className={`p-1 rounded-lg transition-colors cursor-pointer ${
-                        currentVisibility.signatory ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-500 bg-slate-800'
-                      }`}
-                      title={currentVisibility.signatory ? 'Hide section' : 'Show section'}
-                    >
-                      {currentVisibility.signatory ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-                    </button>
                   </div>
                 </div>
               </div>

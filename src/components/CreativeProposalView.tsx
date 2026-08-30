@@ -166,6 +166,30 @@ export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ docu
     </div>
   );
 
+  const renderDeliverablesBox = () => {
+    if (doc.sectionVisibility?.deliverables === false || activeDeliverables.length === 0) return null;
+    return (
+      <div
+        onClick={() => onSelectSection?.('deliverables', 'deliverables')}
+        className={`my-2.5 ${sectionClass('deliverables')}`}
+        title={onSelectSection ? 'Click to edit deliverables' : undefined}
+      >
+        {renderEditBadge('Deliverables')}
+        <h3 className="font-bold text-[11.5px] uppercase tracking-[0.08em] text-[#111111] mb-1.5 border-b border-slate-200 pb-1 whitespace-nowrap">
+          {doc.sectionTitles?.deliverablesTitle || 'DELIVERABLES INCLUDED'}
+        </h3>
+        <div className="grid grid-cols-2 gap-x-4 gap-y-1 bg-amber-50/40 border border-amber-200/60 rounded p-2.5 text-[10.5px]">
+          {activeDeliverables.map((del) => (
+            <div key={del.id} className="flex items-start space-x-1.5">
+              <span className="text-emerald-700 font-bold text-[11px] leading-none shrink-0 mt-0.5">✓</span>
+              <span className="text-slate-800 font-medium leading-tight">{del.text}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-8 print:space-y-0" style={{ fontFamily: `"${fontFamily}", sans-serif` }}>
       {/* ========================================================= */}
@@ -329,30 +353,13 @@ export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ docu
               </div>
             )}
 
-            {/* DELIVERABLES INCLUDED SECTION */}
-            {doc.sectionVisibility?.deliverables !== false && activeDeliverables.length > 0 && (
-              <div
-                onClick={() => onSelectSection?.('deliverables', 'deliverables')}
-                className={`my-2.5 ${sectionClass('deliverables')}`}
-                title={onSelectSection ? 'Click to edit deliverables' : undefined}
-              >
-                {renderEditBadge('Deliverables')}
-                <h3 className="font-bold text-[11.5px] uppercase tracking-[0.08em] text-[#111111] mb-1.5 border-b border-slate-200 pb-1 whitespace-nowrap">
-                  {doc.sectionTitles?.deliverablesTitle || 'DELIVERABLES INCLUDED'}
-                </h3>
-                <div className="grid grid-cols-2 gap-x-4 gap-y-1 bg-amber-50/40 border border-amber-200/60 rounded p-2.5 text-[10.5px]">
-                  {activeDeliverables.map((del) => (
-                    <div key={del.id} className="flex items-start space-x-1.5">
-                      <span className="text-emerald-700 font-bold text-[11px] leading-none shrink-0 mt-0.5">✓</span>
-                      <span className="text-slate-800 font-medium leading-tight">{del.text}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
+            {/* If Single-Page Scope: Render Deliverables and Investment Box on Page 1 */}
+            {!isMultiPagePhases && (
+              <>
+                {renderDeliverablesBox()}
+                {renderInvestmentBox()}
+              </>
             )}
-
-            {/* If Single Page Scope: Render Investment Box on Page 1 */}
-            {!isMultiPagePhases && renderInvestmentBox()}
           </div>
 
           {/* PAGE 1 FOOTER */}
@@ -437,6 +444,9 @@ export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ docu
                 </div>
               </div>
 
+              {/* RENDER DELIVERABLES INCLUDED ON PAGE 2 IMMEDIATELY AFTER SOW PHASES */}
+              {renderDeliverablesBox()}
+
               {/* RENDER TOTAL INVESTMENT BOX ON PAGE 2 */}
               {renderInvestmentBox()}
             </div>
@@ -449,6 +459,7 @@ export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ docu
           </div>
         </div>
       )}
+
 
       {/* ========================================================= */}
       {/* ANNEXURE PAGE (PAGE 2 OR PAGE 3): CREW, GUARANTEES, TERMS */}

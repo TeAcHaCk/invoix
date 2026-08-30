@@ -202,6 +202,25 @@ export interface SectionTitlesConfig {
   termsTitle?: string;
 }
 
+export type ProposalSectionKey =
+  | 'scope'
+  | 'deliverables'
+  | 'pricing'
+  | 'crew'
+  | 'whyChooseUs'
+  | 'terms'
+  | 'signatory';
+
+export const DEFAULT_PROPOSAL_SECTION_ORDER: ProposalSectionKey[] = [
+  'scope',
+  'deliverables',
+  'pricing',
+  'crew',
+  'whyChooseUs',
+  'terms',
+  'signatory',
+];
+
 export interface CustomTemplatePreset {
   id: string;
   name: string;
@@ -212,6 +231,7 @@ export interface CustomTemplatePreset {
   fontFamily: string;
   sectionVisibility: SectionVisibilityConfig;
   sectionTitles?: SectionTitlesConfig;
+  sectionOrder?: ProposalSectionKey[];
   createdAt: string;
   updatedAt: string;
   isCustom: true;
@@ -246,6 +266,7 @@ export interface QuotationDocument {
   customTemplateId?: string;
   sectionVisibility?: SectionVisibilityConfig;
   sectionTitles?: SectionTitlesConfig;
+  sectionOrder?: ProposalSectionKey[];
   status?: 'DRAFT' | 'SENT' | 'VIEWED' | 'APPROVED' | 'PAID';
   viewCount?: number;
   lastViewedAt?: string;

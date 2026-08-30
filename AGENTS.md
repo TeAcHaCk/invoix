@@ -127,7 +127,27 @@ Each of these shipped once and cost real debugging time.
 
 ## Handoff log
 
-### 2026-08-30 (latest) — Antigravity · Dynamic Multi-Page Proposal Pagination Architecture
+### 2026-08-30 (latest) — Antigravity · Proposal Section Flow Re-Ordering & Logical Sequence Alignment
+
+**Delivered Dynamic Section Flow Manager & Logical Proposal Sequencing:**
+
+1. **Logical Proposal Flow Realignment ([`CreativeProposalView.tsx`](file:///d:/Product%20build/src/components/CreativeProposalView.tsx) & [`ModernProposalView.tsx`](file:///d:/Product%20build/src/components/ModernProposalView.tsx))**:
+   - Fixed proposal section ordering so that SOW scope phases (Phases 1..3 on Page 1, Phases 4..end on Page 2) flow immediately into the **Deliverables Checklist**, followed by the **Itemized Pricing Schedule Table**, **Financial Totals**, and **Milestone Payment Schedule**.
+   - Ensures deliverables are never prematurely rendered before completing SOW phases.
+2. **Schema & Sequence State Support ([`src/types/index.ts`](file:///d:/Product%20build/src/types/index.ts))**:
+   - Added `ProposalSectionKey = 'scope' | 'deliverables' | 'pricing' | 'crew' | 'whyChooseUs' | 'terms' | 'signatory'`.
+   - Added `DEFAULT_PROPOSAL_SECTION_ORDER` constant.
+   - Added `sectionOrder?: ProposalSectionKey[]` field to `QuotationDocument` and `CustomTemplatePreset`.
+3. **Interactive Section Flow & Sequence Organizer UI ([`FormEditor.tsx`](file:///d:/Product%20build/src/components/FormEditor.tsx))**:
+   - Replaced static organizer in Tab 1 with dynamic, interactive sequence manager:
+     - Number badges (`#1`, `#2`, `#3`, etc.).
+     - `[ ↑ ]` and `[ ↓ ]` reorder buttons with instant state mutation and toast feedback.
+     - 1-click `[ 🔄 Reset Flow ]` button to restore standard flow.
+     - Individual section visibility eye toggles and custom section title inputs.
+- **Verification**: `npm run lint` = **0 warnings, 0 errors**. `npm run build` = **Clean compile (exit 0)**.
+- **Target Branch**: `staging` and fast-forward to `main`.
+
+### 2026-08-30 — Antigravity · Dynamic Multi-Page Proposal Pagination Architecture
 
 **Delivered Dynamic Multi-Page Pagination for High-Density Proposals:**
 
