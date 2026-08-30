@@ -16,11 +16,24 @@ import {
 
 interface ModernProposalViewProps {
   document: QuotationDocument;
+  onSelectSection?: (tabId: string) => void;
 }
 
-export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document: doc }) => {
+export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document: doc, onSelectSection }) => {
   const preset = INDUSTRY_PRESETS[doc.industry] || INDUSTRY_PRESETS.creative_agency;
   const currency = doc.currency;
+
+  const sectionClass = (_tabId?: string) =>
+    onSelectSection
+      ? 'relative group/canvas-section transition-all cursor-pointer hover:outline hover:outline-2 hover:outline-amber-500/80 hover:outline-offset-2 hover:rounded-xl'
+      : '';
+
+  const renderEditBadge = (label: string) =>
+    onSelectSection ? (
+      <span className="absolute top-1 right-1 opacity-0 group-hover/canvas-section:opacity-100 transition-opacity bg-slate-950/90 text-amber-300 text-[9px] font-bold px-2 py-0.5 rounded shadow-md border border-amber-500/40 pointer-events-none z-20 print:hidden">
+        ✏️ {label}
+      </span>
+    ) : null;
 
   const logoWidth = doc.studio.logoWidth || 280;
   const logoHeight = doc.studio.logoHeight || 110;
@@ -97,7 +110,12 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
         <div className="relative z-10 p-10 text-left text-slate-900 flex flex-col justify-between h-full min-h-[1123px]">
           <div>
             {/* Header / Brand Block */}
-            <div className="flex items-start justify-between border-b-2 border-slate-900 pb-5">
+            <div
+              onClick={() => onSelectSection?.('business')}
+              className={`flex items-start justify-between border-b-2 border-slate-900 pb-5 ${sectionClass('business')}`}
+              title={onSelectSection ? 'Click to edit business branding' : undefined}
+            >
+              {renderEditBadge('Brand')}
               <div className="flex-1 pr-6 min-w-0">
                 {doc.studio.logoUrl ? (
                   <img
@@ -168,7 +186,12 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
             </div>
 
             {/* Client & Project Banner */}
-            <div className="grid grid-cols-2 gap-4 my-4 bg-slate-50 border border-slate-200/80 rounded-xl p-3.5">
+            <div
+              onClick={() => onSelectSection?.('client')}
+              className={`grid grid-cols-2 gap-4 my-4 bg-slate-50 border border-slate-200/80 rounded-xl p-3.5 ${sectionClass('client')}`}
+              title={onSelectSection ? 'Click to edit client and project details' : undefined}
+            >
+              {renderEditBadge('Client & Scope')}
               <div>
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal mb-1">
                   PREPARED FOR / CLIENT:
@@ -201,7 +224,12 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
 
             {/* Project Scope / Phases (If present) */}
             {doc.sectionVisibility?.scope !== false && doc.includeScopeSection !== false && activeMilestones.length > 0 && (
-              <div className="mb-4">
+              <div
+                onClick={() => onSelectSection?.('scope')}
+                className={`mb-4 ${sectionClass('scope')}`}
+                title={onSelectSection ? 'Click to edit SOW phases and milestones' : undefined}
+              >
+                {renderEditBadge('Phases')}
                 <div className="flex items-center space-x-2 border-b border-slate-200/90 pb-1.5 mb-2.5">
                   <Layers className="w-3.5 h-3.5 text-amber-600 shrink-0" />
                   <h4 className="text-[11px] font-bold text-slate-900 uppercase tracking-normal whitespace-nowrap">
@@ -236,7 +264,12 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
 
             {/* Itemized Investment & Pricing Table */}
             {doc.sectionVisibility?.pricingTable !== false && (
-              <div className="mb-4">
+              <div
+                onClick={() => onSelectSection?.('pricing')}
+                className={`mb-4 ${sectionClass('pricing')}`}
+                title={onSelectSection ? 'Click to edit pricing items and discount' : undefined}
+              >
+                {renderEditBadge('Pricing')}
                 <div className="flex items-center justify-between border-b border-slate-200/90 pb-1.5 mb-2.5">
                   <div className="flex items-center space-x-2">
                     <Sparkles className="w-3.5 h-3.5 text-amber-600 shrink-0" />
@@ -324,11 +357,6 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
 
               {/* Financial Totals Block */}
               <div className="flex justify-end mt-2">
-                {/*
-                  Every row is nowrap with an explicit gap. Without it a tax
-                  label like "VAT (10%):" or "Sales Tax (8.25%):" wraps at the
-                  space and the second line collides with the Total rule below.
-                */}
                 <div className="w-80 bg-slate-50 border border-slate-200 rounded-lg p-2.5 space-y-1 text-xs">
                   <div className="flex justify-between items-baseline gap-3 text-slate-600 text-[11px]">
                     <span className="whitespace-nowrap">Subtotal:</span>
@@ -344,13 +372,6 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
 
                   {taxAmount > 0 && (
                     <div className="flex justify-between items-baseline gap-3 text-slate-600 text-[11px]">
-                      {/*
-                        No overflow-hidden / text-ellipsis here. On a flex item
-                        those set min-width to 0, letting the label shrink below
-                        its own content and truncate to "VAT (10…". The sibling
-                        rows keep min-width:auto and render in full, which is why
-                        the longer "Total Investment:" fits and this did not.
-                      */}
                       <span className="whitespace-nowrap">
                         {doc.taxConfig?.label || doc.taxType?.toUpperCase() || 'Tax'} ({doc.taxConfig?.percent || doc.taxPercent}%):
                       </span>
@@ -370,7 +391,12 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
             {/* Payment Milestones & Deliverables Summary */}
             <div className="grid grid-cols-2 gap-3 mb-2">
               {/* Payment Terms Milestones */}
-              <div className="bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-[11px]">
+              <div
+                onClick={() => onSelectSection?.('tax-payment')}
+                className={`bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-[11px] ${sectionClass('tax-payment')}`}
+                title={onSelectSection ? 'Click to edit payment terms & milestones' : undefined}
+              >
+                {renderEditBadge('Payment')}
                 <div className="flex items-center space-x-1.5 pb-1 mb-2 border-b border-slate-200/80">
                   <Clock className="w-3 h-3 text-amber-700 shrink-0" />
                   <span className="font-bold text-slate-900 uppercase tracking-normal text-[9px] whitespace-nowrap">
@@ -399,7 +425,12 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
 
               {/* Deliverables Checklist */}
               {doc.sectionVisibility?.deliverables !== false && activeDeliverables.length > 0 && (
-                <div className="bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-[11px]">
+                <div
+                  onClick={() => onSelectSection?.('deliverables')}
+                  className={`bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-[11px] ${sectionClass('deliverables')}`}
+                  title={onSelectSection ? 'Click to edit project deliverables' : undefined}
+                >
+                  {renderEditBadge('Deliverables')}
                   <div className="flex items-center space-x-1.5 pb-1 mb-2 border-b border-slate-200/80">
                     <CheckCircle2 className="w-3 h-3 text-emerald-600 shrink-0" />
                     <span className="font-bold text-slate-900 uppercase tracking-normal text-[9px] whitespace-nowrap">
@@ -460,7 +491,12 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
 
               {/* Assigned Specialists / Team Section */}
               {doc.sectionVisibility?.crew !== false && doc.includeCrewSection && activeTeam.length > 0 && (
-                <div className="mb-5">
+                <div
+                  onClick={() => onSelectSection?.('industry')}
+                  className={`mb-5 ${sectionClass('industry')}`}
+                  title={onSelectSection ? 'Click to edit team members' : undefined}
+                >
+                  {renderEditBadge('Team')}
                   <div className="flex items-center space-x-2 border-b border-slate-200/90 pb-1.5 mb-2.5">
                     <Award className="w-3.5 h-3.5 text-amber-700 shrink-0" />
                     <h4 className="text-[11px] font-bold text-slate-900 uppercase tracking-normal whitespace-nowrap">
@@ -480,7 +516,12 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
 
               {/* Guarantees & Why Work With Us */}
               {doc.sectionVisibility?.whyChooseUs !== false && doc.includeWhyChooseUs && activeWhy.length > 0 && (
-                <div className="mb-5">
+                <div
+                  onClick={() => onSelectSection?.('industry')}
+                  className={`mb-5 ${sectionClass('industry')}`}
+                  title={onSelectSection ? 'Click to edit guarantees & why choose us' : undefined}
+                >
+                  {renderEditBadge('Guarantees')}
                   <div className="flex items-center space-x-2 border-b border-slate-200/90 pb-1.5 mb-2.5">
                     <ShieldCheck className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
                     <h4 className="text-[11px] font-bold text-slate-900 uppercase tracking-normal whitespace-nowrap">
@@ -503,7 +544,12 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
 
               {/* Commercial Terms & Conditions */}
               {doc.sectionVisibility?.terms !== false && doc.termsAndConditions && doc.termsAndConditions.length > 0 && (
-                <div className="mb-5">
+                <div
+                  onClick={() => onSelectSection?.('tax-payment')}
+                  className={`mb-5 ${sectionClass('tax-payment')}`}
+                  title={onSelectSection ? 'Click to edit commercial terms & clauses' : undefined}
+                >
+                  {renderEditBadge('Terms')}
                   <div className="flex items-center space-x-2 border-b border-slate-200/90 pb-1.5 mb-2.5">
                     <FileText className="w-3.5 h-3.5 text-slate-700 shrink-0" />
                     <h4 className="text-[11px] font-bold text-slate-900 uppercase tracking-normal whitespace-nowrap">
@@ -522,7 +568,12 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
 
               {/* E-Signature & Formal Approval Sign-Off Block */}
               {doc.sectionVisibility?.signatory !== false && doc.signatory?.enabled !== false && (
-                <div className="mt-4 pt-3 border-t-2 border-slate-900 grid grid-cols-2 gap-8">
+                <div
+                  onClick={() => onSelectSection?.('watermark-terms')}
+                  className={`mt-4 pt-3 border-t-2 border-slate-900 grid grid-cols-2 gap-8 ${sectionClass('watermark-terms')}`}
+                  title={onSelectSection ? 'Click to edit signatory details & contract sign-off' : undefined}
+                >
+                  {renderEditBadge('Signatures')}
                   {/* Service Provider Signature */}
                   <div>
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal mb-1 whitespace-nowrap">

@@ -7,11 +7,24 @@ import { Users, ShieldCheck } from 'lucide-react';
 
 interface CreativeProposalViewProps {
   document: QuotationDocument;
+  onSelectSection?: (tabId: string) => void;
 }
 
-export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ document: doc }) => {
+export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ document: doc, onSelectSection }) => {
   const preset = INDUSTRY_PRESETS[doc.industry] || INDUSTRY_PRESETS.photography_events;
   const currency = doc.currency;
+
+  const sectionClass = (_tabId?: string) =>
+    onSelectSection
+      ? 'relative group/canvas-section transition-all cursor-pointer hover:outline hover:outline-2 hover:outline-amber-500/80 hover:outline-offset-2 hover:rounded-xl'
+      : '';
+
+  const renderEditBadge = (label: string) =>
+    onSelectSection ? (
+      <span className="absolute top-1 right-1 opacity-0 group-hover/canvas-section:opacity-100 transition-opacity bg-slate-950/90 text-amber-300 text-[9px] font-bold px-2 py-0.5 rounded shadow-md border border-amber-500/40 pointer-events-none z-20 print:hidden">
+        ✏️ {label}
+      </span>
+    ) : null;
 
   const getEventDateDisplay = () => {
     if (doc.details.eventDateMode === 'single') {
@@ -97,7 +110,12 @@ export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ docu
         <div className="relative z-10 p-10 text-left text-slate-900 flex flex-col justify-between h-full min-h-[1123px]">
           <div>
             {/* TOP HEADER SECTION */}
-            <div className="w-full text-center pb-1">
+            <div
+              onClick={() => onSelectSection?.('business')}
+              className={`w-full text-center pb-1 ${sectionClass('business')}`}
+              title={onSelectSection ? 'Click to edit business branding' : undefined}
+            >
+              {renderEditBadge('Brand')}
               {doc.studio.logoUrl ? (
                 <div className="flex items-center justify-center mb-1">
                   <img
@@ -139,7 +157,12 @@ export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ docu
             </div>
 
             {/* CLIENT & PROPOSAL METADATA BAR */}
-            <div className="grid grid-cols-2 gap-4 mt-3 mb-4 bg-slate-50/80 border border-slate-200/90 rounded-lg p-3 text-[11.5px] leading-relaxed">
+            <div
+              onClick={() => onSelectSection?.('client')}
+              className={`grid grid-cols-2 gap-4 mt-3 mb-4 bg-slate-50/80 border border-slate-200/90 rounded-lg p-3 text-[11.5px] leading-relaxed ${sectionClass('client')}`}
+              title={onSelectSection ? 'Click to edit client & project metadata' : undefined}
+            >
+              {renderEditBadge('Client & Scope')}
               <div className="space-y-0.5">
                 <p>
                   <strong className="text-slate-900 font-semibold">Client / Project:</strong>{' '}
@@ -182,13 +205,21 @@ export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ docu
             </div>
 
             {/* PACKAGE BANNER TITLE */}
-            <div className="bg-[#111111] text-amber-300 py-2.5 px-4 text-center rounded-sm font-bold tracking-[0.12em] text-[13px] uppercase shadow-md my-3">
+            <div
+              onClick={() => onSelectSection?.('client')}
+              className={`bg-[#111111] text-amber-300 py-2.5 px-4 text-center rounded-sm font-bold tracking-[0.12em] text-[13px] uppercase shadow-md my-3 ${sectionClass('client')}`}
+            >
               {doc.packageBannerTitle || preset.defaultPackageTitle}
             </div>
 
             {/* SCOPE & SCHEDULE MATRIX SECTION */}
             {doc.sectionVisibility?.scope !== false && doc.includeScopeSection !== false && doc.eventCoverage && doc.eventCoverage.length > 0 && (
-              <div className="my-3">
+              <div
+                onClick={() => onSelectSection?.('scope')}
+                className={`my-3 ${sectionClass('scope')}`}
+                title={onSelectSection ? 'Click to edit event coverage & phases' : undefined}
+              >
+                {renderEditBadge('Phases')}
                 <h3 className="font-bold text-[12px] uppercase tracking-[0.08em] text-[#111111] mb-2 border-b border-slate-200 pb-1 flex items-center justify-between whitespace-nowrap">
                   <span>{doc.sectionTitles?.scopeTitle || preset.scopeSectionTitle || 'EVENT SCHEDULE & SERVICES COVERAGE'}</span>
                   <span className="text-[10px] text-amber-700 font-normal lowercase tracking-normal">
@@ -226,7 +257,12 @@ export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ docu
 
             {/* DELIVERABLES INCLUDED SECTION */}
             {doc.sectionVisibility?.deliverables !== false && doc.deliverables && doc.deliverables.length > 0 && (
-              <div className="my-3">
+              <div
+                onClick={() => onSelectSection?.('deliverables')}
+                className={`my-3 ${sectionClass('deliverables')}`}
+                title={onSelectSection ? 'Click to edit deliverables' : undefined}
+              >
+                {renderEditBadge('Deliverables')}
                 <h3 className="font-bold text-[12px] uppercase tracking-[0.08em] text-[#111111] mb-2 border-b border-slate-200 pb-1 whitespace-nowrap">
                   {doc.sectionTitles?.deliverablesTitle || 'DELIVERABLES INCLUDED'}
                 </h3>
@@ -244,7 +280,12 @@ export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ docu
             )}
 
             {/* TOTAL INVESTMENT & PAYMENT TERMS SUMMARY */}
-            <div className="mt-4 border-2 border-slate-900 rounded-lg overflow-hidden bg-white shadow-sm">
+            <div
+              onClick={() => onSelectSection?.('pricing')}
+              className={`mt-4 border-2 border-slate-900 rounded-lg overflow-hidden bg-white shadow-sm ${sectionClass('pricing')}`}
+              title={onSelectSection ? 'Click to edit pricing & discount' : undefined}
+            >
+              {renderEditBadge('Pricing')}
               <div className="bg-[#111111] text-white px-4 py-2.5 flex items-center justify-between">
                 <div>
                   <span className="text-[10px] tracking-[0.2em] text-amber-300 uppercase font-semibold block">
@@ -258,7 +299,14 @@ export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ docu
               </div>
 
               {/* 3-Step Milestone Terms Bar */}
-              <div className="grid grid-cols-3 divide-x divide-slate-200 bg-slate-50 p-3 text-center text-[10.5px]">
+              <div
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onSelectSection?.('tax-payment');
+                }}
+                className="grid grid-cols-3 divide-x divide-slate-200 bg-slate-50 p-3 text-center text-[10.5px] cursor-pointer hover:bg-amber-50/40 transition-colors"
+                title={onSelectSection ? 'Click to edit payment milestones' : undefined}
+              >
                 <div className="flex flex-col justify-between items-center px-1.5 min-h-[50px]">
                   <span className="text-[9.5px] text-slate-500 font-bold uppercase leading-tight block mb-1">
                     {doc.paymentTerms?.paymentMilestoneLabels?.advanceLabel || `${advPct}% Advance Booking`}
@@ -325,7 +373,12 @@ export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ docu
 
               {/* CREW / TEAM ALLOCATION SECTION */}
               {doc.sectionVisibility?.crew !== false && doc.includeCrewSection !== false && activeCrew.length > 0 && (
-                <div className="mb-4">
+                <div
+                  onClick={() => onSelectSection?.('industry')}
+                  className={`mb-4 ${sectionClass('industry')}`}
+                  title={onSelectSection ? 'Click to edit team allocation' : undefined}
+                >
+                  {renderEditBadge('Team')}
                   <div className="flex items-center space-x-1.5 mb-2 pb-1 border-b border-slate-200">
                     <Users className="w-3.5 h-3.5 text-amber-700" />
                     <h3 className="font-bold text-[12px] uppercase tracking-[0.08em] text-[#111111] whitespace-nowrap">
@@ -354,7 +407,12 @@ export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ docu
 
               {/* WHY WORK WITH US SECTION */}
               {doc.sectionVisibility?.whyChooseUs !== false && doc.includeWhyChooseUs !== false && activeWhyChoose.length > 0 && (
-                <div className="mb-4">
+                <div
+                  onClick={() => onSelectSection?.('industry')}
+                  className={`mb-4 ${sectionClass('industry')}`}
+                  title={onSelectSection ? 'Click to edit guarantees & value proposition' : undefined}
+                >
+                  {renderEditBadge('Why Us')}
                   <div className="flex items-center space-x-1.5 mb-2 pb-1 border-b border-slate-200">
                     <ShieldCheck className="w-3.5 h-3.5 text-emerald-700" />
                     <h3 className="font-bold text-[12px] uppercase tracking-[0.08em] text-[#111111] whitespace-nowrap">
@@ -381,7 +439,12 @@ export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ docu
 
               {/* TERMS & CONDITIONS (2-Column Layout) */}
               {doc.sectionVisibility?.terms !== false && (
-                <div className="mb-4">
+                <div
+                  onClick={() => onSelectSection?.('tax-payment')}
+                  className={`mb-4 ${sectionClass('tax-payment')}`}
+                  title={onSelectSection ? 'Click to edit terms & conditions' : undefined}
+                >
+                  {renderEditBadge('Terms')}
                   <h3 className="font-bold text-[12px] uppercase tracking-[0.08em] text-[#111111] mb-2 border-b border-slate-200 pb-1 whitespace-nowrap">
                     {doc.sectionTitles?.termsTitle || 'TERMS & CONDITIONS'}
                   </h3>
@@ -407,7 +470,12 @@ export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ docu
               )}
 
               {/* SIGNATURE & CLIENT APPROVAL SECTION */}
-              <div className="mt-4 pt-3 border-t-2 border-slate-900 grid grid-cols-2 gap-6">
+              <div
+                onClick={() => onSelectSection?.('watermark-terms')}
+                className={`mt-4 pt-3 border-t-2 border-slate-900 grid grid-cols-2 gap-6 ${sectionClass('watermark-terms')}`}
+                title={onSelectSection ? 'Click to edit signatory details' : undefined}
+              >
+                {renderEditBadge('Signatures')}
                 <div>
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal mb-1 whitespace-nowrap">
                     ISSUED BY:

@@ -47,6 +47,7 @@ interface NavbarProps {
   onNavigateToHome?: () => void;
   onResetSample?: () => void;
   onNewDocument?: () => void;
+  onUpdateTitle?: (newTitle: string) => void;
   isExporting: boolean;
   onToggleWatermark: () => void;
 }
@@ -65,7 +66,9 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenUpgrade,
   onOpenHealth,
   onNavigateToHome,
+  onResetSample,
   onNewDocument,
+  onUpdateTitle,
   isExporting,
   onToggleWatermark,
 }) => {
@@ -75,6 +78,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [isShareOpen, setIsShareOpen] = useState(false);
   const [isMoreOpen, setIsMoreOpen] = useState(false);
   const [isPdfMenuOpen, setIsPdfMenuOpen] = useState(false);
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [tempTitle, setTempTitle] = useState(doc.packageBannerTitle || doc.client.nameOfEvent || doc.details.invoiceNo || '');
   const shareRef = useRef<HTMLDivElement>(null);
   const moreRef = useRef<HTMLDivElement>(null);
   const pdfMenuRef = useRef<HTMLDivElement>(null);
@@ -148,6 +153,51 @@ export const Navbar: React.FC<NavbarProps> = ({
               <h1 className="text-xs sm:text-sm md:text-base font-bold text-amber-100 tracking-wide font-['Outfit'] truncate">
                 {doc.studio.name || 'INVOIX STUDIO'}
               </h1>
+              <span className="text-slate-600 hidden sm:inline text-xs">›</span>
+              
+              {/* Inline Editable Document Title */}
+              {isEditingTitle ? (
+                <input
+                  type="text"
+                  value={tempTitle}
+                  onChange={(e) => setTempTitle(e.target.value)}
+                  onBlur={() => {
+                    setIsEditingTitle(false);
+                    if (tempTitle.trim() && onUpdateTitle) {
+                      onUpdateTitle(tempTitle.trim());
+                    }
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      setIsEditingTitle(false);
+                      if (tempTitle.trim() && onUpdateTitle) {
+                        onUpdateTitle(tempTitle.trim());
+                      }
+                    } else if (e.key === 'Escape') {
+                      setIsEditingTitle(false);
+                      setTempTitle(doc.packageBannerTitle || doc.client.nameOfEvent || doc.details.invoiceNo || '');
+                    }
+                  }}
+                  autoFocus
+                  className="bg-slate-900 border border-amber-500/80 rounded px-2 py-0.5 text-xs text-amber-300 font-mono outline-none shadow-inner"
+                />
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTempTitle(doc.packageBannerTitle || doc.client.nameOfEvent || doc.details.invoiceNo || '');
+                    setIsEditingTitle(true);
+                  }}
+                  className="group flex items-center space-x-1 hover:text-amber-300 transition-colors text-slate-300 font-mono text-[11px] cursor-pointer hidden sm:flex"
+                  title="Click to rename document"
+                >
+                  <span className="truncate max-w-[120px] md:max-w-[180px] font-bold text-amber-300/90">
+                    [{doc.packageBannerTitle || doc.client.nameOfEvent || doc.details.invoiceNo || 'Draft'}]
+                  </span>
+                  <span className="opacity-0 group-hover:opacity-100 text-[10px]">✏️</span>
+                </button>
+              )}
+
               <span
                 className={`hidden sm:inline-flex text-[9.5px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider shrink-0 ${
                   doc.type === 'INVOICE'
@@ -155,7 +205,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     : 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
                 }`}
               >
-                {doc.type} Mode
+                {doc.type}
               </span>
 
               {/* Cloud Sync Status Indicator */}
@@ -169,8 +219,8 @@ export const Navbar: React.FC<NavbarProps> = ({
               >
                 {user ? (
                   <>
-                    <Cloud className="w-3 h-3 text-emerald-400" />
-                    <span>Cloud Active</span>
+                    <Cloud className="w-3 h-3 text-emerald-400 animate-pulse" />
+                    <span>Cloud Sync</span>
                   </>
                 ) : (
                   <>
@@ -416,6 +466,17 @@ export const Navbar: React.FC<NavbarProps> = ({
                   >
                     <Plus className="w-4 h-4 text-amber-400" />
                     <span>New Document</span>
+                  </button>
+                )}
+
+                {onResetSample && (
+                  <button
+                    type="button"
+                    onClick={() => { onResetSample(); setIsMoreOpen(false); }}
+                    className="w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs text-slate-200 hover:bg-slate-800/60 transition-colors cursor-pointer"
+                  >
+                    <Sparkles className="w-4 h-4 text-amber-400" />
+                    <span>Reset Sample Data</span>
                   </button>
                 )}
 

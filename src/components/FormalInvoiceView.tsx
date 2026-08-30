@@ -6,12 +6,25 @@ import { CheckCircle2, AlertCircle, Clock } from 'lucide-react';
 
 interface FormalInvoiceViewProps {
   document: QuotationDocument;
+  onSelectSection?: (tabId: string) => void;
 }
 
-export const FormalInvoiceView: React.FC<FormalInvoiceViewProps> = ({ document: doc }) => {
+export const FormalInvoiceView: React.FC<FormalInvoiceViewProps> = ({ document: doc, onSelectSection }) => {
   const currency = doc.currency;
   const logoWidth = doc.studio.logoWidth || 320;
   const logoHeight = doc.studio.logoHeight || 130;
+
+  const sectionClass = (_tabId?: string) =>
+    onSelectSection
+      ? 'relative group/canvas-section transition-all cursor-pointer hover:outline hover:outline-2 hover:outline-amber-500/80 hover:outline-offset-2 hover:rounded-xl'
+      : '';
+
+  const renderEditBadge = (label: string) =>
+    onSelectSection ? (
+      <span className="absolute top-1 right-1 opacity-0 group-hover/canvas-section:opacity-100 transition-opacity bg-slate-950/90 text-amber-300 text-[9px] font-bold px-2 py-0.5 rounded shadow-md border border-amber-500/40 pointer-events-none z-20 print:hidden">
+        ✏️ {label}
+      </span>
+    ) : null;
 
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>('');
 
@@ -108,7 +121,12 @@ export const FormalInvoiceView: React.FC<FormalInvoiceViewProps> = ({ document: 
     >
       {/* Top Header */}
       <div>
-        <div className="flex items-start justify-between border-b-2 border-slate-900 pb-4">
+        <div
+          onClick={() => onSelectSection?.('business')}
+          className={`flex items-start justify-between border-b-2 border-slate-900 pb-4 ${sectionClass('business')}`}
+          title={onSelectSection ? 'Click to edit business branding' : undefined}
+        >
+          {renderEditBadge('Brand')}
           <div className="flex-1 pr-6 min-w-0">
             {doc.studio.logoUrl ? (
               <img
@@ -195,7 +213,12 @@ export const FormalInvoiceView: React.FC<FormalInvoiceViewProps> = ({ document: 
         </div>
 
         {/* Bill To / Client Section */}
-        <div className="grid grid-cols-2 gap-6 my-4 bg-slate-50 border border-slate-200/90 rounded-xl p-3.5 text-xs">
+        <div
+          onClick={() => onSelectSection?.('client')}
+          className={`grid grid-cols-2 gap-6 my-4 bg-slate-50 border border-slate-200/90 rounded-xl p-3.5 text-xs ${sectionClass('client')}`}
+          title={onSelectSection ? 'Click to edit client & project summary' : undefined}
+        >
+          {renderEditBadge('Client')}
           <div>
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-normal block mb-1 whitespace-nowrap">
               BILLED TO / CLIENT:
@@ -244,7 +267,12 @@ export const FormalInvoiceView: React.FC<FormalInvoiceViewProps> = ({ document: 
         </div>
 
         {/* Itemized Invoice Table */}
-        <div className="mt-3 border border-slate-200 rounded-lg overflow-hidden">
+        <div
+          onClick={() => onSelectSection?.('pricing')}
+          className={`mt-3 border border-slate-200 rounded-lg overflow-hidden ${sectionClass('pricing')}`}
+          title={onSelectSection ? 'Click to edit line items & rates' : undefined}
+        >
+          {renderEditBadge('Pricing Items')}
           <table className="w-full text-left text-xs border-collapse">
             <thead>
               <tr className="bg-slate-900 text-slate-200 text-[10px] font-bold uppercase tracking-normal">
@@ -289,7 +317,12 @@ export const FormalInvoiceView: React.FC<FormalInvoiceViewProps> = ({ document: 
         <div className="flex justify-between items-start mt-4 gap-6">
           {/* Left: Payment Banking & Offline QR Code */}
           {doc.sectionVisibility?.bankDetails !== false ? (
-            <div className="flex-1 bg-slate-50 border border-slate-200/90 rounded-xl p-3 text-xs">
+            <div
+              onClick={() => onSelectSection?.('tax-payment')}
+              className={`flex-1 bg-slate-50 border border-slate-200/90 rounded-xl p-3 text-xs ${sectionClass('tax-payment')}`}
+              title={onSelectSection ? 'Click to edit bank & payment instructions' : undefined}
+            >
+              {renderEditBadge('Bank & QR')}
               <div className="flex items-start justify-between">
                 <div className="space-y-1 pr-2">
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-normal block whitespace-nowrap">
@@ -340,12 +373,12 @@ export const FormalInvoiceView: React.FC<FormalInvoiceViewProps> = ({ document: 
           )}
 
           {/* Right: Subtotal, Tax & Net Due Totals */}
-          <div className="w-80 bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-1.5 text-xs shrink-0">
-            {/*
-              Nowrap on every row: a tax label like "VAT (10%):" or
-              "Sales Tax (8.25%):" otherwise wraps at the space and the second
-              line collides with the Total rule below.
-            */}
+          <div
+            onClick={() => onSelectSection?.('tax-payment')}
+            className={`w-80 bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-1.5 text-xs shrink-0 ${sectionClass('tax-payment')}`}
+            title={onSelectSection ? 'Click to edit taxes, discount & settlement' : undefined}
+          >
+            {renderEditBadge('Settlement')}
             <div className="flex justify-between items-baseline gap-3 text-slate-600 text-[11px]">
               <span className="whitespace-nowrap">Subtotal:</span>
               <span className="font-mono font-medium whitespace-nowrap">{formatCurrency(subtotal, currency)}</span>
@@ -360,10 +393,6 @@ export const FormalInvoiceView: React.FC<FormalInvoiceViewProps> = ({ document: 
 
             {taxAmount > 0 && (
               <div className="flex justify-between items-baseline gap-3 text-slate-600 text-[11px]">
-                {/*
-                  No overflow-hidden / text-ellipsis here — on a flex item those
-                  set min-width to 0 and the label truncates to "VAT (10…".
-                */}
                 <span className="whitespace-nowrap">
                   {doc.taxConfig?.label || doc.taxType?.toUpperCase() || 'Tax'} ({doc.taxConfig?.percent || doc.taxPercent}%):
                 </span>
@@ -394,7 +423,12 @@ export const FormalInvoiceView: React.FC<FormalInvoiceViewProps> = ({ document: 
       {/* Bottom Legal & Signatory */}
       <div>
         <div className="border-t border-slate-200 pt-3 grid grid-cols-2 gap-6 text-[10px] text-slate-500">
-          <div>
+          <div
+            onClick={() => onSelectSection?.('tax-payment')}
+            className={sectionClass('tax-payment')}
+            title={onSelectSection ? 'Click to edit invoice terms' : undefined}
+          >
+            {renderEditBadge('Terms')}
             {doc.sectionVisibility?.terms !== false && (
               <>
                 <p className="font-bold text-slate-700 uppercase tracking-normal mb-0.5 whitespace-nowrap">
@@ -419,7 +453,12 @@ export const FormalInvoiceView: React.FC<FormalInvoiceViewProps> = ({ document: 
             )}
           </div>
 
-          <div className="text-right flex flex-col items-end justify-end">
+          <div
+            onClick={() => onSelectSection?.('watermark-terms')}
+            className={`text-right flex flex-col items-end justify-end ${sectionClass('watermark-terms')}`}
+            title={onSelectSection ? 'Click to edit signatory details' : undefined}
+          >
+            {renderEditBadge('Signature')}
             {doc.sectionVisibility?.signatory !== false && doc.signatory?.enabled !== false && (
               <>
                 <div className="h-10 flex items-end pb-1">

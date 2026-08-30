@@ -127,7 +127,27 @@ Each of these shipped once and cost real debugging time.
 
 ## Handoff log
 
-### 2026-08-29 (latest) — Antigravity · Replaced Native Browser Alerts with In-App Toasts & Confirmations
+### 2026-08-30 (latest) — Antigravity · Typst/Overleaf-Grade Studio UX & Bi-Directional Workspace
+
+**Delivered 4 Typst-Inspired UX Innovations:**
+
+1. **Bi-Directional "Click-to-Jump" (Document ➔ Form Editor)**:
+   - Wired `onSelectSection` across `InvoiceDocumentView`, `ModernProposalView`, `CreativeProposalView`, and `FormalInvoiceView`.
+   - Clicking any section on the rendered proposal/invoice canvas (Branding, Client, SOW Phases, Itemized Pricing, Deliverables, Payment Terms, Bank Details, Signatures) instantly switches the Form Editor to that exact tab with visual hover rings and `✏️ Edit` tooltips (hidden during print/PDF generation).
+2. **Typst-Style Document Outline Navigator**:
+   - Built a sleek status & outline bar in [`FormEditor.tsx`](file:///d:/Product%20build/src/components/FormEditor.tsx) displaying live section checkmarks, total deal investment, phase/item count, and 1-click jump shortcuts.
+3. **3-Way View Mode Switcher (`Split` / `Editor Focus` / `Canvas Focus`)**:
+   - Implemented 3-Way Mode Switcher in [`StudioWorkspace.tsx`](file:///d:/Product%20build/src/components/StudioWorkspace.tsx) with persistent preference (`localStorage`) and keyboard shortcuts (`Alt+1`, `Alt+2`, `Alt+3`).
+   - `Split View`: 50/50 side-by-side with draggable resizer.
+   - `Focus Editor`: Full-width form editor for dense typing.
+   - `Review Canvas`: Full-width document preview with zoom and pan.
+4. **Live Status Header & Inline Editable Document Breadcrumbs**:
+   - In [`Navbar.tsx`](file:///d:/Product%20build/src/components/Navbar.tsx), added interactive breadcrumb trail with 1-click inline title renaming (`Invoix Studio › [Acme Q1 Proposal ✏️]`).
+   - Added live Cloud Sync pulse badge (`☁️ Cloud Sync` vs `💾 Local Mode`).
+- **Verification**: `npm run lint` = **0 warnings, 0 errors**. `npm run build` = **Clean compile (exit 0)**.
+- **Target Branch**: `staging`.
+
+### 2026-08-29 — Antigravity · Replaced Native Browser Alerts with In-App Toasts & Confirmations
 
 **UX Hardening Across Entire Application:**
 

@@ -752,6 +752,53 @@ export const FormEditor: React.FC<FormEditorProps> = ({
         )}
       </div>
 
+      {/* Typst-Style Document Outline & Status Bar */}
+      <div className="shrink-0 flex items-center justify-between px-3 py-1.5 mb-3 bg-slate-950/80 border border-slate-800/80 rounded-xl text-[11px] text-slate-400">
+        <div className="flex items-center space-x-2.5 overflow-x-auto no-scrollbar">
+          <button
+            type="button"
+            onClick={() => setActiveTab('business')}
+            className={`flex items-center space-x-1 cursor-pointer transition-colors ${
+              doc.studio.name ? 'text-emerald-400 hover:text-emerald-300' : 'text-amber-400/80 hover:text-amber-300'
+            }`}
+            title="Jump to Business Branding"
+          >
+            <span className="text-[9px]">{doc.studio.name ? '●' : '○'}</span>
+            <span className="font-semibold truncate max-w-[90px]">{doc.studio.name || 'Branding'}</span>
+          </button>
+          <span className="text-slate-700">›</span>
+          <button
+            type="button"
+            onClick={() => setActiveTab('client')}
+            className={`flex items-center space-x-1 cursor-pointer transition-colors ${
+              doc.client.clientName || doc.client.nameOfEvent ? 'text-emerald-400 hover:text-emerald-300' : 'text-slate-500 hover:text-slate-400'
+            }`}
+            title="Jump to Client Details"
+          >
+            <span className="text-[9px]">{doc.client.clientName || doc.client.nameOfEvent ? '●' : '○'}</span>
+            <span className="font-medium truncate max-w-[100px]">{doc.client.clientName || doc.client.nameOfEvent || 'Client'}</span>
+          </button>
+          <span className="text-slate-700">›</span>
+          <button
+            type="button"
+            onClick={() => setActiveTab('pricing')}
+            className="flex items-center space-x-1 text-amber-400 hover:text-amber-300 cursor-pointer font-mono font-bold transition-colors"
+            title="Jump to Pricing & Items"
+          >
+            <span>{doc.currency.symbol}{doc.totalInvestment ? doc.totalInvestment.toLocaleString() : '0'}</span>
+          </button>
+        </div>
+
+        <div className="flex items-center space-x-2 shrink-0 ml-2 text-[10px] text-slate-500">
+          <span className="hidden sm:inline">
+            {doc.pricingItems?.length || 0} items • {doc.eventCoverage?.length || 0} phases
+          </span>
+          <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800 text-amber-400 font-mono text-[9.5px]">
+            {doc.type}
+          </span>
+        </div>
+      </div>
+
       {/* Tab Panels */}
       <div className="flex-1 min-h-0 overflow-y-auto space-y-4 pr-1 text-xs no-scrollbar">
         {/* ========================================================= */}

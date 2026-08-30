@@ -8,12 +8,14 @@ interface InvoiceDocumentViewProps {
   document: QuotationDocument;
   elementId?: string;
   zoomScale?: number;
+  onSelectSection?: (tabId: string) => void;
 }
 
 export const InvoiceDocumentView: React.FC<InvoiceDocumentViewProps> = ({
   document: doc,
   elementId = 'quotation-invoice-canvas',
   zoomScale = 1,
+  onSelectSection,
 }) => {
   return (
     <div
@@ -33,12 +35,12 @@ export const InvoiceDocumentView: React.FC<InvoiceDocumentViewProps> = ({
               boxSizing: 'border-box',
             }}
           >
-            <FormalInvoiceView document={doc} />
+            <FormalInvoiceView document={doc} onSelectSection={onSelectSection} />
           </div>
         ) : doc.theme === 'creative' ? (
-          <CreativeProposalView document={doc} />
+          <CreativeProposalView document={doc} onSelectSection={onSelectSection} />
         ) : (
-          <ModernProposalView document={doc} />
+          <ModernProposalView document={doc} onSelectSection={onSelectSection} />
         )}
       </div>
     </div>
