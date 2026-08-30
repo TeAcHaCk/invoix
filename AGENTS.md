@@ -127,7 +127,21 @@ Each of these shipped once and cost real debugging time.
 
 ## Handoff log
 
-### 2026-08-30 (latest) — Antigravity · Precision Canvas-to-Field Auto-Scroll & Visual Focus Pulse
+### 2026-08-30 (latest) — Antigravity · Fix Why Choose Us Emoji Erase & Fallback Bug
+
+**Resolved Emoji Input Fallback & Canvas Render Bug:**
+
+1. **Root Cause**:
+   - In [`FormEditor.tsx`](file:///d:/Product%20build/src/components/FormEditor.tsx), the emoji input was bound as `value={item.icon || '🛡️'}`.
+   - When a user backspaced/cleared the emoji (`item.icon = ''`), JavaScript evaluated `'' || '🛡️'`, forcing `'🛡️'` back into the input box and preventing the user from removing the emoji icon.
+   - In [`ModernProposalView.tsx`](file:///d:/Product%20build/src/components/ModernProposalView.tsx) and [`CreativeProposalView.tsx`](file:///d:/Product%20build/src/components/CreativeProposalView.tsx), `<span className="mr-1.5 text-sm">{w.icon}</span>` was rendered unconditionally.
+2. **Resolution**:
+   - Switched input binding in [`FormEditor.tsx`](file:///d:/Product%20build/src/components/FormEditor.tsx) to `value={item.icon ?? ''}` with placeholder `🛡️` so erasing the field leaves it clean and empty.
+   - Added conditional `{w.icon ? <span className="mr-1.5 text-sm">{w.icon}</span> : null}` across [`ModernProposalView.tsx`](file:///d:/Product%20build/src/components/ModernProposalView.tsx) and [`CreativeProposalView.tsx`](file:///d:/Product%20build/src/components/CreativeProposalView.tsx) so no empty icon margin is rendered when no emoji is selected.
+- **Verification**: `npm run lint` = **0 warnings, 0 errors**. `npm run build` = **Clean compile (exit 0)**.
+- **Target Branch**: `staging`.
+
+### 2026-08-30 — Antigravity · Precision Canvas-to-Field Auto-Scroll & Visual Focus Pulse
 
 **Delivered Precision Deep-Linking & Auto-Scroll Highlight Engine:**
 

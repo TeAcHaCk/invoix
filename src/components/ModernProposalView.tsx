@@ -532,7 +532,7 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
                     {activeWhy.map((w) => (
                       <div key={w.id} className="bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-[11px]">
                         <p className="font-bold text-slate-900 flex items-center">
-                          <span className="mr-1.5 text-sm">{w.icon}</span>
+                          {w.icon ? <span className="mr-1.5 text-sm">{w.icon}</span> : null}
                           <span>{w.title}</span>
                         </p>
                         <p className="text-[10.5px] text-slate-600 mt-0.5 leading-tight">{w.description}</p>

@@ -2377,10 +2377,11 @@ export const FormEditor: React.FC<FormEditorProps> = ({
                         <div className="flex items-center space-x-2 flex-1 mr-2">
                           <input
                             type="text"
-                            value={item.icon || '🛡️'}
+                            value={item.icon ?? ''}
                             onChange={(e) => handleWhyChooseUsChange(item.id, 'icon', e.target.value)}
+                            placeholder="🛡️"
                             className="w-10 bg-slate-950/80 border border-slate-700/70 rounded-xl py-1.5 text-center text-sm focus:outline-none focus:border-amber-500"
-                            title="Emoji / Icon"
+                            title="Emoji / Icon (Leave empty if no icon desired)"
                           />
                           <input
                             type="text"

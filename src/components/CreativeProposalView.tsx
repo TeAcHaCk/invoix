@@ -427,7 +427,7 @@ export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ docu
                         className="bg-amber-50/30 border border-amber-200/60 rounded p-2 text-[10.5px]"
                       >
                         <div className="font-bold text-slate-900 flex items-center space-x-1 mb-0.5">
-                          <span>{why.icon}</span>
+                          {why.icon ? <span>{why.icon}</span> : null}
                           <span className="font-['Outfit']">{why.title}</span>
                         </div>
                         <p className="text-slate-600 text-[10px] leading-tight pl-4">{why.description}</p>
