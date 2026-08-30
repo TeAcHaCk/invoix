@@ -127,7 +127,23 @@ Each of these shipped once and cost real debugging time.
 
 ## Handoff log
 
-### 2026-08-30 (latest) — Antigravity · Dual-Tier 1s Debounced Auto-Save Engine & Live Status Indicator
+### 2026-08-30 (latest) — Antigravity · Streamlined Studio Top Bar & Uncluttered Header UX
+
+**Delivered Clean, High-End Studio Top Bar & Removed Visual Clutter:**
+
+1. **Purged Bloat & Text Collisions in Header ([`Navbar.tsx`](file:///d:/Product%20build/src/components/Navbar.tsx))**:
+   - **Removed Overlapping Inline Title**: Removed the 250px-wide inline title rename widget from the header which was physically overlapping on top of the auto-save pill. Document naming is now cleanly managed inside the Form Editor.
+   - **Integrated Auto-Save Pill**: Positioned the compact live status badge (`✓ Cloud` / `✓ Local` / `⏳ Saving`) directly beside the studio branding and document mode pill (`QUOTATION` / `INVOICE`).
+2. **Centered 3-Way Mode Switcher & Removed Redundancy**:
+   - Centered `[ ◫ Split | ✎ Editor | 👁 Canvas ]` in the top header with keyboard navigation (`Alt+1`, `Alt+2`, `Alt+3`).
+   - Removed the duplicate mode switcher that was floating over the document canvas in [`StudioWorkspace.tsx`](file:///d:/Product%20build/src/components/StudioWorkspace.tsx), making the canvas toolbar a pure, minimalist zoom controller (`-`, `100%`, `+`, `Fit A4`).
+3. **Consolidated Secondary Actions into Clean `...` More Menu**:
+   - Reduced top bar action buttons from 11 cluttered items down to 4 focused priorities: **Pre-flight Health**, **Share**, **Save PDF (Gold Primary CTA)**, and **`...` (More)**.
+   - Secondary tools (`Save to Vault Now`, `New Document`, `Document Vault`, `Business Settings`, `Super Admin`, `Watermark Toggle`) are cleanly grouped inside the `...` menu and user profile avatar.
+- **Verification**: `npm run lint` = **0 warnings, 0 errors**. `npm run build` = **Clean compile (exit 0)**.
+- **Target Branch**: `staging`.
+
+### 2026-08-30 — Antigravity · Dual-Tier 1s Debounced Auto-Save Engine & Live Status Indicator
 
 **Delivered Production-Grade Auto-Save & Visual Feedback:**
 
