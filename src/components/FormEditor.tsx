@@ -73,6 +73,7 @@ import {
   Loader2,
   ChevronLeft,
   ChevronRight,
+  ArrowRight,
 } from 'lucide-react';
 
 interface FormEditorProps {
@@ -934,16 +935,27 @@ export const FormEditor: React.FC<FormEditorProps> = ({
                       <LayoutTemplate className="w-3.5 h-3.5 text-amber-400" />
                       <span className="text-xs font-semibold text-slate-200">Client & Project Info Banner</span>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => toggleSectionVisibility('banner')}
-                      className={`p-1 rounded-lg transition-colors cursor-pointer ${
-                        currentVisibility.banner ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-500 bg-slate-800'
-                      }`}
-                      title={currentVisibility.banner ? 'Hide section' : 'Show section'}
-                    >
-                      {currentVisibility.banner ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-                    </button>
+                    <div className="flex items-center space-x-1.5">
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab('client')}
+                        className="text-[10px] text-amber-400 hover:text-amber-300 font-semibold px-2 py-0.5 rounded-md bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 transition-all cursor-pointer flex items-center space-x-1"
+                        title="Jump to Client Editor"
+                      >
+                        <span>Edit</span>
+                        <ArrowRight className="w-2.5 h-2.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => toggleSectionVisibility('banner')}
+                        className={`p-1 rounded-lg transition-colors cursor-pointer ${
+                          currentVisibility.banner ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-500 bg-slate-800'
+                        }`}
+                        title={currentVisibility.banner ? 'Hide section' : 'Show section'}
+                      >
+                        {currentVisibility.banner ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                      </button>
+                    </div>
                   </div>
                 </div>
 
@@ -954,16 +966,27 @@ export const FormEditor: React.FC<FormEditorProps> = ({
                       <Layers className="w-3.5 h-3.5 text-amber-400" />
                       <span className="text-xs font-semibold text-slate-200">Scope of Work & Milestones</span>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => toggleSectionVisibility('scope')}
-                      className={`p-1 rounded-lg transition-colors cursor-pointer ${
-                        currentVisibility.scope ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-500 bg-slate-800'
-                      }`}
-                      title={currentVisibility.scope ? 'Hide section' : 'Show section'}
-                    >
-                      {currentVisibility.scope ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-                    </button>
+                    <div className="flex items-center space-x-1.5">
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab('scope')}
+                        className="text-[10px] text-amber-400 hover:text-amber-300 font-semibold px-2 py-0.5 rounded-md bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 transition-all cursor-pointer flex items-center space-x-1"
+                        title="Jump to Scope & Milestones Editor"
+                      >
+                        <span>Edit</span>
+                        <ArrowRight className="w-2.5 h-2.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => toggleSectionVisibility('scope')}
+                        className={`p-1 rounded-lg transition-colors cursor-pointer ${
+                          currentVisibility.scope ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-500 bg-slate-800'
+                        }`}
+                        title={currentVisibility.scope ? 'Hide section' : 'Show section'}
+                      >
+                        {currentVisibility.scope ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                      </button>
+                    </div>
                   </div>
                   {currentVisibility.scope && (
                     <input
@@ -983,16 +1006,27 @@ export const FormEditor: React.FC<FormEditorProps> = ({
                       <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
                       <span className="text-xs font-semibold text-slate-200">Deliverables & Specifications</span>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => toggleSectionVisibility('deliverables')}
-                      className={`p-1 rounded-lg transition-colors cursor-pointer ${
-                        currentVisibility.deliverables ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-500 bg-slate-800'
-                      }`}
-                      title={currentVisibility.deliverables ? 'Hide section' : 'Show section'}
-                    >
-                      {currentVisibility.deliverables ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-                    </button>
+                    <div className="flex items-center space-x-1.5">
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab('deliverables')}
+                        className="text-[10px] text-amber-400 hover:text-amber-300 font-semibold px-2 py-0.5 rounded-md bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 transition-all cursor-pointer flex items-center space-x-1"
+                        title="Jump to Deliverables Editor"
+                      >
+                        <span>Edit</span>
+                        <ArrowRight className="w-2.5 h-2.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => toggleSectionVisibility('deliverables')}
+                        className={`p-1 rounded-lg transition-colors cursor-pointer ${
+                          currentVisibility.deliverables ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-500 bg-slate-800'
+                        }`}
+                        title={currentVisibility.deliverables ? 'Hide section' : 'Show section'}
+                      >
+                        {currentVisibility.deliverables ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                      </button>
+                    </div>
                   </div>
                   {currentVisibility.deliverables && (
                     <input
@@ -1012,16 +1046,27 @@ export const FormEditor: React.FC<FormEditorProps> = ({
                       <Award className="w-3.5 h-3.5 text-purple-400" />
                       <span className="text-xs font-semibold text-slate-200">Assigned Specialists & Crew</span>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => toggleSectionVisibility('crew')}
-                      className={`p-1 rounded-lg transition-colors cursor-pointer ${
-                        currentVisibility.crew ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-500 bg-slate-800'
-                      }`}
-                      title={currentVisibility.crew ? 'Hide section' : 'Show section'}
-                    >
-                      {currentVisibility.crew ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-                    </button>
+                    <div className="flex items-center space-x-1.5">
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab('deliverables')}
+                        className="text-[10px] text-amber-400 hover:text-amber-300 font-semibold px-2 py-0.5 rounded-md bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 transition-all cursor-pointer flex items-center space-x-1"
+                        title="Jump to Team & Crew Editor"
+                      >
+                        <span>Edit</span>
+                        <ArrowRight className="w-2.5 h-2.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => toggleSectionVisibility('crew')}
+                        className={`p-1 rounded-lg transition-colors cursor-pointer ${
+                          currentVisibility.crew ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-500 bg-slate-800'
+                        }`}
+                        title={currentVisibility.crew ? 'Hide section' : 'Show section'}
+                      >
+                        {currentVisibility.crew ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                      </button>
+                    </div>
                   </div>
                   {currentVisibility.crew && (
                     <input
@@ -1041,16 +1086,27 @@ export const FormEditor: React.FC<FormEditorProps> = ({
                       <ShieldCheck className="w-3.5 h-3.5 text-blue-400" />
                       <span className="text-xs font-semibold text-slate-200">Why Choose Us & Guarantees</span>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => toggleSectionVisibility('whyChooseUs')}
-                      className={`p-1 rounded-lg transition-colors cursor-pointer ${
-                        currentVisibility.whyChooseUs ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-500 bg-slate-800'
-                      }`}
-                      title={currentVisibility.whyChooseUs ? 'Hide section' : 'Show section'}
-                    >
-                      {currentVisibility.whyChooseUs ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-                    </button>
+                    <div className="flex items-center space-x-1.5">
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab('deliverables')}
+                        className="text-[10px] text-amber-400 hover:text-amber-300 font-semibold px-2 py-0.5 rounded-md bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 transition-all cursor-pointer flex items-center space-x-1"
+                        title="Jump to Guarantees & Why Choose Us"
+                      >
+                        <span>Edit</span>
+                        <ArrowRight className="w-2.5 h-2.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => toggleSectionVisibility('whyChooseUs')}
+                        className={`p-1 rounded-lg transition-colors cursor-pointer ${
+                          currentVisibility.whyChooseUs ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-500 bg-slate-800'
+                        }`}
+                        title={currentVisibility.whyChooseUs ? 'Hide section' : 'Show section'}
+                      >
+                        {currentVisibility.whyChooseUs ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                      </button>
+                    </div>
                   </div>
                   {currentVisibility.whyChooseUs && (
                     <input
@@ -1070,16 +1126,27 @@ export const FormEditor: React.FC<FormEditorProps> = ({
                       <DollarSign className="w-3.5 h-3.5 text-emerald-400" />
                       <span className="text-xs font-semibold text-slate-200">Itemized Commercial Investment</span>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => toggleSectionVisibility('pricingTable')}
-                      className={`p-1 rounded-lg transition-colors cursor-pointer ${
-                        currentVisibility.pricingTable ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-500 bg-slate-800'
-                      }`}
-                      title={currentVisibility.pricingTable ? 'Hide section' : 'Show section'}
-                    >
-                      {currentVisibility.pricingTable ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-                    </button>
+                    <div className="flex items-center space-x-1.5">
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab('pricing')}
+                        className="text-[10px] text-amber-400 hover:text-amber-300 font-semibold px-2 py-0.5 rounded-md bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 transition-all cursor-pointer flex items-center space-x-1"
+                        title="Jump to Pricing & Line Items Editor"
+                      >
+                        <span>Edit</span>
+                        <ArrowRight className="w-2.5 h-2.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => toggleSectionVisibility('pricingTable')}
+                        className={`p-1 rounded-lg transition-colors cursor-pointer ${
+                          currentVisibility.pricingTable ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-500 bg-slate-800'
+                        }`}
+                        title={currentVisibility.pricingTable ? 'Hide section' : 'Show section'}
+                      >
+                        {currentVisibility.pricingTable ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                      </button>
+                    </div>
                   </div>
                   {currentVisibility.pricingTable && (
                     <input
@@ -1099,16 +1166,27 @@ export const FormEditor: React.FC<FormEditorProps> = ({
                       <CreditCard className="w-3.5 h-3.5 text-amber-400" />
                       <span className="text-xs font-semibold text-slate-200">Milestone Payment Schedule</span>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => toggleSectionVisibility('paymentMilestones')}
-                      className={`p-1 rounded-lg transition-colors cursor-pointer ${
-                        currentVisibility.paymentMilestones ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-500 bg-slate-800'
-                      }`}
-                      title={currentVisibility.paymentMilestones ? 'Hide section' : 'Show section'}
-                    >
-                      {currentVisibility.paymentMilestones ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-                    </button>
+                    <div className="flex items-center space-x-1.5">
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab('tax-payment')}
+                        className="text-[10px] text-amber-400 hover:text-amber-300 font-semibold px-2 py-0.5 rounded-md bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 transition-all cursor-pointer flex items-center space-x-1"
+                        title="Jump to Payment Terms Editor"
+                      >
+                        <span>Edit</span>
+                        <ArrowRight className="w-2.5 h-2.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => toggleSectionVisibility('paymentMilestones')}
+                        className={`p-1 rounded-lg transition-colors cursor-pointer ${
+                          currentVisibility.paymentMilestones ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-500 bg-slate-800'
+                        }`}
+                        title={currentVisibility.paymentMilestones ? 'Hide section' : 'Show section'}
+                      >
+                        {currentVisibility.paymentMilestones ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                      </button>
+                    </div>
                   </div>
                 </div>
 
@@ -1119,16 +1197,27 @@ export const FormEditor: React.FC<FormEditorProps> = ({
                       <Building2 className="w-3.5 h-3.5 text-cyan-400" />
                       <span className="text-xs font-semibold text-slate-200">Bank Details & Payment QR Code</span>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => toggleSectionVisibility('bankDetails')}
-                      className={`p-1 rounded-lg transition-colors cursor-pointer ${
-                        currentVisibility.bankDetails ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-500 bg-slate-800'
-                      }`}
-                      title={currentVisibility.bankDetails ? 'Hide section' : 'Show section'}
-                    >
-                      {currentVisibility.bankDetails ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-                    </button>
+                    <div className="flex items-center space-x-1.5">
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab('tax-payment')}
+                        className="text-[10px] text-amber-400 hover:text-amber-300 font-semibold px-2 py-0.5 rounded-md bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 transition-all cursor-pointer flex items-center space-x-1"
+                        title="Jump to Bank Details & QR Editor"
+                      >
+                        <span>Edit</span>
+                        <ArrowRight className="w-2.5 h-2.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => toggleSectionVisibility('bankDetails')}
+                        className={`p-1 rounded-lg transition-colors cursor-pointer ${
+                          currentVisibility.bankDetails ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-500 bg-slate-800'
+                        }`}
+                        title={currentVisibility.bankDetails ? 'Hide section' : 'Show section'}
+                      >
+                        {currentVisibility.bankDetails ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                      </button>
+                    </div>
                   </div>
                 </div>
 
@@ -1139,16 +1228,27 @@ export const FormEditor: React.FC<FormEditorProps> = ({
                       <FileText className="w-3.5 h-3.5 text-amber-400" />
                       <span className="text-xs font-semibold text-slate-200">Commercial Terms & Conditions</span>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => toggleSectionVisibility('terms')}
-                      className={`p-1 rounded-lg transition-colors cursor-pointer ${
-                        currentVisibility.terms ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-500 bg-slate-800'
-                      }`}
-                      title={currentVisibility.terms ? 'Hide section' : 'Show section'}
-                    >
-                      {currentVisibility.terms ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-                    </button>
+                    <div className="flex items-center space-x-1.5">
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab('tax-payment')}
+                        className="text-[10px] text-amber-400 hover:text-amber-300 font-semibold px-2 py-0.5 rounded-md bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 transition-all cursor-pointer flex items-center space-x-1"
+                        title="Jump to Commercial Terms Editor"
+                      >
+                        <span>Edit</span>
+                        <ArrowRight className="w-2.5 h-2.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => toggleSectionVisibility('terms')}
+                        className={`p-1 rounded-lg transition-colors cursor-pointer ${
+                          currentVisibility.terms ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-500 bg-slate-800'
+                        }`}
+                        title={currentVisibility.terms ? 'Hide section' : 'Show section'}
+                      >
+                        {currentVisibility.terms ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                      </button>
+                    </div>
                   </div>
                   {currentVisibility.terms && (
                     <input
@@ -1167,16 +1267,27 @@ export const FormEditor: React.FC<FormEditorProps> = ({
                     <FileSignature className="w-3.5 h-3.5 text-indigo-400" />
                     <span className="text-xs font-semibold text-slate-200">Authorized Signatory & Approval Block</span>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => toggleSectionVisibility('signatory')}
-                    className={`p-1 rounded-lg transition-colors cursor-pointer ${
-                      currentVisibility.signatory ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-500 bg-slate-800'
-                    }`}
-                    title={currentVisibility.signatory ? 'Hide section' : 'Show section'}
-                  >
-                    {currentVisibility.signatory ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-                  </button>
+                  <div className="flex items-center space-x-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('watermark-terms')}
+                      className="text-[10px] text-amber-400 hover:text-amber-300 font-semibold px-2 py-0.5 rounded-md bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 transition-all cursor-pointer flex items-center space-x-1"
+                      title="Jump to Signatory & Approval Editor"
+                    >
+                      <span>Edit</span>
+                      <ArrowRight className="w-2.5 h-2.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => toggleSectionVisibility('signatory')}
+                      className={`p-1 rounded-lg transition-colors cursor-pointer ${
+                        currentVisibility.signatory ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-500 bg-slate-800'
+                      }`}
+                      title={currentVisibility.signatory ? 'Hide section' : 'Show section'}
+                    >
+                      {currentVisibility.signatory ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1722,6 +1833,37 @@ export const FormEditor: React.FC<FormEditorProps> = ({
         {/* ========================================================= */}
         {activeTab === 'scope' && (
           <div className="space-y-4 animate-fadeIn">
+            {/* Inline Section Title & Visibility Control */}
+            <div className="bg-slate-950/70 border border-slate-800/80 rounded-2xl p-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5">
+              <div className="flex-1 w-full">
+                <label className="text-[10px] font-semibold text-slate-400 block mb-1">
+                  Custom Scope Heading on Proposal
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Scope of Work, Project Phases & Milestones"
+                  value={doc.sectionTitles?.scopeTitle || ''}
+                  onChange={(e) => handleSectionTitleChange('scopeTitle', e.target.value)}
+                  className="w-full bg-slate-900/90 border border-slate-700/60 rounded-xl px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-amber-500"
+                />
+              </div>
+              <div className="flex items-center space-x-2 shrink-0 sm:pt-4">
+                <button
+                  type="button"
+                  onClick={() => toggleSectionVisibility('scope')}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center space-x-1.5 transition-colors cursor-pointer ${
+                    currentVisibility.scope
+                      ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30'
+                      : 'bg-slate-800 text-slate-500 border border-slate-700'
+                  }`}
+                  title={currentVisibility.scope ? 'Section is visible on proposal' : 'Section is hidden on proposal'}
+                >
+                  {currentVisibility.scope ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                  <span>{currentVisibility.scope ? 'Visible' : 'Hidden'}</span>
+                </button>
+              </div>
+            </div>
+
             <div className="flex items-center justify-between">
               <label className="text-xs font-bold text-amber-300 uppercase tracking-wider flex items-center space-x-1.5 font-['Outfit']">
                 <Layers className="w-3.5 h-3.5" />
@@ -1800,6 +1942,37 @@ export const FormEditor: React.FC<FormEditorProps> = ({
         {/* ========================================================= */}
         {activeTab === 'pricing' && (
           <div className="space-y-4 animate-fadeIn">
+            {/* Inline Section Title & Visibility Control */}
+            <div className="bg-slate-950/70 border border-slate-800/80 rounded-2xl p-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5">
+              <div className="flex-1 w-full">
+                <label className="text-[10px] font-semibold text-slate-400 block mb-1">
+                  Custom Pricing Table Heading on Proposal
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Itemized Commercial Investment & Fee Structure"
+                  value={doc.sectionTitles?.pricingTitle || ''}
+                  onChange={(e) => handleSectionTitleChange('pricingTitle', e.target.value)}
+                  className="w-full bg-slate-900/90 border border-slate-700/60 rounded-xl px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-amber-500"
+                />
+              </div>
+              <div className="flex items-center space-x-2 shrink-0 sm:pt-4">
+                <button
+                  type="button"
+                  onClick={() => toggleSectionVisibility('pricingTable')}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center space-x-1.5 transition-colors cursor-pointer ${
+                    currentVisibility.pricingTable
+                      ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30'
+                      : 'bg-slate-800 text-slate-500 border border-slate-700'
+                  }`}
+                  title={currentVisibility.pricingTable ? 'Section is visible on proposal' : 'Section is hidden on proposal'}
+                >
+                  {currentVisibility.pricingTable ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                  <span>{currentVisibility.pricingTable ? 'Visible' : 'Hidden'}</span>
+                </button>
+              </div>
+            </div>
+
             <div className="flex items-center justify-between">
               <label className="text-xs font-bold text-amber-300 uppercase tracking-wider flex items-center space-x-1.5 font-['Outfit']">
                 <DollarSign className="w-3.5 h-3.5" />
@@ -1958,6 +2131,37 @@ export const FormEditor: React.FC<FormEditorProps> = ({
         {/* ========================================================= */}
         {activeTab === 'deliverables' && (
           <div className="space-y-5 animate-fadeIn">
+            {/* Inline Deliverables Heading & Visibility */}
+            <div className="bg-slate-950/70 border border-slate-800/80 rounded-2xl p-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5">
+              <div className="flex-1 w-full">
+                <label className="text-[10px] font-semibold text-slate-400 block mb-1">
+                  Custom Deliverables Heading on Proposal
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Included Deliverables & Specifications"
+                  value={doc.sectionTitles?.deliverablesTitle || ''}
+                  onChange={(e) => handleSectionTitleChange('deliverablesTitle', e.target.value)}
+                  className="w-full bg-slate-900/90 border border-slate-700/60 rounded-xl px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-amber-500"
+                />
+              </div>
+              <div className="flex items-center space-x-2 shrink-0 sm:pt-4">
+                <button
+                  type="button"
+                  onClick={() => toggleSectionVisibility('deliverables')}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center space-x-1.5 transition-colors cursor-pointer ${
+                    currentVisibility.deliverables
+                      ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30'
+                      : 'bg-slate-800 text-slate-500 border border-slate-700'
+                  }`}
+                  title={currentVisibility.deliverables ? 'Section is visible on proposal' : 'Section is hidden on proposal'}
+                >
+                  {currentVisibility.deliverables ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                  <span>{currentVisibility.deliverables ? 'Visible' : 'Hidden'}</span>
+                </button>
+              </div>
+            </div>
+
             {/* 1. Deliverables Checklist */}
             <div className="bg-slate-950/70 border border-slate-800/80 rounded-2xl p-4 space-y-3">
               <div className="flex items-center justify-between">
@@ -2061,6 +2265,13 @@ export const FormEditor: React.FC<FormEditorProps> = ({
 
               {doc.includeCrewSection && (
                 <div className="space-y-2.5 pt-1">
+                  <input
+                    type="text"
+                    placeholder="Custom Team Title on Proposal (e.g. Lead Engineers & Key Personnel)"
+                    value={doc.sectionTitles?.crewTitle || ''}
+                    onChange={(e) => handleSectionTitleChange('crewTitle', e.target.value)}
+                    className="w-full bg-slate-900/90 border border-slate-700/60 rounded-xl px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-amber-500"
+                  />
                   {(doc.crewMembers || []).map((crew, idx) => (
                     <div
                       key={crew.id}
@@ -2150,6 +2361,13 @@ export const FormEditor: React.FC<FormEditorProps> = ({
 
               {doc.includeWhyChooseUs && (
                 <div className="space-y-2.5 pt-1">
+                  <input
+                    type="text"
+                    placeholder="Custom Guarantees Title on Proposal (e.g. Why Choose Us & Quality Standards)"
+                    value={doc.sectionTitles?.whyChooseUsTitle || ''}
+                    onChange={(e) => handleSectionTitleChange('whyChooseUsTitle', e.target.value)}
+                    className="w-full bg-slate-900/90 border border-slate-700/60 rounded-xl px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-amber-500"
+                  />
                   {(doc.whyChooseUs || []).map((item, idx) => (
                     <div
                       key={item.id}
@@ -2518,6 +2736,37 @@ export const FormEditor: React.FC<FormEditorProps> = ({
                 >
                   + Add Clause
                 </button>
+              </div>
+
+              {/* Inline Custom Terms Heading & Visibility */}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 bg-slate-900/60 border border-slate-800/80 rounded-xl p-2.5">
+                <div className="flex-1 w-full">
+                  <label className="text-[10px] font-semibold text-slate-400 block mb-1">
+                    Custom Terms & Conditions Heading on Proposal
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Terms of Engagement & Acceptance Criteria"
+                    value={doc.sectionTitles?.termsTitle || ''}
+                    onChange={(e) => handleSectionTitleChange('termsTitle', e.target.value)}
+                    className="w-full bg-slate-950/80 border border-slate-700/60 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+                <div className="flex items-center space-x-2 shrink-0 sm:pt-3">
+                  <button
+                    type="button"
+                    onClick={() => toggleSectionVisibility('terms')}
+                    className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center space-x-1 transition-colors cursor-pointer ${
+                      currentVisibility.terms
+                        ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30'
+                        : 'bg-slate-800 text-slate-500 border border-slate-700'
+                    }`}
+                    title={currentVisibility.terms ? 'Section is visible on proposal' : 'Section is hidden on proposal'}
+                  >
+                    {currentVisibility.terms ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                    <span>{currentVisibility.terms ? 'Visible' : 'Hidden'}</span>
+                  </button>
+                </div>
               </div>
 
               {/* 1-Click Quick Clause Presets */}

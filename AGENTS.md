@@ -127,7 +127,27 @@ Each of these shipped once and cost real debugging time.
 
 ## Handoff log
 
-### 2026-08-30 (latest) — Antigravity · Interactive Mini Studio Playground on Landing Hero
+### 2026-08-30 (latest) — Antigravity · Accurate Bi-Directional Canvas-to-Field Jump & Inline Section Titles
+
+**Delivered Accurate Canvas-to-Field Redirection & Section Management Polish:**
+
+1. **Fixed Canvas-to-Tab Redirection Targets Across All Views**:
+   - In [`ModernProposalView.tsx`](file:///d:/Product%20build/src/components/ModernProposalView.tsx) and [`CreativeProposalView.tsx`](file:///d:/Product%20build/src/components/CreativeProposalView.tsx):
+     - Clicking **Assigned Specialists / Team** now directly redirects to the `deliverables` tab where team members are edited (was previously mistakenly opening `industry`).
+     - Clicking **Guarantees & Why Choose Us** now directly redirects to the `deliverables` tab where guarantees are edited (was previously opening `industry`).
+     - Clicking **Commercial Terms & Conditions** across [`ModernProposalView.tsx`](file:///d:/Product%20build/src/components/ModernProposalView.tsx), [`CreativeProposalView.tsx`](file:///d:/Product%20build/src/components/CreativeProposalView.tsx), and [`FormalInvoiceView.tsx`](file:///d:/Product%20build/src/components/FormalInvoiceView.tsx) now directly redirects to the `watermark-terms` tab where terms and SLA clauses are edited.
+2. **Added 1-Click `[Edit ➔]` Jump Shortcuts in Modular Section Organizer**:
+   - In [`FormEditor.tsx`](file:///d:/Product%20build/src/components/FormEditor.tsx) Tab 1 (Preset & Style), added direct `[Edit ➔]` buttons on every section row (Banner, Scope, Deliverables, Team, Guarantees, Pricing, Payments, Bank, Terms, Signatory), allowing 1-click jumps from the organizer straight into the corresponding field editor.
+3. **Inline Section Heading & Visibility Customization Across All Tabs**:
+   - Added inline custom heading input boxes & eye visibility toggles directly inside the respective editor tabs:
+     - `Scope & Milestones` tab: Custom Scope Heading input + visibility toggle.
+     - `Deliverables` tab: Custom Deliverables Heading, Team Heading, and Guarantees Heading inputs + visibility toggles.
+     - `Pricing & Items` tab: Custom Pricing Table Heading input + visibility toggle.
+     - `Contract & Sign` tab: Custom Commercial Terms Heading input + visibility toggle.
+- **Verification**: `npm run lint` = **0 warnings, 0 errors**. `npm run build` = **Clean compile (exit 0)**.
+- **Target Branch**: `staging`.
+
+### 2026-08-30 — Antigravity · Interactive Mini Studio Playground on Landing Hero
 
 **Delivered Live Interactive Mini Playground in Hero Section ([`LandingHero.tsx`](file:///d:/Product%20build/src/components/landing/LandingHero.tsx)):**
 

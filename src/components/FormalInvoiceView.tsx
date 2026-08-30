@@ -424,8 +424,8 @@ export const FormalInvoiceView: React.FC<FormalInvoiceViewProps> = ({ document: 
       <div>
         <div className="border-t border-slate-200 pt-3 grid grid-cols-2 gap-6 text-[10px] text-slate-500">
           <div
-            onClick={() => onSelectSection?.('tax-payment')}
-            className={sectionClass('tax-payment')}
+            onClick={() => onSelectSection?.('watermark-terms')}
+            className={sectionClass('watermark-terms')}
             title={onSelectSection ? 'Click to edit invoice terms' : undefined}
           >
             {renderEditBadge('Terms')}

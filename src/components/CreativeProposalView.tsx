@@ -374,8 +374,8 @@ export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ docu
               {/* CREW / TEAM ALLOCATION SECTION */}
               {doc.sectionVisibility?.crew !== false && doc.includeCrewSection !== false && activeCrew.length > 0 && (
                 <div
-                  onClick={() => onSelectSection?.('industry')}
-                  className={`mb-4 ${sectionClass('industry')}`}
+                  onClick={() => onSelectSection?.('deliverables')}
+                  className={`mb-4 ${sectionClass('deliverables')}`}
                   title={onSelectSection ? 'Click to edit team allocation' : undefined}
                 >
                   {renderEditBadge('Team')}
@@ -408,8 +408,8 @@ export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ docu
               {/* WHY WORK WITH US SECTION */}
               {doc.sectionVisibility?.whyChooseUs !== false && doc.includeWhyChooseUs !== false && activeWhyChoose.length > 0 && (
                 <div
-                  onClick={() => onSelectSection?.('industry')}
-                  className={`mb-4 ${sectionClass('industry')}`}
+                  onClick={() => onSelectSection?.('deliverables')}
+                  className={`mb-4 ${sectionClass('deliverables')}`}
                   title={onSelectSection ? 'Click to edit guarantees & value proposition' : undefined}
                 >
                   {renderEditBadge('Why Us')}
@@ -440,8 +440,8 @@ export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ docu
               {/* TERMS & CONDITIONS (2-Column Layout) */}
               {doc.sectionVisibility?.terms !== false && (
                 <div
-                  onClick={() => onSelectSection?.('tax-payment')}
-                  className={`mb-4 ${sectionClass('tax-payment')}`}
+                  onClick={() => onSelectSection?.('watermark-terms')}
+                  className={`mb-4 ${sectionClass('watermark-terms')}`}
                   title={onSelectSection ? 'Click to edit terms & conditions' : undefined}
                 >
                   {renderEditBadge('Terms')}

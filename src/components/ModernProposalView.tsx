@@ -492,8 +492,8 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
               {/* Assigned Specialists / Team Section */}
               {doc.sectionVisibility?.crew !== false && doc.includeCrewSection && activeTeam.length > 0 && (
                 <div
-                  onClick={() => onSelectSection?.('industry')}
-                  className={`mb-5 ${sectionClass('industry')}`}
+                  onClick={() => onSelectSection?.('deliverables')}
+                  className={`mb-5 ${sectionClass('deliverables')}`}
                   title={onSelectSection ? 'Click to edit team members' : undefined}
                 >
                   {renderEditBadge('Team')}
@@ -517,8 +517,8 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
               {/* Guarantees & Why Work With Us */}
               {doc.sectionVisibility?.whyChooseUs !== false && doc.includeWhyChooseUs && activeWhy.length > 0 && (
                 <div
-                  onClick={() => onSelectSection?.('industry')}
-                  className={`mb-5 ${sectionClass('industry')}`}
+                  onClick={() => onSelectSection?.('deliverables')}
+                  className={`mb-5 ${sectionClass('deliverables')}`}
                   title={onSelectSection ? 'Click to edit guarantees & why choose us' : undefined}
                 >
                   {renderEditBadge('Guarantees')}
@@ -545,8 +545,8 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
               {/* Commercial Terms & Conditions */}
               {doc.sectionVisibility?.terms !== false && doc.termsAndConditions && doc.termsAndConditions.length > 0 && (
                 <div
-                  onClick={() => onSelectSection?.('tax-payment')}
-                  className={`mb-5 ${sectionClass('tax-payment')}`}
+                  onClick={() => onSelectSection?.('watermark-terms')}
+                  className={`mb-5 ${sectionClass('watermark-terms')}`}
                   title={onSelectSection ? 'Click to edit commercial terms & clauses' : undefined}
                 >
                   {renderEditBadge('Terms')}
