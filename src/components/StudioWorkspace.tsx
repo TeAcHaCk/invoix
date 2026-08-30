@@ -34,9 +34,8 @@ import {
   ZoomIn,
   ZoomOut,
   Maximize2,
-  Eye,
   Edit3,
-  Columns,
+  Eye,
   CheckCircle2,
   AlertTriangle,
   X,
@@ -496,7 +495,6 @@ export default function StudioWorkspace({ initialIndustry, onNavigateToAdmin, on
           onNavigateToHome={onNavigateToHome}
           onNewDocument={handleNewDocument}
           onResetSample={handleResetSample}
-          onUpdateTitle={(newTitle) => setDocument((prev) => ({ ...prev, packageBannerTitle: newTitle }))}
           isExporting={isExporting}
           onToggleWatermark={handleToggleWatermark}
         />
@@ -605,62 +603,8 @@ export default function StudioWorkspace({ initialIndustry, onNavigateToAdmin, on
               : 'flex'
           }`}
         >
-          {/* Zoom & View Mode Switcher Floating Action Bar */}
-          <div className="sticky top-4 z-20 mb-4 bg-slate-950/90 backdrop-blur-md border border-slate-800 px-3 py-1.5 rounded-2xl shadow-xl flex items-center space-x-2 text-xs">
-            {/* 3-Way Mode Switcher (Desktop) */}
-            <div className="hidden sm:flex items-center bg-slate-900/90 rounded-xl p-0.5 border border-slate-800 mr-1.5">
-              <button
-                type="button"
-                onClick={() => {
-                  setViewMode('split');
-                  localStorage.setItem('invoix_view_mode', 'split');
-                }}
-                className={`px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center space-x-1 transition-all cursor-pointer ${
-                  viewMode === 'split'
-                    ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
-                    : 'text-slate-400 hover:text-slate-200'
-                }`}
-                title="Split View (Side by Side) [Alt+1]"
-              >
-                <Columns className="w-3.5 h-3.5" />
-                <span>Split</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setViewMode('editor');
-                  localStorage.setItem('invoix_view_mode', 'editor');
-                }}
-                className={`px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center space-x-1 transition-all cursor-pointer ${
-                  viewMode === 'editor'
-                    ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
-                    : 'text-slate-400 hover:text-slate-200'
-                }`}
-                title="Focus Editor (Full Width) [Alt+2]"
-              >
-                <Edit3 className="w-3.5 h-3.5" />
-                <span>Editor</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setViewMode('preview');
-                  localStorage.setItem('invoix_view_mode', 'preview');
-                }}
-                className={`px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center space-x-1 transition-all cursor-pointer ${
-                  viewMode === 'preview'
-                    ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
-                    : 'text-slate-400 hover:text-slate-200'
-                }`}
-                title="Review Canvas (Full Width) [Alt+3]"
-              >
-                <Eye className="w-3.5 h-3.5" />
-                <span>Canvas</span>
-              </button>
-            </div>
-
-            <div className="hidden sm:block w-px h-4 bg-slate-800" />
-
+          {/* Floating Zoom & Fit Toolbar */}
+          <div className="sticky top-4 z-20 mb-4 bg-slate-950/90 backdrop-blur-md border border-slate-800 px-2.5 py-1 rounded-2xl shadow-xl flex items-center space-x-1.5 text-xs">
             {/* Zoom Controls */}
             <button
               type="button"
