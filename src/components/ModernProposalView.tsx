@@ -654,32 +654,44 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
     switch (key) {
       case 'scope': {
         if (doc.sectionVisibility?.scope === false || activeMilestones.length === 0) return 0;
-        return 45 + Math.min(activeMilestones.length, 6) * 44 + baseGap;
+        // Each phase card ~55px (title + services list), 2-col grid so ceil(n/2) rows, + header 35px
+        const phaseRows = Math.ceil(Math.min(activeMilestones.length, 8) / 2);
+        return 35 + phaseRows * 60 + baseGap;
       }
       case 'pricing': {
         if (doc.sectionVisibility?.pricingTable === false) return 0;
         const itemCount = selectedItems.length + optionalAddons.length;
-        return 120 + itemCount * 24 + 90 + baseGap;
+        // Table header ~32px + each row ~26px + totals box ~80px + payment terms box ~110px + margins
+        const tableHeight = 32 + itemCount * 26;
+        const totalsHeight = 80;
+        const paymentTermsHeight = 110;
+        return tableHeight + totalsHeight + paymentTermsHeight + 20 + baseGap;
       }
       case 'deliverables': {
         if (doc.sectionVisibility?.deliverables === false || activeDeliverables.length === 0) return 0;
-        return 40 + Math.ceil(activeDeliverables.length / 2) * 24 + baseGap;
+        // Header 30px + 2-col grid, each row ~28px (text can wrap)
+        return 30 + Math.ceil(activeDeliverables.length / 2) * 28 + 16 + baseGap;
       }
       case 'whyChooseUs': {
         if (doc.sectionVisibility?.whyChooseUs === false || !doc.includeWhyChooseUs || activeWhy.length === 0) return 0;
-        return 40 + Math.ceil(activeWhy.length / 2) * 38 + baseGap;
+        // Header 30px + 2-col grid, each card ~65px (title + description text wrap)
+        const whyRows = Math.ceil(activeWhy.length / 2);
+        return 30 + whyRows * 68 + baseGap;
       }
       case 'crew': {
         if (doc.sectionVisibility?.crew === false || !doc.includeCrewSection || activeTeam.length === 0) return 0;
-        return 40 + activeTeam.length * 36 + baseGap;
+        // Header 30px + 2-col grid, each card ~45px
+        const crewRows = Math.ceil(activeTeam.length / 2);
+        return 30 + crewRows * 48 + baseGap;
       }
       case 'terms': {
         if (doc.sectionVisibility?.terms === false || !doc.termsAndConditions || doc.termsAndConditions.length === 0) return 0;
-        return 35 + doc.termsAndConditions.length * 20 + baseGap;
+        // Header 30px + each term ~22px (some terms wrap)
+        return 30 + doc.termsAndConditions.length * 22 + baseGap;
       }
       case 'signatory': {
         if (doc.sectionVisibility?.signatory === false || doc.signatory?.enabled === false) return 0;
-        return 140 + baseGap;
+        return 150 + baseGap;
       }
       default:
         return 0;
@@ -690,8 +702,9 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
   const pages: ProposalSectionKey[][] = [];
   let currentPage: ProposalSectionKey[] = [];
   let currentHeight = 0;
-  // Available budget = 1123px - (2 * pagePaddingPx) - header/footer
-  let maxCapacity = Math.max(620, 1123 - (pagePaddingPx * 2) - 270);
+  // Page 1 budget: 1123px total - padding top/bottom - header (~200px logo+client+metadata) - footer (~40px)
+  const page1HeaderFooter = 240 + 40;
+  let maxCapacity = Math.max(500, 1123 - (pagePaddingPx * 2) - page1HeaderFooter);
 
   for (const key of currentSectionOrder) {
     const h = getSectionEstimatedHeight(key);
@@ -701,7 +714,8 @@ export const ModernProposalView: React.FC<ModernProposalViewProps> = ({ document
       pages.push(currentPage);
       currentPage = [key];
       currentHeight = h;
-      maxCapacity = Math.max(760, 1123 - (pagePaddingPx * 2) - 100);
+      // Subsequent pages: smaller header (~50px) + footer (~40px)
+      maxCapacity = Math.max(600, 1123 - (pagePaddingPx * 2) - 90);
     } else {
       currentPage.push(key);
       currentHeight += h;

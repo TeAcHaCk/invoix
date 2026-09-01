@@ -565,31 +565,39 @@ export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ docu
     switch (key) {
       case 'scope': {
         if (doc.sectionVisibility?.scope === false || doc.includeScopeSection === false || allPhases.length === 0) return 0;
-        return 45 + Math.min(allPhases.length, 6) * 44 + baseGap;
+        // Each phase is a vertical block ~60px (title + services in 2-col), + header 35px
+        return 35 + Math.min(allPhases.length, 8) * 60 + baseGap;
       }
       case 'pricing': {
         if (doc.sectionVisibility?.pricingTable === false) return 0;
-        return 165 + baseGap;
+        // Total banner ~55px + 3-col milestone bar ~70px + padding
+        return 140 + baseGap;
       }
       case 'deliverables': {
         if (doc.sectionVisibility?.deliverables === false || activeDeliverables.length === 0) return 0;
-        return 40 + Math.ceil(activeDeliverables.length / 2) * 24 + baseGap;
+        // Header 30px + 2-col grid rows ~28px each + padding
+        return 30 + Math.ceil(activeDeliverables.length / 2) * 28 + 16 + baseGap;
       }
       case 'whyChooseUs': {
         if (doc.sectionVisibility?.whyChooseUs === false || doc.includeWhyChooseUs === false || activeWhyChoose.length === 0) return 0;
-        return 40 + Math.ceil(activeWhyChoose.length / 2) * 38 + baseGap;
+        // Header 30px + 2-col grid, each card ~68px (title + desc wrapping)
+        const whyRows = Math.ceil(activeWhyChoose.length / 2);
+        return 30 + whyRows * 68 + baseGap;
       }
       case 'crew': {
         if (doc.sectionVisibility?.crew === false || doc.includeCrewSection === false || activeCrew.length === 0) return 0;
-        return 40 + activeCrew.length * 36 + baseGap;
+        // Header 30px + 2-col grid, each card ~48px
+        const crewRows = Math.ceil(activeCrew.length / 2);
+        return 30 + crewRows * 48 + baseGap;
       }
       case 'terms': {
         if (doc.sectionVisibility?.terms === false || termsList.length === 0) return 0;
-        return 35 + Math.ceil(termsList.length / 2) * 24 + baseGap;
+        // Header 30px + 2-col layout, each side ~22px per term
+        return 30 + Math.ceil(termsList.length / 2) * 22 + baseGap;
       }
       case 'signatory': {
         if (doc.sectionVisibility?.signatory === false || doc.signatory?.enabled === false) return 0;
-        return 130 + baseGap;
+        return 150 + baseGap;
       }
       default:
         return 0;
@@ -600,8 +608,9 @@ export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ docu
   const pages: ProposalSectionKey[][] = [];
   let currentPage: ProposalSectionKey[] = [];
   let currentHeight = 0;
-  // Available budget = 1123px - (2 * pagePaddingPx) - header/footer
-  let maxCapacity = Math.max(620, 1123 - (pagePaddingPx * 2) - 270);
+  // Page 1: creative header is taller (~260px logo+separator+title+client metadata+package banner) + footer (~40px)
+  const page1HeaderFooter = 260 + 40;
+  let maxCapacity = Math.max(500, 1123 - (pagePaddingPx * 2) - page1HeaderFooter);
 
   for (const key of currentSectionOrder) {
     const h = getSectionEstimatedHeight(key);
@@ -611,7 +620,8 @@ export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ docu
       pages.push(currentPage);
       currentPage = [key];
       currentHeight = h;
-      maxCapacity = Math.max(760, 1123 - (pagePaddingPx * 2) - 100);
+      // Subsequent pages: smaller header (~50px) + footer (~40px)
+      maxCapacity = Math.max(600, 1123 - (pagePaddingPx * 2) - 90);
     } else {
       currentPage.push(key);
       currentHeight += h;

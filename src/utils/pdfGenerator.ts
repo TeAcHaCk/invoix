@@ -111,6 +111,12 @@ async function capturePageAsPng(pageEl: HTMLElement, fontEmbedCSS?: string): Pro
   void pageEl.offsetHeight;
   await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
 
+  // Clamp capture height to A4 so overflowing content is cut off at the page
+  // boundary rather than bleeding into the capture and creating orphan PDF
+  // sheets. The page-packing algorithm should prevent overflow in the first
+  // place, but this is a hard safety net.
+  const captureHeight = Math.min(pageEl.scrollHeight || A4_HEIGHT_PX, A4_HEIGHT_PX);
+
   try {
     const dataUrl = await toPng(pageEl, {
       pixelRatio: PIXEL_RATIO,
@@ -118,13 +124,15 @@ async function capturePageAsPng(pageEl: HTMLElement, fontEmbedCSS?: string): Pro
       cacheBust: true,
       fontEmbedCSS,
       width: A4_WIDTH_PX,
-      height: pageEl.scrollHeight || A4_HEIGHT_PX,
+      height: captureHeight,
       style: {
         transform: 'none',
         margin: '0',
         maxWidth: 'none',
         width: `${A4_WIDTH_PX}px`,
-        minHeight: `${A4_HEIGHT_PX}px`,
+        height: `${A4_HEIGHT_PX}px`,
+        maxHeight: `${A4_HEIGHT_PX}px`,
+        overflow: 'hidden',
       },
       filter: (node) => {
         if (node instanceof HTMLElement && node.classList.contains('no-print')) {
@@ -153,13 +161,11 @@ function getImageDimensions(dataUrl: string): Promise<{ width: number; height: n
 /**
  * Places one captured page into the PDF at full A4 width.
  *
- * The previous version fitted by whichever axis overflowed, so any page taller
- * than A4 (every `.print-page` uses min-height, so content freely overflows) got
- * scaled down to ~86% and centre-floated with white gutters down both sides.
- * That was the long-running "alignment is not proper" bug.
- *
- * Content now always spans the full page width; anything taller than one A4
- * flows onto additional pages rather than being squashed to fit.
+ * Each page is captured at exactly A4 height (1123px), so the image should
+ * always map 1:1 onto a single A4 PDF sheet. Minor sub-pixel variations
+ * (up to 8%) are absorbed by stretching to fill the page. Anything larger
+ * (which should not happen with the capture clamp) still gets handled by
+ * slicing onto additional sheets as a last resort.
  */
 async function drawPageIntoPdf(
   pdf: jsPDF,
@@ -175,8 +181,8 @@ async function drawPageIntoPdf(
   const drawW = pdfW;
   const drawH = pdfW / imgAspect;
 
-  // Standard full-page fit (with up to 2% sub-pixel tolerance)
-  if (drawH <= pdfH * 1.025) {
+  // Fit within a single page (absorb up to 8% overshoot by stretching)
+  if (drawH <= pdfH * 1.08) {
     pdf.addImage(imgData, 'PNG', 0, 0, drawW, pdfH, alias, 'FAST');
     return;
   }
