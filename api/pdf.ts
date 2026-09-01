@@ -49,11 +49,20 @@ function sanitizeFilename(raw: unknown): string {
 function resolveOrigin(req: ApiRequest): string | null {
   const rawHost = req.headers['x-forwarded-host'] || req.headers['host'];
   const host = Array.isArray(rawHost) ? rawHost[0] : rawHost;
-  if (!host) return null;
+  if (host) {
+    const rawProto = req.headers['x-forwarded-proto'];
+    const proto = (Array.isArray(rawProto) ? rawProto[0] : rawProto) || 'https';
+    return `${proto}://${host}`;
+  }
 
-  const rawProto = req.headers['x-forwarded-proto'];
-  const proto = (Array.isArray(rawProto) ? rawProto[0] : rawProto) || 'https';
-  return `${proto}://${host}`;
+  if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
+    return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`;
+  }
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`;
+  }
+
+  return null;
 }
 
 export default async function handler(req: ApiRequest, res: ApiResponse): Promise<void> {
@@ -92,7 +101,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse): Promis
 
   try {
     browser = await puppeteer.launch({
-      args: chromium.args,
+      args: [...chromium.args, '--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu'],
       defaultViewport: { width: 1240, height: 1754, deviceScaleFactor: 1 },
       executablePath: await chromium.executablePath(),
       headless: true,
@@ -102,7 +111,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse): Promis
     page.setDefaultTimeout(RENDER_TIMEOUT_MS);
 
     await page.goto(`${origin}/?view=${encodeURIComponent(token)}`, {
-      waitUntil: 'networkidle0',
+      waitUntil: 'domcontentloaded',
       timeout: NAV_TIMEOUT_MS,
     });
 

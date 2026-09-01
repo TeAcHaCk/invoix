@@ -326,7 +326,20 @@ export default function StudioWorkspace({ initialIndustry, onNavigateToAdmin, on
         : 'Rendering PDF image snapshot...'
     );
     try {
-      const res = await downloadPdf(document, quality, 'quotation-preview-container');
+      let docToExport = document;
+      if (quality === 'text') {
+        const saveRes = await saveDocument(document, user?.id, isPaidPlan(profile));
+        if (saveRes.synced) {
+          reconcileSynced(saveRes.synced);
+          docToExport = {
+            ...document,
+            shareToken: saveRes.synced.shareToken || document.shareToken,
+            cloudSyncedAt: saveRes.synced.cloudSyncedAt || new Date().toISOString(),
+          };
+        }
+      }
+
+      const res = await downloadPdf(docToExport, quality, 'quotation-preview-container');
       if (res.success) {
         confetti({ particleCount: 80, spread: 60, origin: { y: 0.7 } });
         if (res.fallbackReason) {
