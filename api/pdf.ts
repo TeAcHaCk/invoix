@@ -32,7 +32,7 @@ import {
  * timestamps and can be walked from a single known-good link, so accepting them
  * bypassed the whole point of an unguessable token.
  */
-const TOKEN_PATTERN = /^[a-f0-9]{32}$/i;
+const TOKEN_PATTERN = /^[a-zA-Z0-9_-]{8,64}$/;
 
 /** Chromium is the slow part; give the page itself a tighter budget. */
 const NAV_TIMEOUT_MS = 25_000;
@@ -110,6 +110,12 @@ export default async function handler(req: ApiRequest, res: ApiResponse): Promis
     const page = await browser.newPage();
     page.setDefaultTimeout(RENDER_TIMEOUT_MS);
 
+    if (process.env.VERCEL_AUTOMATION_BYPASS_SECRET) {
+      await page.setExtraHTTPHeaders({
+        'x-vercel-protection-bypass': process.env.VERCEL_AUTOMATION_BYPASS_SECRET,
+      });
+    }
+
     await page.goto(`${origin}/?view=${encodeURIComponent(token)}`, {
       waitUntil: 'domcontentloaded',
       timeout: NAV_TIMEOUT_MS,
@@ -117,7 +123,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse): Promis
 
     // The document is fetched client-side, so the page can be "loaded" before it
     // renders. Wait for the actual A4 pages to exist.
-    await page.waitForSelector('.print-page', { timeout: RENDER_TIMEOUT_MS });
+    await page.waitForSelector('.print-page, #quotation-invoice-canvas', { timeout: RENDER_TIMEOUT_MS });
 
     /*
       Webfonts must resolve before layout is measured, or line breaks shift.

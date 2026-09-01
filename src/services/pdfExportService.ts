@@ -39,7 +39,7 @@ const buildFilename = (doc: QuotationDocument): string => {
 
 /** True when the server renderer can reach this document at all. */
 export const canExportTextPdf = (doc: QuotationDocument): boolean =>
-  Boolean(doc.shareToken && doc.cloudSyncedAt);
+  Boolean(doc.shareToken);
 
 const triggerBlobDownload = (blob: Blob, filename: string): void => {
   const url = URL.createObjectURL(blob);
@@ -77,7 +77,8 @@ export const fetchTextPdfBlob = async (doc: QuotationDocument): Promise<Blob | n
     const res = await fetch(`/api/pdf?${params.toString()}`, { signal: controller.signal });
 
     if (!res.ok) {
-      console.warn('Text PDF render failed with status', res.status);
+      const errText = await res.text().catch(() => '');
+      console.warn('Text PDF render failed with status', res.status, errText);
       return null;
     }
 
