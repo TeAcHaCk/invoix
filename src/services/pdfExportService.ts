@@ -37,9 +37,8 @@ const buildFilename = (doc: QuotationDocument): string => {
   return `${kind}-${ref || 'Invoix'}.pdf`;
 };
 
-/** True when the server renderer can reach this document at all. */
-export const canExportTextPdf = (doc: QuotationDocument): boolean =>
-  Boolean(doc.shareToken);
+/** True when the server renderer can reach this document. */
+export const canExportTextPdf = (_doc: QuotationDocument): boolean => true;
 
 const triggerBlobDownload = (blob: Blob, filename: string): void => {
   const url = URL.createObjectURL(blob);
@@ -59,22 +58,21 @@ const triggerBlobDownload = (blob: Blob, filename: string): void => {
 /**
  * Fetches the server-rendered text PDF as a Blob.
  *
- * Returns null on any failure so callers can fall back rather than surfacing an
- * error the user cannot act on.
+ * Sends the full document structure directly so that all drafts, local files,
+ * and unsaved modifications export with 100% crisp vector text regardless of auth state.
  */
 export const fetchTextPdfBlob = async (doc: QuotationDocument): Promise<Blob | null> => {
-  if (!canExportTextPdf(doc)) return null;
-
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), SERVER_TIMEOUT_MS);
 
   try {
-    const params = new URLSearchParams({
-      token: doc.shareToken!,
-      filename: buildFilename(doc),
+    const filename = buildFilename(doc);
+    const res = await fetch('/api/pdf', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ document: doc, filename }),
+      signal: controller.signal,
     });
-
-    const res = await fetch(`/api/pdf?${params.toString()}`, { signal: controller.signal });
 
     if (!res.ok) {
       const errText = await res.text().catch(() => '');
