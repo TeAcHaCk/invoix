@@ -102,7 +102,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse): Promis
     page.setDefaultTimeout(RENDER_TIMEOUT_MS);
 
     await page.goto(`${origin}/?view=${encodeURIComponent(token)}`, {
-      waitUntil: 'networkidle0',
+      waitUntil: 'domcontentloaded',
       timeout: NAV_TIMEOUT_MS,
     });
 

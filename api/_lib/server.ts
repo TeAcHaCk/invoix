@@ -36,7 +36,21 @@ export function requireEnv(name: string): string {
  * only thing on the platform allowed to write profiles.plan.
  */
 export function getSupabaseAdmin(): SupabaseClient {
-  return createClient(requireEnv('SUPABASE_URL'), requireEnv('SUPABASE_SERVICE_ROLE_KEY'), {
+  const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+  const key =
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    process.env.VITE_SUPABASE_SERVICE_ROLE_KEY ||
+    process.env.SUPABASE_ANON_KEY ||
+    process.env.VITE_SUPABASE_ANON_KEY;
+
+  if (!url) {
+    throw new Error('Missing required server environment variable: SUPABASE_URL or VITE_SUPABASE_URL');
+  }
+  if (!key) {
+    throw new Error('Missing required server environment variable: SUPABASE_SERVICE_ROLE_KEY or VITE_SUPABASE_ANON_KEY');
+  }
+
+  return createClient(url, key, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 }
