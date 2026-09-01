@@ -109,11 +109,17 @@ export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ docu
   const logoHeight = doc.studio.logoHeight || 130;
   const fontFamily = doc.fontFamily || 'Plus Jakarta Sans';
 
-  const renderScopeSection = (phasesToRender: typeof allPhases = allPhases, isContinued = false) => {
+  const renderScopeSection = (
+    phasesToRender: typeof allPhases = allPhases,
+    startNumber = 1,
+    isContinued = false
+  ) => {
     if (doc.sectionVisibility?.scope === false || doc.includeScopeSection === false || phasesToRender.length === 0) return null;
+    const endNumber = startNumber + phasesToRender.length - 1;
+
     return (
       <div
-        key={isContinued ? 'scope-cont' : 'scope'}
+        key={isContinued ? `scope-${startNumber}` : 'scope'}
         onClick={() => onSelectSection?.('scope', 'scope')}
         style={{ marginBottom: `${sectionGapPx}px` }}
         className={sectionClass('scope')}
@@ -123,7 +129,9 @@ export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ docu
         <h3 className="font-bold text-[11.5px] uppercase tracking-[0.08em] text-[#111111] mb-1.5 border-b border-slate-200 pb-1 flex items-center justify-between whitespace-nowrap">
           <span>{doc.sectionTitles?.scopeTitle || preset.scopeSectionTitle || 'PROJECT PHASES & SOW MILESTONES'} {isContinued ? '(CONTINUED)' : ''}</span>
           <span className="text-[10px] text-amber-700 font-normal lowercase tracking-normal">
-            {isContinued ? `Phases 5 to ${allPhases.length}` : `${allPhases.length} phase(s) planned`}
+            {isContinued
+              ? `Phases ${startNumber} to ${endNumber} of ${allPhases.length}`
+              : `${allPhases.length} phase(s) planned`}
           </span>
         </h3>
 
@@ -135,7 +143,7 @@ export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ docu
             >
               <div className="font-bold text-slate-900 mb-1 flex items-start space-x-2">
                 <span className="w-4 h-4 rounded-full bg-amber-500 text-slate-950 text-[9px] font-extrabold flex items-center justify-center shrink-0 mt-0.5">
-                  {isContinued ? idx + 5 : idx + 1}
+                  {startNumber + idx}
                 </span>
                 <span className="font-['Outfit'] uppercase tracking-normal text-[11px] text-amber-950 leading-snug block flex-1">
                   {item.dayTitle}
@@ -413,11 +421,26 @@ export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ docu
     );
   };
 
-  const renderSectionByKey = (key: ProposalSectionKey, isLast = false) => {
+  type ProposalPageUnit =
+    | {
+        type: 'scope_chunk';
+        phases: typeof allPhases;
+        startNumber: number;
+        isContinued: boolean;
+        height: number;
+      }
+    | { type: 'deliverables'; height: number }
+    | { type: 'pricing'; height: number }
+    | { type: 'crew'; height: number }
+    | { type: 'whyChooseUs'; height: number }
+    | { type: 'terms'; height: number }
+    | { type: 'signatory'; height: number };
+
+  const renderUnit = (unit: ProposalPageUnit, isLast = false) => {
     const rendered = (() => {
-      switch (key) {
-        case 'scope':
-          return renderScopeSection(allPhases, false);
+      switch (unit.type) {
+        case 'scope_chunk':
+          return renderScopeSection(unit.phases, unit.startNumber, unit.isContinued);
         case 'deliverables':
           return renderDeliverablesBox();
         case 'pricing':
@@ -438,7 +461,7 @@ export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ docu
     if (!rendered) return null;
 
     return (
-      <React.Fragment key={key}>
+      <React.Fragment key={unit.type === 'scope_chunk' ? `scope-${unit.startNumber}` : unit.type}>
         {rendered}
         {dividerStyle !== 'none' && !isLast && (
           <div
@@ -560,71 +583,98 @@ export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ docu
     </>
   );
 
-  const getSectionEstimatedHeight = (key: ProposalSectionKey): number => {
-    const baseGap = sectionGapPx;
+  // Build atomic Page Units with intelligent phase chunking
+  const pageUnits: ProposalPageUnit[] = [];
+
+  for (const key of currentSectionOrder) {
     switch (key) {
       case 'scope': {
-        if (doc.sectionVisibility?.scope === false || doc.includeScopeSection === false || allPhases.length === 0) return 0;
-        // Each phase is a vertical block ~60px (title + services in 2-col), + header 35px
-        return 35 + Math.min(allPhases.length, 8) * 60 + baseGap;
-      }
-      case 'pricing': {
-        if (doc.sectionVisibility?.pricingTable === false) return 0;
-        // Total banner ~55px + 3-col milestone bar ~70px + padding
-        return 140 + baseGap;
+        if (doc.sectionVisibility?.scope === false || doc.includeScopeSection === false || allPhases.length === 0) break;
+        if (allPhases.length <= 4) {
+          const h = 35 + Math.ceil(allPhases.length / 2) * 60 + sectionGapPx;
+          pageUnits.push({
+            type: 'scope_chunk',
+            phases: allPhases,
+            startNumber: 1,
+            isContinued: false,
+            height: h,
+          });
+        } else {
+          // Chunk phases: 4 phases for chunk 1, then up to 8 phases per subsequent chunk
+          let offset = 0;
+          let isFirst = true;
+          while (offset < allPhases.length) {
+            const chunkSize = isFirst ? 4 : 8;
+            const slice = allPhases.slice(offset, offset + chunkSize);
+            const h = 35 + Math.ceil(slice.length / 2) * 60 + sectionGapPx;
+            pageUnits.push({
+              type: 'scope_chunk',
+              phases: slice,
+              startNumber: offset + 1,
+              isContinued: !isFirst,
+              height: h,
+            });
+            offset += chunkSize;
+            isFirst = false;
+          }
+        }
+        break;
       }
       case 'deliverables': {
-        if (doc.sectionVisibility?.deliverables === false || activeDeliverables.length === 0) return 0;
-        // Header 30px + 2-col grid rows ~28px each + padding
-        return 30 + Math.ceil(activeDeliverables.length / 2) * 28 + 16 + baseGap;
+        if (doc.sectionVisibility?.deliverables === false || activeDeliverables.length === 0) break;
+        const h = 30 + Math.ceil(activeDeliverables.length / 2) * 28 + 16 + sectionGapPx;
+        pageUnits.push({ type: 'deliverables', height: h });
+        break;
+      }
+      case 'pricing': {
+        if (doc.sectionVisibility?.pricingTable === false) break;
+        pageUnits.push({ type: 'pricing', height: 140 + sectionGapPx });
+        break;
       }
       case 'whyChooseUs': {
-        if (doc.sectionVisibility?.whyChooseUs === false || doc.includeWhyChooseUs === false || activeWhyChoose.length === 0) return 0;
-        // Header 30px + 2-col grid, each card ~68px (title + desc wrapping)
-        const whyRows = Math.ceil(activeWhyChoose.length / 2);
-        return 30 + whyRows * 68 + baseGap;
+        if (doc.sectionVisibility?.whyChooseUs === false || doc.includeWhyChooseUs === false || activeWhyChoose.length === 0) break;
+        const h = 30 + Math.ceil(activeWhyChoose.length / 2) * 68 + sectionGapPx;
+        pageUnits.push({ type: 'whyChooseUs', height: h });
+        break;
       }
       case 'crew': {
-        if (doc.sectionVisibility?.crew === false || doc.includeCrewSection === false || activeCrew.length === 0) return 0;
-        // Header 30px + 2-col grid, each card ~48px
-        const crewRows = Math.ceil(activeCrew.length / 2);
-        return 30 + crewRows * 48 + baseGap;
+        if (doc.sectionVisibility?.crew === false || doc.includeCrewSection === false || activeCrew.length === 0) break;
+        const h = 30 + Math.ceil(activeCrew.length / 2) * 48 + sectionGapPx;
+        pageUnits.push({ type: 'crew', height: h });
+        break;
       }
       case 'terms': {
-        if (doc.sectionVisibility?.terms === false || termsList.length === 0) return 0;
-        // Header 30px + 2-col layout, each side ~22px per term
-        return 30 + Math.ceil(termsList.length / 2) * 22 + baseGap;
+        if (doc.sectionVisibility?.terms === false || termsList.length === 0) break;
+        const h = 30 + Math.ceil(termsList.length / 2) * 22 + sectionGapPx;
+        pageUnits.push({ type: 'terms', height: h });
+        break;
       }
       case 'signatory': {
-        if (doc.sectionVisibility?.signatory === false || doc.signatory?.enabled === false) return 0;
-        return 150 + baseGap;
+        if (doc.sectionVisibility?.signatory === false || doc.signatory?.enabled === false) break;
+        pageUnits.push({ type: 'signatory', height: 150 + sectionGapPx });
+        break;
       }
-      default:
-        return 0;
     }
-  };
+  }
 
-  // Build Pages dynamically based on user's exact currentSectionOrder
-  const pages: ProposalSectionKey[][] = [];
-  let currentPage: ProposalSectionKey[] = [];
+  // Pack units into distinct A4 sheets strictly observing vertical height limits
+  const pages: ProposalPageUnit[][] = [];
+  let currentPage: ProposalPageUnit[] = [];
   let currentHeight = 0;
   // Page 1: creative header is taller (~260px logo+separator+title+client metadata+package banner) + footer (~40px)
   const page1HeaderFooter = 260 + 40;
-  let maxCapacity = Math.max(500, 1123 - (pagePaddingPx * 2) - page1HeaderFooter);
+  let maxCapacity = Math.max(450, 1123 - (pagePaddingPx * 2) - page1HeaderFooter);
 
-  for (const key of currentSectionOrder) {
-    const h = getSectionEstimatedHeight(key);
-    if (h === 0) continue;
-
-    if (currentHeight + h > maxCapacity && currentPage.length > 0) {
+  for (const unit of pageUnits) {
+    if (currentHeight + unit.height > maxCapacity && currentPage.length > 0) {
       pages.push(currentPage);
-      currentPage = [key];
-      currentHeight = h;
-      // Subsequent pages: smaller header (~50px) + footer (~40px)
-      maxCapacity = Math.max(600, 1123 - (pagePaddingPx * 2) - 90);
+      currentPage = [unit];
+      currentHeight = unit.height;
+      // Subsequent pages budget: smaller header (~50px) + footer (~40px)
+      maxCapacity = Math.max(550, 1123 - (pagePaddingPx * 2) - 90);
     } else {
-      currentPage.push(key);
-      currentHeight += h;
+      currentPage.push(unit);
+      currentHeight += unit.height;
     }
   }
 
@@ -633,14 +683,14 @@ export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ docu
   }
 
   if (pages.length === 0) {
-    pages.push(['scope', 'pricing']);
+    pages.push([{ type: 'pricing', height: 200 }]);
   }
 
   const totalPages = pages.length;
 
   return (
     <div className="space-y-8 print:space-y-0" style={{ fontFamily: `"${fontFamily}", sans-serif` }}>
-      {pages.map((pageSections, pageIdx) => {
+      {pages.map((pageUnitsOnSheet, pageIdx) => {
         const isFirstPage = pageIdx === 0;
         const pageNum = pageIdx + 1;
 
@@ -678,9 +728,9 @@ export const CreativeProposalView: React.FC<CreativeProposalViewProps> = ({ docu
                   </div>
                 )}
 
-                {/* Render Sections on this sheet strictly in user's defined order */}
-                {pageSections.map((sectionKey, sIdx) =>
-                  renderSectionByKey(sectionKey, sIdx === pageSections.length - 1)
+                {/* Render Units on this sheet strictly in defined order */}
+                {pageUnitsOnSheet.map((unit, uIdx) =>
+                  renderUnit(unit, uIdx === pageUnitsOnSheet.length - 1)
                 )}
               </div>
 

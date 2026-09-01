@@ -127,18 +127,21 @@ Each of these shipped once and cost real debugging time.
 
 ## Handoff log
 
-### 2026-09-01 (latest) — Antigravity · Standalone HTML Vector PDF Engine & SSO Protection Bypass
+### 2026-09-01 (latest) — Antigravity · Dynamic Multi-Phase Pagination Chunking (15+ Milestones & Dense Proposals)
 
-**Delivered Zero-Network-Call Standalone HTML Vector PDF Rendering:**
+**Delivered Atomic Phase Chunking & True Capacity-Based Multi-Page Splitting:**
 
-1. **Root Cause**:
-   - The user console showed: `Access to internal resource at 'https://vercel.com/sso-api?url=https%3A%2F%2Fstaging.invoix.app...' redirected from 'staging.invoix.app' has been blocked by CORS`.
-   - Vercel has **Deployment Protection / SSO Password Protection** enabled on Preview environments (`staging.invoix.app`).
-   - When `/api/pdf` ran in AWS Lambda and attempted to make an outgoing HTTP request to `https://staging.invoix.app/?...`, Vercel's edge proxy intercepted Chromium with a 307 redirect to the Vercel SSO login page, causing `.print-page` to time out and return HTTP 500.
-2. **Standalone HTML Payload Architecture**:
-   - Updated `pdfExportService.ts` to construct a complete, self-contained standalone HTML bundle (`buildExportHtml()`) containing the live canvas DOM clone + all embedded document stylesheets and `@page` rules, POSTing it directly in the body to `/api/pdf`.
-   - In `api/pdf.ts`, Puppeteer directly loads this HTML string via `page.setContent(htmlPayload, { waitUntil: 'domcontentloaded' })`.
-   - **Zero external network requests** are made by Chromium. This eliminates Vercel SSO blocks, CORS issues, proxy redirects, and network cold-start latency entirely, generating **100% crisp vector PDFs in under 1 second**.
+1. **Root Cause of Sliced Tables & Overflow with 15+ Phases**:
+   - In [`ModernProposalView.tsx`](file:///d:/Product%20build/src/components/ModernProposalView.tsx) and [`CreativeProposalView.tsx`](file:///d:/Product%20build/src/components/CreativeProposalView.tsx), when users added 10–15+ SOW milestones, `renderScopeSection` rendered all phases inside a single container on Page 1, pushing total height over 2,000px and slicing investment totals and payment terms right across sheet boundaries.
+2. **Atomic Proposal Page Units & Continuous Phase Chunking**:
+   - Refactored proposal page construction to use atomic `ProposalPageUnit` items.
+   - When a proposal has $> 4$ phases (e.g. 15 phases):
+     - Chunk 1 (Phases 1..4) fits cleanly on Page 1 alongside Client Metadata.
+     - Subsequent Chunks (Phases 5..12, Phases 13..15, etc.) flow into subsequent A4 pages in balanced batches of up to 8 phases.
+     - Continuous milestone numbering (`startNumber + idx`) ensures phases are numbered 1, 2, 3 ... 14, 15 without duplicate index resets.
+     - Header tags display clear continuation labels (e.g. `Phases 5 to 12 of 15`).
+3. **Guaranteed Zero-Overflow A4 Height Budgeting**:
+   - Every page strictly calculates unit heights and enforces maximum A4 capacity (`1123px - (padding * 2) - header - footer`), preventing content slicing, orphan totals, or squashed typography across both Modern and Creative proposals.
 - **Verification**: `npm run lint` = **0 warnings, 0 errors**. `npm run build` = **Clean compile (exit 0)**.
 - **Target Branch**: `staging`.
 2. **Universal Spacing & Gap Resolver ([`src/utils/canvasSpacingResolver.ts`](file:///d:/Product%20build/src/utils/canvasSpacingResolver.ts))**:
