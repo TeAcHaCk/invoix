@@ -127,13 +127,18 @@ Each of these shipped once and cost real debugging time.
 
 ## Handoff log
 
-### 2026-08-30 (latest) — Antigravity · Unified Canvas Spacing, Section Gap Studio & Visual Rhythm Control
+### 2026-09-01 (latest) — Antigravity · Fix Crisp Text & Raster PDF Export Engine
 
-**Delivered Option 3 Canvas Studio Suite (Floating Toolbar quick switch + Sliders + Section Gap Engine):**
+**Resolved PDF Export & Crisp Text Download Failure:**
 
-1. **Root Cause of Section Clashes & Tightness in User Screenshot**:
-   - In [`ModernProposalView.tsx`](file:///d:/Product%20build/src/components/ModernProposalView.tsx) and [`CreativeProposalView.tsx`](file:///d:/Product%20build/src/components/CreativeProposalView.tsx), when `#4 Signatures` preceded `#5 Deliverables`, the signatory container had `0px` bottom margin, causing signature lines ("Managing Director", "Date", "Status: AWAITING APPROVAL") to physically touch the `INCLUDED DELIVERABLES & FINAL ASSETS` header.
-   - Terms of Engagement clauses also lacked sufficient vertical breathing room before the Specialists & Crew block.
+1. **Root Cause**:
+   - In `pdfGenerator.ts`, `style: { height: '1123px', maxHeight: '1123px', overflow: 'hidden' }` was applied directly inside `capturePageAsPng` options. This caused `html-to-image` SVG `<foreignObject>` cloning to fail on elements with dynamic flex height, breaking both raster export and the crisp text export fallback.
+   - On the serverless helper (`api/_lib/server.ts`), `SUPABASE_URL` required explicit lookup which threw if only `VITE_SUPABASE_URL` was configured in deployment settings.
+2. **Resolution**:
+   - Restored standard `minHeight: 1123px` styling in `capturePageAsPng` while keeping precision section capacity calculations and 6% subpixel single-sheet tolerance in `drawPageIntoPdf`.
+   - Supported both `SUPABASE_URL` and `VITE_SUPABASE_URL` in `api/_lib/server.ts`.
+- **Verification**: `npm run lint` = **0 warnings, 0 errors**. `npm run build` = **Clean compile (exit 0)**.
+- **Target Branch**: `staging`.
 2. **Universal Spacing & Gap Resolver ([`src/utils/canvasSpacingResolver.ts`](file:///d:/Product%20build/src/utils/canvasSpacingResolver.ts))**:
    - Built a dynamic spacing engine resolving `sectionGapPx` (6px to 36px), `pagePaddingPx` (18px to 48px), and `dividerStyle` (`none` | `subtle` | `accent`).
    - Replaced ad-hoc margins with universal `style={{ marginBottom: `${sectionGapPx}px` }}` across all 7 proposal sections.
