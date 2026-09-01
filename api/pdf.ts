@@ -22,7 +22,6 @@ import {
   type ApiResponse,
   getSupabaseAdmin,
   methodNotAllowed,
-  readJsonBody,
 } from './_lib/server.js';
 
 /**
@@ -33,84 +32,67 @@ import {
  * timestamps and can be walked from a single known-good link, so accepting them
  * bypassed the whole point of an unguessable token.
  */
-const TOKEN_PATTERN = /^[a-zA-Z0-9_-]{8,64}$/;
+const TOKEN_PATTERN = /^[a-f0-9]{32}$/i;
 
 /** Chromium is the slow part; give the page itself a tighter budget. */
 const NAV_TIMEOUT_MS = 25_000;
-const RENDER_TIMEOUT_MS = 35_000;
+const RENDER_TIMEOUT_MS = 20_000;
 
 function sanitizeFilename(raw: unknown): string {
-  if (typeof raw !== 'string') return 'Invoix-Document.pdf';
-  const cleaned = raw.replace(/[^a-zA-Z0-9._-]/g, '').slice(0, 100);
-  return cleaned.endsWith('.pdf') ? cleaned : `${cleaned || 'Invoix-Document'}.pdf`;
+  const value = typeof raw === 'string' ? raw : '';
+  const cleaned = value.replace(/[^a-zA-Z0-9._-]/g, '').slice(0, 80);
+  if (!cleaned || cleaned === '.pdf') return 'Invoix-Document.pdf';
+  return cleaned.toLowerCase().endsWith('.pdf') ? cleaned : `${cleaned}.pdf`;
 }
 
 /** Reconstructs the public origin from the proxy headers Vercel sets. */
 function resolveOrigin(req: ApiRequest): string | null {
   const rawHost = req.headers['x-forwarded-host'] || req.headers['host'];
   const host = Array.isArray(rawHost) ? rawHost[0] : rawHost;
-  if (host) {
-    const rawProto = req.headers['x-forwarded-proto'];
-    const proto = (Array.isArray(rawProto) ? rawProto[0] : rawProto) || 'https';
-    return `${proto}://${host}`;
-  }
+  if (!host) return null;
 
-  if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
-    return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`;
-  }
-  if (process.env.VERCEL_URL) {
-    return `https://${process.env.VERCEL_URL}`;
-  }
-
-  return null;
+  const rawProto = req.headers['x-forwarded-proto'];
+  const proto = (Array.isArray(rawProto) ? rawProto[0] : rawProto) || 'https';
+  return `${proto}://${host}`;
 }
 
 export default async function handler(req: ApiRequest, res: ApiResponse): Promise<void> {
-  if (req.method !== 'GET' && req.method !== 'POST') {
-    return methodNotAllowed(res, 'GET, POST');
+  if (req.method !== 'GET') {
+    return methodNotAllowed(res, 'GET');
   }
 
-  let htmlPayload: string | null = null;
-  let docPayload: unknown = null;
-  let filename = 'Invoix-Document.pdf';
-  let token = '';
+  // req.query is populated by the Vercel Node runtime.
+  const query = (req as unknown as { query?: Record<string, string | string[]> }).query || {};
+  const rawToken = Array.isArray(query.token) ? query.token[0] : query.token;
+  const token = typeof rawToken === 'string' ? rawToken.trim() : '';
 
-  if (req.method === 'POST') {
-    const body = readJsonBody(req) as { html?: string; document?: unknown; filename?: unknown } | null;
-    if (typeof body?.html === 'string' && body.html.length > 50) {
-      htmlPayload = body.html;
-    }
-    docPayload = body?.document || null;
-    if (body?.filename) filename = sanitizeFilename(body.filename);
-  } else {
-    // req.query is populated by the Vercel Node runtime.
-    const query = (req as unknown as { query?: Record<string, string | string[]> }).query || {};
-    const rawToken = Array.isArray(query.token) ? query.token[0] : query.token;
-    token = typeof rawToken === 'string' ? rawToken.trim() : '';
-    if (query.filename) filename = sanitizeFilename(query.filename);
+  if (!token || !TOKEN_PATTERN.test(token)) {
+    return void res.status(400).json({ error: 'A valid document link token is required.' });
+  }
 
-    if (!token || !TOKEN_PATTERN.test(token)) {
-      return void res.status(400).json({ error: 'A valid document link token is required.' });
-    }
+  const origin = resolveOrigin(req);
+  if (!origin) {
+    return void res.status(500).json({ error: 'Could not determine the site address.' });
+  }
 
-    // Confirm the document exists BEFORE paying for a Chromium cold start.
-    try {
-      const admin = getSupabaseAdmin();
-      const { data, error } = await admin.rpc('get_public_document', { p_token: token });
-      if (error || !data) {
-        return void res.status(404).json({ error: 'Document not found or this link has expired.' });
-      }
-    } catch (err) {
-      console.error('PDF: document lookup failed:', err);
-      return void res.status(500).json({ error: 'Could not verify the document.' });
+  // Confirm the document exists BEFORE paying for a Chromium cold start. Without
+  // this, any request with a random token burns a full browser launch.
+  try {
+    const admin = getSupabaseAdmin();
+    const { data, error } = await admin.rpc('get_public_document', { p_token: token });
+    if (error || !data) {
+      return void res.status(404).json({ error: 'Document not found or this link has expired.' });
     }
+  } catch (err) {
+    console.error('PDF: document lookup failed:', err);
+    return void res.status(500).json({ error: 'Could not verify the document.' });
   }
 
   let browser: Browser | null = null;
 
   try {
     browser = await puppeteer.launch({
-      args: [...chromium.args, '--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu'],
+      args: chromium.args,
       defaultViewport: { width: 1240, height: 1754, deviceScaleFactor: 1 },
       executablePath: await chromium.executablePath(),
       headless: true,
@@ -119,47 +101,14 @@ export default async function handler(req: ApiRequest, res: ApiResponse): Promis
     const page = await browser.newPage();
     page.setDefaultTimeout(RENDER_TIMEOUT_MS);
 
-    if (htmlPayload) {
-      // 100% self-contained HTML payload: NO network navigation needed!
-      // This bypasses Vercel SSO, Deployment Protection, CORS and cold start network latency.
-      await page.setContent(htmlPayload, {
-        waitUntil: 'domcontentloaded',
-        timeout: NAV_TIMEOUT_MS,
-      });
-    } else {
-      const origin = resolveOrigin(req);
-      if (!origin) {
-        return void res.status(500).json({ error: 'Could not determine the site address.' });
-      }
+    await page.goto(`${origin}/?view=${encodeURIComponent(token)}`, {
+      waitUntil: 'networkidle0',
+      timeout: NAV_TIMEOUT_MS,
+    });
 
-      if (process.env.VERCEL_AUTOMATION_BYPASS_SECRET) {
-        await page.setExtraHTTPHeaders({
-          'x-vercel-protection-bypass': process.env.VERCEL_AUTOMATION_BYPASS_SECRET,
-        });
-      }
-
-      if (docPayload) {
-        await page.goto(`${origin}/?render_pdf=1`, {
-          waitUntil: 'domcontentloaded',
-          timeout: NAV_TIMEOUT_MS,
-        });
-
-        await page.evaluate((d) => {
-          const win = globalThis as { __invoixSetDocument?: (doc: unknown) => void };
-          if (typeof win.__invoixSetDocument === 'function') {
-            win.__invoixSetDocument(d);
-          }
-        }, docPayload);
-      } else {
-        await page.goto(`${origin}/?view=${encodeURIComponent(token)}`, {
-          waitUntil: 'domcontentloaded',
-          timeout: NAV_TIMEOUT_MS,
-        });
-      }
-    }
-
-    // Wait for the actual A4 pages to exist.
-    await page.waitForSelector('.print-page, #quotation-invoice-canvas, #invoix-print-root', { timeout: RENDER_TIMEOUT_MS });
+    // The document is fetched client-side, so the page can be "loaded" before it
+    // renders. Wait for the actual A4 pages to exist.
+    await page.waitForSelector('.print-page', { timeout: RENDER_TIMEOUT_MS });
 
     /*
       Webfonts must resolve before layout is measured, or line breaks shift.
@@ -174,20 +123,26 @@ export default async function handler(req: ApiRequest, res: ApiResponse): Promis
       if (doc?.fonts?.ready) await doc.fonts.ready;
     });
 
-    if (!htmlPayload) {
-      const prepared = await page.evaluate(() => {
-        const win = globalThis as { __invoixPreparePrint?: () => void };
-        if (typeof win.__invoixPreparePrint === 'function') {
-          win.__invoixPreparePrint();
-          return true;
-        }
-        return false;
-      });
-
-      if (!prepared) {
-        console.error('PDF: window.__invoixPreparePrint is not available on the page.');
-        return void res.status(500).json({ error: 'The document could not be prepared for export.' });
+    /*
+      page.pdf() does NOT fire `beforeprint`, and that event is the only thing
+      that builds the print isolation root. Without this call Chromium would
+      render the whole page chrome - nav bar, signing form and all - instead of
+      the document.
+    */
+    const prepared = await page.evaluate(() => {
+      const win = globalThis as { __invoixPreparePrint?: () => void };
+      if (typeof win.__invoixPreparePrint === 'function') {
+        win.__invoixPreparePrint();
+        return true;
       }
+      return false;
+    });
+
+    if (!prepared) {
+      // Fail loudly rather than returning a PDF of the whole app, which would
+      // look like a rendering bug rather than a missing hook.
+      console.error('PDF: window.__invoixPreparePrint is not available on the page.');
+      return void res.status(500).json({ error: 'The document could not be prepared for export.' });
     }
 
     await page.emulateMediaType('print');
@@ -195,13 +150,19 @@ export default async function handler(req: ApiRequest, res: ApiResponse): Promis
     const pdf = await page.pdf({
       format: 'a4',
       printBackground: true,
+      // Honour the @page rule in index.css instead of imposing our own box.
       preferCSSPageSize: true,
       margin: { top: '0', right: '0', bottom: '0', left: '0' },
     });
 
+    const filename = sanitizeFilename(
+      Array.isArray(query.filename) ? query.filename[0] : query.filename
+    );
+
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
     res.setHeader('Content-Length', String(pdf.length));
+    // A signed document never changes; an unsigned one may. Keep it short.
     res.setHeader('Cache-Control', 'private, max-age=60');
 
     return void (res as unknown as { end: (chunk: Buffer) => void }).end(Buffer.from(pdf));

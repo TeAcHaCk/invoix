@@ -19,9 +19,6 @@ import { Analytics } from '@vercel/analytics/react';
   three document views, the PDF stack and every modal.
 */
 const StudioWorkspace = lazy(() => import('./components/StudioWorkspace'));
-const InvoiceDocumentView = lazy(() =>
-  import('./components/InvoiceDocumentView').then((m) => ({ default: m.InvoiceDocumentView }))
-);
 const PublicProposalPage = lazy(() =>
   import('./components/PublicProposalPage').then((m) => ({ default: m.PublicProposalPage }))
 );
@@ -40,20 +37,16 @@ const TemplateLandingPage = lazy(() =>
 
 // URL Route Resolver Helper
 function parseCurrentRoute(): {
-  type: 'landing' | 'studio' | 'admin' | 'public_proposal' | 'privacy' | 'terms' | 'template' | 'render_pdf';
+  type: 'landing' | 'studio' | 'admin' | 'public_proposal' | 'privacy' | 'terms' | 'template';
   docId?: string;
   section?: string;
   templateSlug?: string;
 } {
   const urlParams = new URLSearchParams(window.location.search);
-  const renderPdfParam = urlParams.get('render_pdf');
   const viewParam = urlParams.get('view');
   const pageParam = urlParams.get('page');
   const templateParam = urlParams.get('template');
   const rawHash = window.location.hash.replace('#', '').toLowerCase();
-
-  // 0. Direct Headless PDF Render Endpoint (?render_pdf=1)
-  if (renderPdfParam) return { type: 'render_pdf' };
 
   // 1. Direct Public Proposal Link (?view=<shareToken> or #view/<shareToken>)
   if (viewParam) return { type: 'public_proposal', docId: viewParam };
@@ -90,13 +83,6 @@ export function App() {
   const [upgradePlan, setUpgradePlan] = useState<'pro' | 'agency'>('pro');
   const [selectedIndustry, setSelectedIndustry] = useState<IndustryCategory | undefined>(undefined);
   const [currentView, setCurrentView] = useState(parseCurrentRoute);
-  const [renderDoc, setRenderDoc] = useState<any>(null);
-
-  useEffect(() => {
-    (window as unknown as { __invoixSetDocument?: (doc: unknown) => void }).__invoixSetDocument = (doc: unknown) => {
-      setRenderDoc(doc);
-    };
-  }, []);
 
   useEffect(() => {
     const handleUrlChange = () => {
@@ -167,24 +153,20 @@ export function App() {
   return (
     <AuthProvider>
       <ToastProvider>
-        {currentView.type === 'render_pdf' ? (
-        <div className="bg-slate-900 min-h-screen p-4 flex justify-center">
-          {renderDoc ? (
-            <Suspense fallback={null}>
-              <InvoiceDocumentView document={renderDoc} elementId="quotation-invoice-canvas" zoomScale={1} />
-            </Suspense>
-          ) : (
-            <div className="text-white text-xs font-mono">Waiting for document payload...</div>
-          )}
-        </div>
-      ) : currentView.type === 'public_proposal' ? (
+        {currentView.type === 'public_proposal' && currentView.docId ? (
+        // The audience here is the USER'S CLIENT, not the user. A crash on this
+        // route must not show them a stack trace or a blank page — they cannot
+        // act on either, and it reflects on the person who sent the proposal.
         <ErrorBoundary
-          label="public_proposal"
+          label="public-proposal"
           fallback={
-            <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col items-center justify-center p-4">
-              <div className="max-w-md w-full bg-slate-900 border border-slate-800 rounded-2xl p-6 text-center space-y-3 shadow-2xl">
-                <h2 className="text-base font-bold text-slate-100 font-['Outfit']">Something went wrong</h2>
-                <p className="text-xs text-slate-400">This proposal could not be displayed properly.</p>
+            <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-6 font-['Plus_Jakarta_Sans',sans-serif]">
+              <div className="max-w-sm w-full text-center space-y-3">
+                <h1 className="text-lg font-bold font-['Outfit']">This proposal could not be displayed</h1>
+                <p className="text-sm text-slate-400 leading-relaxed">
+                  Something went wrong while loading this document. Please refresh the page, or
+                  contact the sender if it keeps happening.
+                </p>
                 <button
                   type="button"
                   onClick={() => window.location.reload()}
@@ -197,7 +179,7 @@ export function App() {
           }
         >
           <Suspense fallback={<RouteFallback label="Loading Secure Proposal…" />}>
-            <PublicProposalPage documentId={currentView.docId || ''} />
+            <PublicProposalPage documentId={currentView.docId} />
           </Suspense>
         </ErrorBoundary>
       ) : currentView.type === 'admin' ? (

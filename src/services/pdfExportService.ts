@@ -37,8 +37,9 @@ const buildFilename = (doc: QuotationDocument): string => {
   return `${kind}-${ref || 'Invoix'}.pdf`;
 };
 
-/** True when the server renderer can reach this document. */
-export const canExportTextPdf = (_doc: QuotationDocument): boolean => true;
+/** True when the server renderer can reach this document at all. */
+export const canExportTextPdf = (doc: QuotationDocument): boolean =>
+  Boolean(doc.shareToken && doc.cloudSyncedAt);
 
 const triggerBlobDownload = (blob: Blob, filename: string): void => {
   const url = URL.createObjectURL(blob);
@@ -55,72 +56,28 @@ const triggerBlobDownload = (blob: Blob, filename: string): void => {
   }, 3000);
 };
 
-/** Builds a standalone HTML document containing the rendered canvas and all stylesheets. */
-export const buildExportHtml = (elementId: string = 'quotation-preview-container'): string => {
-  const target =
-    document.getElementById('quotation-invoice-canvas') ||
-    document.getElementById(elementId) ||
-    document.querySelector<HTMLElement>('.print-page');
-
-  if (!target) return '';
-
-  const styles = Array.from(document.querySelectorAll('style, link[rel="stylesheet"]'))
-    .map((el) => el.outerHTML)
-    .join('\n');
-
-  const clone = target.cloneNode(true) as HTMLElement;
-  clone.removeAttribute('id');
-  clone.style.transform = 'none';
-
-  return `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  ${styles}
-  <style>
-    @page { size: A4 portrait; margin: 0; }
-    html, body { margin: 0; padding: 0; background: #fff !important; width: 100%; }
-    .print-page { margin: 0 auto !important; box-shadow: none !important; page-break-after: always; break-after: page; }
-    .print-page:last-child { page-break-after: auto; break-after: auto; }
-  </style>
-</head>
-<body>
-  <div id="invoix-print-root" style="width: 100%; display: flex; flex-direction: column; align-items: center;">
-    ${clone.outerHTML}
-  </div>
-</body>
-</html>`;
-};
-
 /**
  * Fetches the server-rendered text PDF as a Blob.
  *
- * Sends the standalone HTML structure directly so that export succeeds even in
- * protected environments (such as Vercel SSO/preview password protection) without
- * making external network calls.
+ * Returns null on any failure so callers can fall back rather than surfacing an
+ * error the user cannot act on.
  */
-export const fetchTextPdfBlob = async (
-  doc: QuotationDocument,
-  elementId?: string
-): Promise<Blob | null> => {
+export const fetchTextPdfBlob = async (doc: QuotationDocument): Promise<Blob | null> => {
+  if (!canExportTextPdf(doc)) return null;
+
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), SERVER_TIMEOUT_MS);
 
   try {
-    const filename = buildFilename(doc);
-    const html = buildExportHtml(elementId);
-
-    const res = await fetch('/api/pdf', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ html, document: doc, filename }),
-      signal: controller.signal,
+    const params = new URLSearchParams({
+      token: doc.shareToken!,
+      filename: buildFilename(doc),
     });
 
+    const res = await fetch(`/api/pdf?${params.toString()}`, { signal: controller.signal });
+
     if (!res.ok) {
-      const errText = await res.text().catch(() => '');
-      console.warn('Text PDF render failed with status', res.status, errText);
+      console.warn('Text PDF render failed with status', res.status);
       return null;
     }
 
@@ -142,7 +99,7 @@ export const fetchTextPdfBlob = async (
 /**
  * Downloads the document, preferring true text and degrading quietly.
  *
- * `elementId` is used for the HTML snapshot and the raster fallback.
+ * `elementId` is only used by the raster fallback, which captures the live DOM.
  */
 export const downloadPdf = async (
   doc: QuotationDocument,
@@ -152,7 +109,18 @@ export const downloadPdf = async (
   const filename = buildFilename(doc);
 
   if (quality === 'text') {
-    const blob = await fetchTextPdfBlob(doc, elementId);
+    if (!canExportTextPdf(doc)) {
+      const ok = await exportDocumentToPdf(elementId, filename);
+      return {
+        success: ok,
+        usedQuality: 'image',
+        fallbackReason:
+          'This document has not synced to the cloud yet, so the standard PDF was used. Save it while signed in to enable crisp text export.',
+        error: ok ? undefined : 'Could not generate the PDF.',
+      };
+    }
+
+    const blob = await fetchTextPdfBlob(doc);
     if (blob) {
       triggerBlobDownload(blob, filename);
       return { success: true, usedQuality: 'text' };
