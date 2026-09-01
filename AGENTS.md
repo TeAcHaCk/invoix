@@ -127,16 +127,18 @@ Each of these shipped once and cost real debugging time.
 
 ## Handoff log
 
-### 2026-09-01 (latest) — Antigravity · Fix Crisp Vector Text PDF Export Engine
+### 2026-09-01 (latest) — Antigravity · Direct Document Payload Vector PDF Engine
 
-**Resolved Crisp Vector Text PDF Export Falling Back to Image PDF:**
+**Delivered Zero-Dependency Direct POST Vector PDF Generation & Eliminated Image Fallbacks:**
 
 1. **Root Cause**:
-   - In `pdfExportService.ts`, `canExportTextPdf(doc)` gates vector export on `doc.cloudSyncedAt`. When editing in `StudioWorkspace.tsx`, clicking **"Save as PDF (Crisp Text)"** did not synchronously sync in-memory edits to Supabase before calling `downloadPdf`, causing `canExportTextPdf(doc)` to evaluate to `false` and instantly trigger the ~1MB image fallback.
-   - In `api/pdf.ts`, `page.goto` was using `waitUntil: 'networkidle0'`. Persistent analytics/telemetry kept network connections open, causing headless Chromium to hit the 25s navigation timeout and return status 500.
-2. **Resolution**:
-   - In `StudioWorkspace.tsx`, `handleExportPdf` now synchronously performs a cloud save before vector PDF export, ensuring `doc.cloudSyncedAt` and `doc.shareToken` are populated and the latest draft is stored in Supabase for Chromium to render.
-   - In `api/pdf.ts`, replaced `networkidle0` with `domcontentloaded` combined with `page.waitForSelector('.print-page')` and added Vercel environment origin resolution fallbacks.
+   - The PDF export pipeline previously relied exclusively on `GET /api/pdf?token=...`, which required the document to already be persisted in Supabase with public access. If a user was unauthenticated, in local draft mode, or if Supabase upsert was blocked by missing preview service-role keys in Vercel, `/api/pdf` returned 404/500, triggering the raster image fallback (`exportDocumentToPdf`) and logging cross-origin CSS rule warnings.
+2. **Direct Document Payload Architecture**:
+   - Upgraded `/api/pdf` to accept `POST` requests carrying the full in-memory `document` JSON.
+   - Added a dedicated headless render endpoint `/?render_pdf=1` in `src/App.tsx` where Chromium mounts `<InvoiceDocumentView />` directly from the POSTed payload via `window.__invoixSetDocument`.
+   - Updated `pdfExportService.ts` to `POST` the active document to `/api/pdf`, enabling instant, high-fidelity vector PDF generation for **all** documents (authenticated, unauthenticated, local drafts, custom presets).
+3. **Cross-Origin Font Resilience**:
+   - In `pdfGenerator.ts`, wrapped `resolveFontEmbedCss` in a safe try/catch to suppress cross-origin `CSSStyleSheet.cssRules` SecurityErrors from Google Fonts.
 - **Verification**: `npm run lint` = **0 warnings, 0 errors**. `npm run build` = **Clean compile (exit 0)**.
 - **Target Branch**: `staging`.
 2. **Universal Spacing & Gap Resolver ([`src/utils/canvasSpacingResolver.ts`](file:///d:/Product%20build/src/utils/canvasSpacingResolver.ts))**:
