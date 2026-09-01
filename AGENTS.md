@@ -127,16 +127,16 @@ Each of these shipped once and cost real debugging time.
 
 ## Handoff log
 
-### 2026-09-01 (latest) — Antigravity · Fix Crisp Text & Raster PDF Export Engine
+### 2026-09-01 (latest) — Antigravity · Fix Crisp Vector Text PDF Export Engine
 
-**Resolved PDF Export & Crisp Text Download Failure:**
+**Resolved Crisp Vector Text PDF Export Falling Back to Image PDF:**
 
 1. **Root Cause**:
-   - In `pdfGenerator.ts`, `style: { height: '1123px', maxHeight: '1123px', overflow: 'hidden' }` was applied directly inside `capturePageAsPng` options. This caused `html-to-image` SVG `<foreignObject>` cloning to fail on elements with dynamic flex height, breaking both raster export and the crisp text export fallback.
-   - On the serverless helper (`api/_lib/server.ts`), `SUPABASE_URL` required explicit lookup which threw if only `VITE_SUPABASE_URL` was configured in deployment settings.
+   - In `pdfExportService.ts`, `canExportTextPdf(doc)` gates vector export on `doc.cloudSyncedAt`. When editing in `StudioWorkspace.tsx`, clicking **"Save as PDF (Crisp Text)"** did not synchronously sync in-memory edits to Supabase before calling `downloadPdf`, causing `canExportTextPdf(doc)` to evaluate to `false` and instantly trigger the ~1MB image fallback.
+   - In `api/pdf.ts`, `page.goto` was using `waitUntil: 'networkidle0'`. Persistent analytics/telemetry kept network connections open, causing headless Chromium to hit the 25s navigation timeout and return status 500.
 2. **Resolution**:
-   - Restored standard `minHeight: 1123px` styling in `capturePageAsPng` while keeping precision section capacity calculations and 6% subpixel single-sheet tolerance in `drawPageIntoPdf`.
-   - Supported both `SUPABASE_URL` and `VITE_SUPABASE_URL` in `api/_lib/server.ts`.
+   - In `StudioWorkspace.tsx`, `handleExportPdf` now synchronously performs a cloud save before vector PDF export, ensuring `doc.cloudSyncedAt` and `doc.shareToken` are populated and the latest draft is stored in Supabase for Chromium to render.
+   - In `api/pdf.ts`, replaced `networkidle0` with `domcontentloaded` combined with `page.waitForSelector('.print-page')` and added Vercel environment origin resolution fallbacks.
 - **Verification**: `npm run lint` = **0 warnings, 0 errors**. `npm run build` = **Clean compile (exit 0)**.
 - **Target Branch**: `staging`.
 2. **Universal Spacing & Gap Resolver ([`src/utils/canvasSpacingResolver.ts`](file:///d:/Product%20build/src/utils/canvasSpacingResolver.ts))**:
