@@ -70,18 +70,17 @@ export default async function handler(req: ApiRequest, res: ApiResponse): Promis
     return methodNotAllowed(res, 'GET, POST');
   }
 
-  const origin = resolveOrigin(req);
-  if (!origin) {
-    return void res.status(500).json({ error: 'Could not determine the site address.' });
-  }
-
+  let htmlPayload: string | null = null;
   let docPayload: unknown = null;
   let filename = 'Invoix-Document.pdf';
   let token = '';
 
   if (req.method === 'POST') {
-    const body = readJsonBody(req) as { document?: unknown; filename?: unknown } | null;
-    docPayload = body?.document || body;
+    const body = readJsonBody(req) as { html?: string; document?: unknown; filename?: unknown } | null;
+    if (typeof body?.html === 'string' && body.html.length > 50) {
+      htmlPayload = body.html;
+    }
+    docPayload = body?.document || null;
     if (body?.filename) filename = sanitizeFilename(body.filename);
   } else {
     // req.query is populated by the Vercel Node runtime.
@@ -120,34 +119,47 @@ export default async function handler(req: ApiRequest, res: ApiResponse): Promis
     const page = await browser.newPage();
     page.setDefaultTimeout(RENDER_TIMEOUT_MS);
 
-    if (process.env.VERCEL_AUTOMATION_BYPASS_SECRET) {
-      await page.setExtraHTTPHeaders({
-        'x-vercel-protection-bypass': process.env.VERCEL_AUTOMATION_BYPASS_SECRET,
-      });
-    }
-
-    if (docPayload) {
-      await page.goto(`${origin}/?render_pdf=1`, {
+    if (htmlPayload) {
+      // 100% self-contained HTML payload: NO network navigation needed!
+      // This bypasses Vercel SSO, Deployment Protection, CORS and cold start network latency.
+      await page.setContent(htmlPayload, {
         waitUntil: 'domcontentloaded',
         timeout: NAV_TIMEOUT_MS,
       });
-
-      await page.evaluate((d) => {
-        const win = globalThis as { __invoixSetDocument?: (doc: unknown) => void };
-        if (typeof win.__invoixSetDocument === 'function') {
-          win.__invoixSetDocument(d);
-        }
-      }, docPayload);
     } else {
-      await page.goto(`${origin}/?view=${encodeURIComponent(token)}`, {
-        waitUntil: 'domcontentloaded',
-        timeout: NAV_TIMEOUT_MS,
-      });
+      const origin = resolveOrigin(req);
+      if (!origin) {
+        return void res.status(500).json({ error: 'Could not determine the site address.' });
+      }
+
+      if (process.env.VERCEL_AUTOMATION_BYPASS_SECRET) {
+        await page.setExtraHTTPHeaders({
+          'x-vercel-protection-bypass': process.env.VERCEL_AUTOMATION_BYPASS_SECRET,
+        });
+      }
+
+      if (docPayload) {
+        await page.goto(`${origin}/?render_pdf=1`, {
+          waitUntil: 'domcontentloaded',
+          timeout: NAV_TIMEOUT_MS,
+        });
+
+        await page.evaluate((d) => {
+          const win = globalThis as { __invoixSetDocument?: (doc: unknown) => void };
+          if (typeof win.__invoixSetDocument === 'function') {
+            win.__invoixSetDocument(d);
+          }
+        }, docPayload);
+      } else {
+        await page.goto(`${origin}/?view=${encodeURIComponent(token)}`, {
+          waitUntil: 'domcontentloaded',
+          timeout: NAV_TIMEOUT_MS,
+        });
+      }
     }
 
-    // The document is fetched client-side, so the page can be "loaded" before it
-    // renders. Wait for the actual A4 pages to exist.
-    await page.waitForSelector('.print-page, #quotation-invoice-canvas', { timeout: RENDER_TIMEOUT_MS });
+    // Wait for the actual A4 pages to exist.
+    await page.waitForSelector('.print-page, #quotation-invoice-canvas, #invoix-print-root', { timeout: RENDER_TIMEOUT_MS });
 
     /*
       Webfonts must resolve before layout is measured, or line breaks shift.
@@ -162,24 +174,20 @@ export default async function handler(req: ApiRequest, res: ApiResponse): Promis
       if (doc?.fonts?.ready) await doc.fonts.ready;
     });
 
-    /*
-      page.pdf() does NOT fire `beforeprint`, and that event is the only thing
-      that builds the print isolation root. Without this call Chromium would
-      render the whole page chrome - nav bar, signing form and all - instead of
-      the document.
-    */
-    const prepared = await page.evaluate(() => {
-      const win = globalThis as { __invoixPreparePrint?: () => void };
-      if (typeof win.__invoixPreparePrint === 'function') {
-        win.__invoixPreparePrint();
-        return true;
-      }
-      return false;
-    });
+    if (!htmlPayload) {
+      const prepared = await page.evaluate(() => {
+        const win = globalThis as { __invoixPreparePrint?: () => void };
+        if (typeof win.__invoixPreparePrint === 'function') {
+          win.__invoixPreparePrint();
+          return true;
+        }
+        return false;
+      });
 
-    if (!prepared) {
-      console.error('PDF: window.__invoixPreparePrint is not available on the page.');
-      return void res.status(500).json({ error: 'The document could not be prepared for export.' });
+      if (!prepared) {
+        console.error('PDF: window.__invoixPreparePrint is not available on the page.');
+        return void res.status(500).json({ error: 'The document could not be prepared for export.' });
+      }
     }
 
     await page.emulateMediaType('print');

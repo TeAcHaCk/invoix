@@ -55,22 +55,66 @@ const triggerBlobDownload = (blob: Blob, filename: string): void => {
   }, 3000);
 };
 
+/** Builds a standalone HTML document containing the rendered canvas and all stylesheets. */
+export const buildExportHtml = (elementId: string = 'quotation-preview-container'): string => {
+  const target =
+    document.getElementById('quotation-invoice-canvas') ||
+    document.getElementById(elementId) ||
+    document.querySelector<HTMLElement>('.print-page');
+
+  if (!target) return '';
+
+  const styles = Array.from(document.querySelectorAll('style, link[rel="stylesheet"]'))
+    .map((el) => el.outerHTML)
+    .join('\n');
+
+  const clone = target.cloneNode(true) as HTMLElement;
+  clone.removeAttribute('id');
+  clone.style.transform = 'none';
+
+  return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  ${styles}
+  <style>
+    @page { size: A4 portrait; margin: 0; }
+    html, body { margin: 0; padding: 0; background: #fff !important; width: 100%; }
+    .print-page { margin: 0 auto !important; box-shadow: none !important; page-break-after: always; break-after: page; }
+    .print-page:last-child { page-break-after: auto; break-after: auto; }
+  </style>
+</head>
+<body>
+  <div id="invoix-print-root" style="width: 100%; display: flex; flex-direction: column; align-items: center;">
+    ${clone.outerHTML}
+  </div>
+</body>
+</html>`;
+};
+
 /**
  * Fetches the server-rendered text PDF as a Blob.
  *
- * Sends the full document structure directly so that all drafts, local files,
- * and unsaved modifications export with 100% crisp vector text regardless of auth state.
+ * Sends the standalone HTML structure directly so that export succeeds even in
+ * protected environments (such as Vercel SSO/preview password protection) without
+ * making external network calls.
  */
-export const fetchTextPdfBlob = async (doc: QuotationDocument): Promise<Blob | null> => {
+export const fetchTextPdfBlob = async (
+  doc: QuotationDocument,
+  elementId?: string
+): Promise<Blob | null> => {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), SERVER_TIMEOUT_MS);
 
   try {
     const filename = buildFilename(doc);
+    const html = buildExportHtml(elementId);
+
     const res = await fetch('/api/pdf', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ document: doc, filename }),
+      body: JSON.stringify({ html, document: doc, filename }),
       signal: controller.signal,
     });
 
@@ -98,7 +142,7 @@ export const fetchTextPdfBlob = async (doc: QuotationDocument): Promise<Blob | n
 /**
  * Downloads the document, preferring true text and degrading quietly.
  *
- * `elementId` is only used by the raster fallback, which captures the live DOM.
+ * `elementId` is used for the HTML snapshot and the raster fallback.
  */
 export const downloadPdf = async (
   doc: QuotationDocument,
@@ -108,18 +152,7 @@ export const downloadPdf = async (
   const filename = buildFilename(doc);
 
   if (quality === 'text') {
-    if (!canExportTextPdf(doc)) {
-      const ok = await exportDocumentToPdf(elementId, filename);
-      return {
-        success: ok,
-        usedQuality: 'image',
-        fallbackReason:
-          'This document has not synced to the cloud yet, so the standard PDF was used. Save it while signed in to enable crisp text export.',
-        error: ok ? undefined : 'Could not generate the PDF.',
-      };
-    }
-
-    const blob = await fetchTextPdfBlob(doc);
+    const blob = await fetchTextPdfBlob(doc, elementId);
     if (blob) {
       triggerBlobDownload(blob, filename);
       return { success: true, usedQuality: 'text' };
